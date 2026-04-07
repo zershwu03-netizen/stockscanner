@@ -210,6 +210,22 @@ header .inner { max-width:1280px; margin:0 auto; display:flex; align-items:cente
 .fav-chips { display:flex; flex-wrap:wrap; gap:6px; }
 .fav-chip { display:flex; align-items:center; gap:4px; background:#fff; border:1px solid var(--line2); border-radius:20px; padding:4px 10px; font-size:12px; color:var(--text2); font-family:'JetBrains Mono',monospace; cursor:pointer; }
 .fav-chip:hover { border-color:var(--ember); color:var(--ember); }
+
+/* Signal section */
+.signal-section { margin-bottom:4px; }
+.signal-section-title { font-size:11px; font-weight:600; color:var(--text2); margin-bottom:6px; }
+.entry-ok   { color:#059669; font-weight:700; }
+.entry-wait { color:#d97706; font-weight:700; }
+.signal-grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+.signal-box.wait { background:rgba(107,114,128,0.07); border:1px dashed rgba(107,114,128,0.3); }
+.signal-box.wait .signal-box-label { color:#374151; }
+.signal-box.wait .signal-price { color:#374151; font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; }
+
+/* Entry warnings */
+.warn-block { margin: 0 16px 10px; display:flex; flex-direction:column; gap:5px; }
+.warn-item { font-size:11px; padding:7px 10px; border-radius:8px; line-height:1.5; }
+.warn-item.danger { background:rgba(220,38,38,0.07); border:1px solid rgba(220,38,38,0.2); color:#991b1b; }
+.warn-item.warn   { background:rgba(217,119,6,0.07);  border:1px solid rgba(217,119,6,0.2);  color:#92400e; }
 </style>
 </head>
 <body>
@@ -570,32 +586,85 @@ async function analyzeSymbol(symbol) {
   const support1  = Math.min(...recentLows);
   const resist1   = Math.max(...recentHighs);
 
-  // ── Buy / Sell Signals (精確版) ──
-  // 短線買入：RSI 低檔 + 接近布林下軌或 MA20 支撐
-  const buyShort  = Math.max(bbL, ma20 - atrVal * 0.5, support1);
-  // 波段買入：MA60 支撐區
-  const buySwing  = (ma60 || price * 0.9) * 0.99;
-  // 短線目標價：阻力位 or 布林上軌
-  const targetShort = Math.min(resist1, bbU || price * 1.05);
-  // 波段目標價：前高 + 1 ATR
-  const targetSwing = resist1 + atrVal;
-  // 停損：支撐下方 3%
-  const stopLoss  = support1 * 0.97;
-  // 風險報酬比 (short)
+  // ── 支撐 / 阻力 ──
+  // 停損：近期低點下方 3%（不管現價在哪都成立）
+  const stopLoss = support1 * 0.97;
+
+  // ── 短線（週內）──
+  // 短線買入區：布林下軌 ~ MA20，這是「理想進場區」
+  const buyShortLow  = Math.max(bbL || price * 0.95, support1);
+  const buyShortHigh = ma20 || price * 0.98;
+  // 短線是否「目前可進場」：現價在買入區內或以下
+  const shortEntryNow = price <= buyShortHigh * 1.01;
+  // 短線目標：必須 > 現價 才有意義；取阻力位或布林上軌，但至少要 > 現價 + 1 ATR
+  const targetShortRaw = Math.max(resist1, bbU || price * 1.05);
+  const targetShort = Math.max(targetShortRaw, price + atrVal);
+
+  // ── 波段（數週~數月）──
+  // 波段買入區：MA60 支撐附近（比短線更低，適合分批布局）
+  const buySwingLow  = (ma60 || price * 0.88) * 0.98;
+  const buySwingHigh = (ma60 || price * 0.88) * 1.01;
+  // 波段是否「目前可進場」：現價 <= MA60 * 1.03（接近或低於 MA60）
+  const swingEntryNow = price <= (ma60 || price) * 1.03;
+  // 波段目標：前高 + ATR，必須 > 現價
+  const targetSwingRaw = resist1 + atrVal;
+  const targetSwing = Math.max(targetSwingRaw, price + atrVal * 2);
+
+  // ── 風險報酬比（以短線為基準，從現價計算）──
   const risk   = price - stopLoss;
   const reward = targetShort - price;
   const rrRatio = risk > 0 ? (reward / risk) : 0;
 
-  // Score
+  // 向後兼容（buildCard 仍用 buyShort）
+  const buyShort = buyShortLow;
+  const buySwing = buySwingLow;
+
+  // BB position ratio (0=下軌, 1=上軌, >1=突破上軌)
+  const bbPctRaw = (bbU && bbL && bbU !== bbL) ? (price - bbL) / (bbU - bbL) : 0.5;
+
+  // 現價相對建議買入點的溢價
+  const priceVsBuy = buyShort > 0 ? (price - buyShort) / buyShort : 0;
+
+  // Score — 修正版：追高、超買都會大幅扣分
   let score = 50;
-  if (rsiVal < 40) score += 15; else if (rsiVal < 50) score += 8; else if (rsiVal > 70) score -= 12;
+  // RSI
+  if (rsiVal < 30)       score += 18;
+  else if (rsiVal < 40)  score += 12;
+  else if (rsiVal < 50)  score += 6;
+  else if (rsiVal > 75)  score -= 15;
+  else if (rsiVal > 65)  score -= 8;
+  // MACD
   if (macdHist > 0) score += 10; else score -= 5;
-  if (price > ma20) score += 8; else score -= 8;
-  if (ma60 && price > ma60) score += 8; else if (ma60) score -= 5;
-  if (price > bbM) score += 5; else score -= 3;
-  if (price < bbL * 1.02) score += 10;
-  if (volRatio > 1.5) score += 5;
+  // MA trend
+  if (price > ma20) score += 6; else score -= 8;
+  if (ma60 && price > ma60) score += 6; else if (ma60) score -= 5;
+  // BB position：突破上軌重扣，近下軌加分
+  if (bbPctRaw < 0.1)       score += 12;
+  else if (bbPctRaw < 0.25) score += 6;
+  else if (bbPctRaw > 1.0)  score -= 20;  // 突破上軌 → 強烈追高警告
+  else if (bbPctRaw > 0.85) score -= 12;  // 非常接近上軌
+  else if (bbPctRaw > 0.70) score -= 5;
+  // 現價 vs 建議買入點：追高懲罰
+  if (priceVsBuy > 0.08)  score -= 15;
+  else if (priceVsBuy > 0.04) score -= 7;
+  // 量比
+  if (volRatio > 1.5) score += 4;
   score = Math.max(0, Math.min(100, Math.round(score)));
+
+  // ── 進場警示：偵測矛盾訊號 ──
+  const warnings = [];
+  if (bbPctRaw > 1.0)
+    warnings.push({ level:'danger', text:'⚠️ 股價已突破布林上軌，短期超漲，追高風險高，建議等回踩再進場' });
+  else if (bbPctRaw > 0.85)
+    warnings.push({ level:'warn', text:'⚠️ 股價接近布林上軌（上方空間有限），不宜追高' });
+  if (rsiVal > 70)
+    warnings.push({ level:'danger', text:'⚠️ RSI 超買區（>70），短線回調機率上升' });
+  else if (rsiVal > 65)
+    warnings.push({ level:'warn', text:'⚠️ RSI 偏高（>65），動能可能趨緩' });
+  if (priceVsBuy > 0.08)
+    warnings.push({ level:'warn', text:`⚠️ 現價比建議買入點高 ${(priceVsBuy*100).toFixed(0)}%，此時進場風報比不佳` });
+  if (rrRatio < 1 && rrRatio >= 0)
+    warnings.push({ level:'warn', text:'⚠️ 風險報酬比 <1x，停損空間大於潛在獲利' });
 
   const verdict = score >= 70 ? '強烈買入機會' : score >= 55 ? '可考慮布局' : score >= 40 ? '中性觀察' : '偏空，暫緩';
   const verdictColor = score >= 70 ? '#059669' : score >= 55 ? '#2563eb' : score >= 40 ? '#d97706' : '#dc2626';
@@ -610,7 +679,8 @@ async function analyzeSymbol(symbol) {
     bbU, bbM, bbL, ma20, ma60,
     atrVal, volRatio,
     buyShort, buySwing, targetShort, targetSwing, stopLoss, rrRatio,
-    score, verdict, verdictColor, rrRatio,
+    buyShortLow, buyShortHigh, buySwingLow, buySwingHigh, shortEntryNow, swingEntryNow,
+    score, verdict, verdictColor, rrRatio, warnings,
     closes: closes.slice(-60), highs: highs.slice(-60), lows: lows.slice(-60),
     bt,
   };
@@ -655,6 +725,109 @@ function renderCards() {
     return;
   }
   grid.innerHTML = displayedResults.map((r, idx) => buildCard(r, idx)).join('');
+}
+
+
+function buildWarnings(r) {
+  if (!r.warnings || !r.warnings.length) return '';
+  return '<div class="warn-block">' +
+    r.warnings.map(function(w) {
+      return '<div class="warn-item ' + w.level + '">' + w.text + '</div>';
+    }).join('') +
+  '</div>';
+}
+
+function buildSignals(r, rrClass, rrText) {
+  var dp = r.dp;
+
+  function pct(a, b) { return ((a - b) / b * 100).toFixed(1); }
+
+  // Short-term block
+  var shortTitle, shortBuyBox;
+  if (r.shortEntryNow) {
+    shortTitle = '⚡ 短線（週內）— <span class="entry-ok">目前可進場</span>';
+    shortBuyBox =
+      '<div class="signal-box buy">' +
+        '<div class="signal-box-label">🟢 買入區</div>' +
+        '<div class="signal-price">' + r.buyShortLow.toFixed(dp) + ' ~ ' + r.buyShortHigh.toFixed(dp) + '</div>' +
+        '<div class="signal-sub">現價在買入區內</div>' +
+      '</div>';
+  } else {
+    var needDrop = Math.abs(pct(r.buyShortLow, r.price));
+    shortTitle = '⏳ 短線（週內）— <span class="entry-wait">等待回調 ' + needDrop + '%</span>';
+    shortBuyBox =
+      '<div class="signal-box wait">' +
+        '<div class="signal-box-label">📍 等待買入區</div>' +
+        '<div class="signal-price">' + r.buyShortLow.toFixed(dp) + ' ~ ' + r.buyShortHigh.toFixed(dp) + '</div>' +
+        '<div class="signal-sub">回調 ' + needDrop + '% 後進場</div>' +
+      '</div>';
+  }
+  var shortPctTarget = pct(r.targetShort, r.price);
+  var shortBlock =
+    '<div class="signal-section">' +
+      '<div class="signal-section-title">' + shortTitle + '</div>' +
+      '<div class="signal-grid-3">' +
+        shortBuyBox +
+        '<div class="signal-box target">' +
+          '<div class="signal-box-label">🎯 目標價</div>' +
+          '<div class="signal-price">' + r.targetShort.toFixed(dp) + '</div>' +
+          '<div class="signal-sub">潛在 +' + shortPctTarget + '%（進場後）</div>' +
+        '</div>' +
+        '<div class="signal-box stop">' +
+          '<div class="signal-box-label">🛑 停損</div>' +
+          '<div class="signal-price">' + r.stopLoss.toFixed(dp) + '</div>' +
+          '<div class="signal-sub">跌破出場</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  // Swing block
+  var swingTitle, swingBuyBox;
+  if (r.swingEntryNow) {
+    swingTitle = '📈 波段（數週~數月）— <span class="entry-ok">可分批布局</span>';
+    swingBuyBox =
+      '<div class="signal-box buy" style="background:rgba(37,99,235,0.06);border-color:rgba(37,99,235,0.2)">' +
+        '<div class="signal-box-label" style="color:#1e40af">🔵 買入區</div>' +
+        '<div class="signal-price" style="color:#2563eb">' + r.buySwingLow.toFixed(dp) + ' ~ ' + r.buySwingHigh.toFixed(dp) + '</div>' +
+        '<div class="signal-sub">MA60 支撐附近</div>' +
+      '</div>';
+  } else {
+    var needDropS = Math.abs(pct(r.buySwingLow, r.price));
+    swingTitle = '📈 波段（數週~數月）— <span class="entry-wait">等待回調至 MA60</span>';
+    swingBuyBox =
+      '<div class="signal-box wait">' +
+        '<div class="signal-box-label">📍 等待買入區</div>' +
+        '<div class="signal-price">' + r.buySwingLow.toFixed(dp) + ' ~ ' + r.buySwingHigh.toFixed(dp) + '</div>' +
+        '<div class="signal-sub">需回調 ' + needDropS + '%（MA60 支撐）</div>' +
+      '</div>';
+  }
+  var swingPctTarget = pct(r.targetSwing, r.price);
+  var swingBlock =
+    '<div class="signal-section" style="margin-top:8px">' +
+      '<div class="signal-section-title">' + swingTitle + '</div>' +
+      '<div class="signal-grid-3">' +
+        swingBuyBox +
+        '<div class="signal-box target">' +
+          '<div class="signal-box-label">🚀 目標價</div>' +
+          '<div class="signal-price">' + r.targetSwing.toFixed(dp) + '</div>' +
+          '<div class="signal-sub">潛在 +' + swingPctTarget + '%（進場後）</div>' +
+        '</div>' +
+        '<div class="signal-box stop">' +
+          '<div class="signal-box-label">🛑 停損</div>' +
+          '<div class="signal-price">' + r.stopLoss.toFixed(dp) + '</div>' +
+          '<div class="signal-sub">跌破出場</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  var rrRow =
+    '<div style="display:flex;align-items:center;justify-content:flex-end;margin-top:8px;gap:8px">' +
+      '<div class="rr-badge ' + rrClass + '">' + rrText + '</div>' +
+      '<div style="font-size:10px;color:var(--text3)">從現價計算</div>' +
+    '</div>';
+
+  return '<div class="trade-signals"><div class="trade-title">📊 操作建議</div>' +
+    shortBlock + swingBlock + rrRow + '</div>';
 }
 
 function buildCard(r, idx) {
@@ -752,44 +925,13 @@ function buildCard(r, idx) {
       </div>
     </div>
 
-    <!-- Buy / Sell Signals -->
-    <div class="trade-signals">
-      <div class="trade-title">📊 買賣訊號與目標價</div>
-      <div class="signal-grid">
-        <div class="signal-box buy">
-          <div class="signal-box-label">🟢 短線買入</div>
-          <div class="signal-price">${r.buyShort.toFixed(r.dp)}</div>
-          <div class="signal-sub">週內進出</div>
-        </div>
-        <div class="signal-box target">
-          <div class="signal-box-label">🎯 短線目標</div>
-          <div class="signal-price">${r.targetShort.toFixed(r.dp)}</div>
-          <div class="signal-sub">預期阻力位</div>
-        </div>
-        <div class="signal-box buy" style="background:rgba(37,99,235,0.06);border-color:rgba(37,99,235,0.2)">
-          <div class="signal-box-label" style="color:#1e40af">🔵 波段買入</div>
-          <div class="signal-price" style="color:#2563eb">${r.buySwing.toFixed(r.dp)}</div>
-          <div class="signal-sub">數週~數月</div>
-        </div>
-        <div class="signal-box target">
-          <div class="signal-box-label">🚀 波段目標</div>
-          <div class="signal-price">${r.targetSwing.toFixed(r.dp)}</div>
-          <div class="signal-sub">前高 + ATR</div>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
-        <div class="signal-box stop" style="flex:1;margin-right:8px">
-          <div class="signal-box-label">🛑 停損價</div>
-          <div class="signal-price">${r.stopLoss.toFixed(r.dp)}</div>
-          <div class="signal-sub">支撐下方 3%</div>
-        </div>
-        <div>
-          <div class="rr-badge ${rrClass}">${rrText}</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:4px;text-align:right">潛在報酬/風險</div>
-        </div>
-      </div>
-    </div>
+    <!-- Entry Warnings -->
+    ${buildWarnings(r)}
 
+    <!-- Buy / Sell Signals -->
+    ${buildSignals(r, rrClass, rrText)}
+
+    <!-- Backtest -->
     <!-- Backtest -->
     <div class="backtest-section">
       <div class="backtest-title">
