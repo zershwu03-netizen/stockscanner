@@ -3,306 +3,213 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI 選股分析儀</title>
+<title>AI 選股分析儀 v2</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 :root {
-  --ink: #f5f7fa;
-  --ink2: #eef0f5;
-  --ink3: #e8eaf0;
-  --line: #dde1ec;
-  --line2: #c8cedf;
-  --sky: #2563eb;
-  --sky2: #3b82f6;
-  --mint: #059669;
-  --ember: #dc2626;
-  --gold: #d97706;
-  --text: #111827;
-  --text2: #374151;
-  --text3: #6b7280;
-  --card-bg: rgba(255,255,255,0.98);
+  --ink: #f5f7fa; --ink2: #eef0f5; --ink3: #e8eaf0;
+  --line: #dde1ec; --line2: #c8cedf;
+  --sky: #2563eb; --sky2: #3b82f6;
+  --mint: #059669; --ember: #dc2626; --gold: #d97706;
+  --text: #111827; --text2: #374151; --text3: #6b7280;
   --glow: 0 4px 24px rgba(37,99,235,0.10);
 }
-
 * { box-sizing: border-box; margin: 0; padding: 0; }
-
 html { scroll-behavior: smooth; }
+body { font-family: 'Noto Sans TC', sans-serif; background: #f0f2f8; color: var(--text); min-height: 100vh; overflow-x: hidden; }
+body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse 60% 40% at 20% 20%, rgba(37,99,235,0.04) 0%, transparent 60%), radial-gradient(ellipse 40% 60% at 80% 80%, rgba(5,150,105,0.03) 0%, transparent 60%); pointer-events:none; z-index:0; }
+body::after { content:''; position:fixed; inset:0; background-image: radial-gradient(rgba(37,99,235,0.07) 1px, transparent 1px); background-size:28px 28px; pointer-events:none; z-index:0; mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%); }
+.wrap { position:relative; z-index:1; max-width:1280px; margin:0 auto; padding:0 20px; }
 
-body {
-  font-family: 'Noto Sans TC', sans-serif;
-  background: #f0f2f8;
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
+/* Header */
+header { padding:20px 20px 18px; border-bottom:1px solid var(--line); background:rgba(255,255,255,0.92); backdrop-filter:blur(20px); position:sticky; top:0; z-index:200; box-shadow:0 1px 12px rgba(0,0,0,0.06); }
+header .inner { max-width:1280px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+.brand { display:flex; align-items:center; gap:14px; }
+.brand-mark { width:40px; height:40px; background:linear-gradient(135deg,var(--sky),var(--mint)); border-radius:10px; display:grid; place-items:center; font-size:18px; flex-shrink:0; }
+.brand-name { font-family:'Syne',sans-serif; font-size:18px; font-weight:800; letter-spacing:-0.5px; }
+.brand-name span { color:var(--sky); }
+.brand-sub { font-size:11px; color:var(--text3); margin-top:2px; }
+.key-bar { display:flex; align-items:center; gap:8px; }
+.key-bar label { font-size:11px; color:var(--text3); white-space:nowrap; }
+.key-input { padding:8px 12px; background:#fff; border:1px solid var(--line2); border-radius:8px; color:var(--text); font-family:'JetBrains Mono',monospace; font-size:12px; width:200px; outline:none; transition:border-color 0.2s; }
+.key-input:focus { border-color:var(--sky); box-shadow:0 0 0 3px rgba(37,99,235,0.1); }
+.key-input::placeholder { color:var(--text3); }
 
-/* Animated background */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 60% 40% at 20% 20%, rgba(37,99,235,0.04) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 60% at 80% 80%, rgba(5,150,105,0.03) 0%, transparent 60%);
-  pointer-events: none;
-  z-index: 0;
-}
+/* Controls */
+.controls { padding:20px 0 0; }
+.market-tabs { display:flex; gap:4px; margin-bottom:16px; }
+.mkt-btn { padding:8px 18px; border-radius:8px; border:1px solid var(--line2); background:#fff; color:var(--text2); cursor:pointer; font-family:'Syne',sans-serif; font-size:13px; font-weight:600; transition:all 0.2s; }
+.mkt-btn:hover { border-color:var(--sky); color:var(--sky); }
+.mkt-btn.active { background:var(--sky); border-color:var(--sky); color:white; }
+.presets-section { margin-bottom:14px; }
+.presets-label { font-size:11px; color:var(--text3); letter-spacing:0.8px; text-transform:uppercase; margin-bottom:8px; }
+.presets-grid { display:flex; flex-wrap:wrap; gap:6px; }
+.preset-group { display:flex; align-items:center; gap:4px; background:#fff; border:1px solid var(--line); border-radius:8px; padding:4px 10px 4px 6px; cursor:pointer; transition:all 0.2s; }
+.preset-group:hover { border-color:var(--sky2); }
+.preset-group input[type=checkbox] { accent-color:var(--sky); cursor:pointer; width:14px; height:14px; }
+.preset-group span { font-size:12px; color:var(--text2); white-space:nowrap; user-select:none; }
+.preset-group:has(input:checked) { border-color:var(--sky); background:rgba(37,99,235,0.06); }
+.preset-group:has(input:checked) span { color:var(--sky); }
+.custom-section { margin-bottom:16px; }
+.custom-label { font-size:11px; color:var(--text3); letter-spacing:0.8px; text-transform:uppercase; margin-bottom:8px; }
+.custom-input-row { display:flex; gap:8px; flex-wrap:wrap; }
+.custom-input { flex:1; padding:10px 14px; background:#fff; border:1px solid var(--line2); border-radius:8px; color:var(--text); font-family:'JetBrains Mono',monospace; font-size:13px; outline:none; transition:border-color 0.2s; min-width:200px; max-width:500px; }
+.custom-input:focus { border-color:var(--sky); }
+.custom-input::placeholder { color:var(--text3); }
+.scan-btn { padding:10px 24px; border-radius:8px; border:none; cursor:pointer; background:linear-gradient(135deg,var(--sky),#1d4ed8); color:white; font-family:'Syne',sans-serif; font-size:14px; font-weight:700; display:flex; align-items:center; gap:8px; transition:all 0.2s; box-shadow:0 4px 20px rgba(37,99,235,0.25); }
+.scan-btn:hover { transform:translateY(-1px); }
+.scan-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
 
-/* Dot grid */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: radial-gradient(rgba(37,99,235,0.07) 1px, transparent 1px);
-  background-size: 28px 28px;
-  pointer-events: none;
-  z-index: 0;
-  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
-}
+/* Filter bar */
+.filter-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:12px 16px; background:#fff; border:1px solid var(--line); border-radius:12px; margin-bottom:16px; }
+.filter-bar label { font-size:11px; color:var(--text3); white-space:nowrap; font-weight:500; }
+.filter-select { padding:5px 10px; border:1px solid var(--line2); border-radius:6px; font-size:12px; color:var(--text); background:#fff; outline:none; cursor:pointer; }
+.filter-range-group { display:flex; align-items:center; gap:6px; }
+.filter-range-group input[type=number] { width:62px; padding:5px 8px; border:1px solid var(--line2); border-radius:6px; font-size:12px; font-family:'JetBrains Mono',monospace; color:var(--text); background:#fff; outline:none; }
+.filter-sep { font-size:11px; color:var(--text3); }
+.fav-only-btn { padding:5px 12px; border:1px solid var(--line2); border-radius:6px; font-size:12px; color:var(--text3); background:#fff; cursor:pointer; transition:all 0.15s; display:flex; align-items:center; gap:4px; }
+.fav-only-btn.active { background:rgba(220,38,38,0.08); border-color:var(--ember); color:var(--ember); }
+.filter-count { font-size:11px; color:var(--text3); margin-left:auto; white-space:nowrap; }
 
-.wrap { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 0 20px; }
+/* Progress */
+.progress-wrap { margin:20px 0; display:none; }
+.progress-bar-bg { height:3px; background:var(--line); border-radius:2px; overflow:hidden; margin-bottom:8px; }
+.progress-bar-fill { height:100%; background:linear-gradient(90deg,var(--sky),var(--mint)); border-radius:2px; transition:width 0.4s; width:0%; }
+.progress-text { font-size:12px; color:var(--text3); font-family:'JetBrains Mono',monospace; }
 
-/* ── Header ── */
-header {
-  padding: 28px 20px 24px;
-  border-bottom: 1px solid var(--line);
-  background: rgba(255,255,255,0.92);
-  backdrop-filter: blur(20px);
-  position: sticky; top: 0; z-index: 200;
-  box-shadow: 0 1px 12px rgba(0,0,0,0.06);
-}
-header .inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+/* Results header */
+.results-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:10px; }
+.results-title { font-family:'Syne',sans-serif; font-size:18px; font-weight:700; }
+.results-meta { font-size:12px; color:var(--text3); }
+.sort-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+.sort-btn { padding:6px 14px; border-radius:6px; border:1px solid var(--line); background:#fff; color:var(--text3); cursor:pointer; font-size:12px; font-family:inherit; transition:all 0.15s; }
+.sort-btn:hover { border-color:var(--sky); color:var(--sky); }
+.sort-btn.active { background:rgba(37,99,235,0.08); border-color:var(--sky); color:var(--sky); }
 
-.brand { display: flex; align-items: center; gap: 14px; }
-.brand-mark {
-  width: 42px; height: 42px;
-  background: linear-gradient(135deg, var(--sky), var(--mint));
-  border-radius: 10px;
-  display: grid; place-items: center;
-  font-size: 20px;
-  box-shadow: 0 4px 20px rgba(79,142,247,0.35);
-  flex-shrink: 0;
-}
-.brand-name { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
-.brand-name span { color: var(--sky); }
-.brand-sub { font-size: 11px; color: var(--text3); margin-top: 2px; letter-spacing: 0.5px; }
+/* Cards */
+.cards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:16px; }
+@media (max-width:780px) { .cards-grid { grid-template-columns:1fr; } }
 
-.key-bar { display: flex; align-items: center; gap: 8px; }
-.key-bar label { font-size: 11px; color: var(--text3); white-space: nowrap; }
-.key-input {
-  padding: 9px 14px;
-  background: #fff;
-  border: 1px solid var(--line2);
-  border-radius: 8px;
-  color: var(--text);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  width: 220px;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-.key-input:focus { border-color: var(--sky); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
-.key-input::placeholder { color: var(--text3); }
+/* Stock Card */
+.stock-card { background:#fff; border:1px solid var(--line); border-radius:16px; overflow:hidden; transition:transform 0.2s, border-color 0.2s, box-shadow 0.2s; animation:fadeUp 0.4s ease both; }
+.stock-card:hover { transform:translateY(-2px); border-color:var(--line2); box-shadow:var(--glow); }
+.stock-card.fav-card { border-color:rgba(220,38,38,0.3); }
+@keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
 
-/* ── Controls ── */
-.controls { padding: 24px 0 0; }
-
-.market-tabs { display: flex; gap: 4px; margin-bottom: 20px; }
-.mkt-btn {
-  padding: 9px 20px; border-radius: 8px; border: 1px solid var(--line2);
-  background: #fff; color: var(--text2); cursor: pointer;
-  font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600;
-  transition: all 0.2s; letter-spacing: 0.3px;
-}
-.mkt-btn:hover { border-color: var(--sky); color: var(--sky); }
-.mkt-btn.active { background: var(--sky); border-color: var(--sky); color: white; box-shadow: 0 4px 16px rgba(37,99,235,0.25); }
-
-.presets-section { margin-bottom: 16px; }
-.presets-label { font-size: 11px; color: var(--text3); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 10px; }
-.presets-grid { display: flex; flex-wrap: wrap; gap: 6px; }
-
-.preset-group {
-  display: flex; align-items: center; gap: 4px;
-  background: #fff; border: 1px solid var(--line); border-radius: 8px;
-  padding: 4px 10px 4px 6px; cursor: pointer; transition: all 0.2s;
-}
-.preset-group:hover { border-color: var(--sky2); }
-.preset-group input[type=checkbox] { accent-color: var(--sky); cursor: pointer; width: 14px; height: 14px; }
-.preset-group span { font-size: 12px; color: var(--text2); white-space: nowrap; user-select: none; }
-.preset-group:has(input:checked) { border-color: var(--sky); background: rgba(37,99,235,0.06); }
-.preset-group:has(input:checked) span { color: var(--sky); }
-
-.custom-section { margin-bottom: 20px; }
-.custom-label { font-size: 11px; color: var(--text3); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 10px; }
-.custom-input-row { display: flex; gap: 8px; }
-.custom-input {
-  flex: 1; padding: 10px 14px;
-  background: #fff; border: 1px solid var(--line2); border-radius: 8px;
-  color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 13px;
-  outline: none; transition: border-color 0.2s;
-  max-width: 500px;
-}
-.custom-input:focus { border-color: var(--sky); }
-.custom-input::placeholder { color: var(--text3); }
-
-.scan-btn {
-  padding: 11px 28px; border-radius: 8px; border: none; cursor: pointer;
-  background: linear-gradient(135deg, var(--sky), #1d4ed8);
-  color: white; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
-  letter-spacing: 0.3px;
-  display: flex; align-items: center; gap: 8px;
-  transition: all 0.2s; box-shadow: 0 4px 20px rgba(37,99,235,0.25);
-}
-.scan-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(37,99,235,0.35); }
-.scan-btn:active { transform: translateY(0); }
-.scan-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
-/* ── Progress ── */
-.progress-wrap { margin: 24px 0; display: none; }
-.progress-bar-bg { height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; margin-bottom: 10px; }
-.progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--sky), var(--mint)); border-radius: 2px; transition: width 0.4s; width: 0%; }
-.progress-text { font-size: 12px; color: var(--text3); font-family: 'JetBrains Mono', monospace; }
-
-/* ── Results ── */
-.results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
-.results-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; }
-.results-meta { font-size: 12px; color: var(--text3); }
-
-.sort-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
-.sort-btn {
-  padding: 6px 14px; border-radius: 6px; border: 1px solid var(--line);
-  background: #fff; color: var(--text3); cursor: pointer;
-  font-size: 12px; font-family: inherit; transition: all 0.15s;
-}
-.sort-btn:hover { border-color: var(--sky); color: var(--sky); }
-.sort-btn.active { background: rgba(37,99,235,0.08); border-color: var(--sky); color: var(--sky); }
-
-.cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
-@media (max-width: 780px) { .cards-grid { grid-template-columns: 1fr; } }
-
-/* ── Stock Card ── */
-.stock-card {
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  overflow: hidden;
-  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
-  animation: fadeUp 0.4s ease both;
-}
-.stock-card:hover { transform: translateY(-2px); border-color: var(--line2); box-shadow: var(--glow); }
-@keyframes fadeUp { from { opacity:0; transform: translateY(16px); } to { opacity:1; transform: translateY(0); } }
-
-.card-head {
-  padding: 16px 18px 12px;
-  border-bottom: 1px solid var(--line);
-  display: flex; align-items: flex-start; justify-content: space-between;
-}
-.card-symbol { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; letter-spacing: -0.3px; }
-.card-name { font-size: 12px; color: var(--text2); margin-top: 2px; }
-.card-price-wrap { text-align: right; }
-.card-price { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 600; }
-.card-change { font-size: 12px; margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+.card-head { padding:14px 16px 10px; border-bottom:1px solid var(--line); display:flex; align-items:flex-start; justify-content:space-between; }
+.card-head-left { display:flex; align-items:flex-start; gap:10px; flex:1; }
+.fav-btn { background:none; border:none; cursor:pointer; font-size:18px; line-height:1; padding:0; transition:transform 0.15s; flex-shrink:0; }
+.fav-btn:hover { transform:scale(1.2); }
+.card-symbol { font-family:'Syne',sans-serif; font-size:17px; font-weight:800; letter-spacing:-0.3px; }
+.card-name { font-size:11px; color:var(--text2); margin-top:2px; }
+.card-price-wrap { text-align:right; flex-shrink:0; }
+.card-price { font-family:'JetBrains Mono',monospace; font-size:19px; font-weight:600; }
+.card-change { font-size:12px; margin-top:2px; font-family:'JetBrains Mono',monospace; }
 
 /* Score ring */
-.score-section { padding: 14px 18px 10px; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--line); }
-.score-ring { position: relative; width: 56px; height: 56px; flex-shrink: 0; }
-.score-ring svg { transform: rotate(-90deg); }
-.score-ring-val {
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 800;
-}
-.score-desc { flex: 1; }
-.score-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; }
-.score-verdict { font-size: 14px; font-weight: 600; }
+.score-section { padding:12px 16px 10px; display:flex; align-items:center; gap:14px; border-bottom:1px solid var(--line); }
+.score-ring { position:relative; width:52px; height:52px; flex-shrink:0; }
+.score-ring svg { transform:rotate(-90deg); }
+.score-ring-val { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-size:14px; font-weight:800; }
+.score-desc { flex:1; }
+.score-label { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:3px; }
+.score-verdict { font-size:13px; font-weight:600; }
 
 /* Indicators */
-.indicators { padding: 12px 18px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; border-bottom: 1px solid var(--line); }
-.ind { text-align: center; }
-.ind-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
-.ind-val { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; }
-.ind-sig { font-size: 10px; margin-top: 2px; }
+.indicators { padding:10px 16px; display:grid; grid-template-columns:repeat(3,1fr); gap:6px; border-bottom:1px solid var(--line); }
+.ind { text-align:center; }
+.ind-label { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:2px; }
+.ind-val { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; }
+.ind-sig { font-size:10px; margin-top:1px; }
 
-/* Buy zones */
-.buy-zones { padding: 12px 18px; border-bottom: 1px solid var(--line); }
-.buy-zones-title { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px; }
-.zone-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-.zone-tag {
-  font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 600;
-  white-space: nowrap;
-}
-.zone-short { background: rgba(217,119,6,0.1); color: #92400e; border: 1px solid rgba(217,119,6,0.2); }
-.zone-swing { background: rgba(5,150,105,0.1); color: #065f46; border: 1px solid rgba(5,150,105,0.2); }
-.zone-stop { background: rgba(220,38,38,0.08); color: #991b1b; border: 1px solid rgba(220,38,38,0.2); }
-.zone-vals { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; }
-.zone-note { font-size: 11px; color: var(--text3); margin-left: 8px; }
+/* Buy/Sell signals — enhanced */
+.trade-signals { padding:12px 16px; border-bottom:1px solid var(--line); }
+.trade-title { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:10px; font-weight:600; }
+.signal-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+.signal-box { border-radius:10px; padding:10px 12px; }
+.signal-box.buy  { background:rgba(5,150,105,0.07); border:1px solid rgba(5,150,105,0.2); }
+.signal-box.sell { background:rgba(220,38,38,0.06); border:1px solid rgba(220,38,38,0.18); }
+.signal-box.stop { background:rgba(220,38,38,0.04); border:1px dashed rgba(220,38,38,0.3); }
+.signal-box.target { background:rgba(5,150,105,0.04); border:1px dashed rgba(5,150,105,0.25); }
+.signal-box-label { font-size:10px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:5px; }
+.signal-box.buy  .signal-box-label { color:#065f46; }
+.signal-box.sell .signal-box-label { color:#991b1b; }
+.signal-box.stop .signal-box-label { color:#991b1b; }
+.signal-box.target .signal-box-label { color:#065f46; }
+.signal-price { font-family:'JetBrains Mono',monospace; font-size:15px; font-weight:700; }
+.signal-box.buy  .signal-price { color:#059669; }
+.signal-box.sell .signal-price { color:#dc2626; }
+.signal-box.stop .signal-price { color:#dc2626; }
+.signal-box.target .signal-price { color:#059669; }
+.signal-sub { font-size:10px; color:var(--text3); margin-top:2px; }
+.rr-badge { display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:3px 8px; border-radius:20px; font-weight:600; margin-top:4px; }
+.rr-good { background:rgba(5,150,105,0.1); color:#065f46; }
+.rr-ok   { background:rgba(217,119,6,0.1); color:#92400e; }
+.rr-bad  { background:rgba(220,38,38,0.08); color:#991b1b; }
 
-/* AI Analysis */
-.ai-section { padding: 14px 18px; }
-.ai-section-head { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
-.ai-badge { font-size: 10px; padding: 2px 7px; border-radius: 4px; background: rgba(37,99,235,0.08); color: var(--sky); border: 1px solid rgba(37,99,235,0.2); font-weight: 600; letter-spacing: 0.5px; }
-.ai-text { font-size: 13px; line-height: 1.7; color: var(--text2); }
-.ai-loading { display: flex; align-items: center; gap: 8px; color: var(--text3); font-size: 12px; }
-.dots { display: flex; gap: 4px; }
-.dot { width: 5px; height: 5px; border-radius: 50%; background: var(--sky); animation: blink 1.4s infinite; }
-.dot:nth-child(2) { animation-delay: 0.2s; }
-.dot:nth-child(3) { animation-delay: 0.4s; }
+/* Backtest */
+.backtest-section { padding:12px 16px; border-bottom:1px solid var(--line); }
+.backtest-title { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:10px; font-weight:600; display:flex; align-items:center; justify-content:space-between; }
+.backtest-toggle { font-size:10px; padding:2px 8px; border-radius:4px; border:1px solid var(--line2); background:#fff; color:var(--text3); cursor:pointer; }
+.bt-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+.bt-stat { text-align:center; background:var(--ink2); border-radius:8px; padding:8px 4px; }
+.bt-stat-val { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; }
+.bt-stat-lbl { font-size:9px; color:var(--text3); margin-top:2px; text-transform:uppercase; letter-spacing:0.3px; }
+.bt-detail { margin-top:10px; display:none; }
+.bt-detail.open { display:block; }
+.bt-trade-row { display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:4px 0; border-bottom:1px solid var(--line); color:var(--text2); }
+.bt-trade-row:last-child { border-bottom:none; }
+.bt-win { color:var(--mint); font-weight:600; }
+.bt-loss { color:var(--ember); font-weight:600; }
+
+/* AI section — markdown */
+.ai-section { padding:14px 16px; }
+.ai-section-head { display:flex; align-items:center; gap:6px; margin-bottom:10px; }
+.ai-badge { font-size:10px; padding:2px 7px; border-radius:4px; background:rgba(37,99,235,0.08); color:var(--sky); border:1px solid rgba(37,99,235,0.2); font-weight:600; letter-spacing:0.5px; }
+.ai-text { font-size:13px; line-height:1.75; color:var(--text2); }
+.ai-text p { margin-bottom:8px; }
+.ai-text p:last-child { margin-bottom:0; }
+.ai-text strong { color:var(--text); font-weight:600; }
+.ai-text ul, .ai-text ol { padding-left:18px; margin-bottom:8px; }
+.ai-text li { margin-bottom:3px; }
+.ai-text h3 { font-size:13px; font-weight:700; color:var(--text); margin:10px 0 4px; }
+.ai-loading { display:flex; align-items:center; gap:8px; color:var(--text3); font-size:12px; }
+.dots { display:flex; gap:4px; }
+.dot { width:5px; height:5px; border-radius:50%; background:var(--sky); animation:blink 1.4s infinite; }
+.dot:nth-child(2) { animation-delay:0.2s; }
+.dot:nth-child(3) { animation-delay:0.4s; }
 @keyframes blink { 0%,80%,100% { opacity:0.15; } 40% { opacity:1; } }
 
-/* Signal tags */
-.c-bull { color: #059669; }
-.c-bear { color: #dc2626; }
-.c-neu { color: var(--text2); }
+/* Signal colors */
+.c-bull { color:#059669; } .c-bear { color:#dc2626; } .c-neu { color:var(--text2); }
 
-/* Period toggle on card */
-.period-toggle { display: flex; gap: 4px; margin-bottom: 8px; }
-.period-btn {
-  padding: 4px 10px; border-radius: 5px; border: 1px solid var(--line);
-  background: #fff; color: var(--text3); font-size: 11px; cursor: pointer;
-  font-family: inherit; transition: all 0.15s;
-}
-.period-btn.active { background: rgba(217,119,6,0.08); border-color: var(--gold); color: #92400e; }
-.period-btn:last-child.active { background: rgba(5,150,105,0.08); border-color: var(--mint); color: #065f46; }
-
-/* Empty / error */
-.empty-state { text-align: center; padding: 80px 20px; }
-.empty-icon { font-size: 56px; margin-bottom: 16px; }
-.empty-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 8px; }
-.empty-sub { color: var(--text3); font-size: 14px; line-height: 1.6; }
+/* Empty */
+.empty-state { text-align:center; padding:80px 20px; }
+.empty-icon { font-size:52px; margin-bottom:14px; }
+.empty-title { font-family:'Syne',sans-serif; font-size:20px; font-weight:700; margin-bottom:8px; }
+.empty-sub { color:var(--text3); font-size:14px; line-height:1.6; }
 
 /* Toast */
-.toast {
-  position: fixed; bottom: 28px; right: 28px; z-index: 9999;
-  background: #fff; border: 1px solid var(--line2); border-radius: 10px;
-  padding: 12px 18px; font-size: 13px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-  transform: translateY(60px); opacity: 0; transition: all 0.3s;
-  max-width: 320px;
-}
-.toast.show { transform: translateY(0); opacity: 1; }
+.toast { position:fixed; bottom:24px; right:24px; z-index:9999; background:#fff; border:1px solid var(--line2); border-radius:10px; padding:12px 18px; font-size:13px; box-shadow:0 8px 32px rgba(0,0,0,0.15); transform:translateY(60px); opacity:0; transition:all 0.3s; max-width:320px; }
+.toast.show { transform:translateY(0); opacity:1; }
+.spinner { width:15px; height:15px; border:2px solid rgba(255,255,255,0.25); border-top-color:white; border-radius:50%; animation:spin 0.6s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:var(--ink); }
+::-webkit-scrollbar-thumb { background:var(--line2); border-radius:3px; }
+.section-pad { padding:20px 0; }
+.mkt-badge { font-size:10px; padding:2px 6px; border-radius:4px; font-weight:600; margin-left:6px; }
+.mkt-tw { background:rgba(37,99,235,0.1); color:#1e40af; }
+.mkt-us { background:rgba(5,150,105,0.1); color:#065f46; }
 
-/* Spinner */
-.spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.2); border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--ink); }
-::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 3px; }
-
-.section-pad { padding: 24px 0; }
-
-.divider { height: 1px; background: var(--line); margin: 8px 0; }
-
-/* Signal bar */
-.sig-bar { height: 3px; background: var(--line); border-radius: 2px; margin-top: 6px; overflow: hidden; }
-.sig-bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
-
-/* Market badge */
-.mkt-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-left: 6px; }
-.mkt-tw { background: rgba(37,99,235,0.1); color: #1e40af; }
-.mkt-us { background: rgba(5,150,105,0.1); color: #065f46; }
+/* Favourites tab */
+.fav-section { margin-top:8px; margin-bottom:16px; display:none; }
+.fav-section.visible { display:block; }
+.fav-header { font-size:12px; color:var(--text3); margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+.fav-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.fav-chip { display:flex; align-items:center; gap:4px; background:#fff; border:1px solid var(--line2); border-radius:20px; padding:4px 10px; font-size:12px; color:var(--text2); font-family:'JetBrains Mono',monospace; cursor:pointer; }
+.fav-chip:hover { border-color:var(--ember); color:var(--ember); }
 </style>
 </head>
 <body>
@@ -313,7 +220,7 @@ header .inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: c
       <div class="brand-mark">🔭</div>
       <div>
         <div class="brand-name">Stock<span>Radar</span></div>
-        <div class="brand-sub">AI 選股技術分析儀 · 台股 + 美股</div>
+        <div class="brand-sub">AI 選股技術分析儀 v2 · 台股 + 美股</div>
       </div>
     </div>
     <div class="key-bar">
@@ -326,22 +233,25 @@ header .inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: c
 <div class="wrap">
   <div class="controls section-pad">
 
-    <!-- Market tabs -->
     <div class="market-tabs">
-      <button class="mkt-btn active" data-mkt="all" onclick="setMarket('all',this)">全部</button>
-      <button class="mkt-btn" data-mkt="tw" onclick="setMarket('tw',this)">🇹🇼 台股</button>
-      <button class="mkt-btn" data-mkt="us" onclick="setMarket('us',this)">🇺🇸 美股</button>
+      <button class="mkt-btn active" onclick="setMarket('all',this)">全部</button>
+      <button class="mkt-btn" onclick="setMarket('tw',this)">🇹🇼 台股</button>
+      <button class="mkt-btn" onclick="setMarket('us',this)">🇺🇸 美股</button>
     </div>
 
-    <!-- Preset lists -->
     <div class="presets-section">
       <div class="presets-label">預設清單</div>
       <div class="presets-grid" id="presets-grid"></div>
     </div>
 
-    <!-- Custom input -->
+    <!-- Favourites quick-load -->
+    <div class="fav-section" id="fav-section">
+      <div class="fav-header">⭐ 收藏清單（點擊載入）</div>
+      <div class="fav-chips" id="fav-chips"></div>
+    </div>
+
     <div class="custom-section">
-      <div class="custom-label">自訂代號（用逗號分隔，台股加 .TW）</div>
+      <div class="custom-label">自訂代號（逗號分隔，台股加 .TW）</div>
       <div class="custom-input-row">
         <input class="custom-input" id="custom-syms" placeholder="例如：NVDA, TSLA, 2330.TW, 0050.TW">
         <button class="scan-btn" id="scan-btn" onclick="startScan()">
@@ -351,7 +261,6 @@ header .inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: c
       </div>
     </div>
 
-    <!-- Progress -->
     <div class="progress-wrap" id="progress-wrap">
       <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
       <div class="progress-text" id="progress-text">準備中...</div>
@@ -366,21 +275,42 @@ header .inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: c
         <div class="results-title">掃描結果</div>
         <div class="results-meta" id="results-meta"></div>
       </div>
-      <div class="sort-row" id="sort-row">
+      <div class="sort-row">
         <button class="sort-btn active" onclick="sortCards('score',this)">綜合評分 ↓</button>
         <button class="sort-btn" onclick="sortCards('rsi',this)">RSI</button>
         <button class="sort-btn" onclick="sortCards('price',this)">現價</button>
         <button class="sort-btn" onclick="sortCards('change',this)">漲跌幅</button>
+        <button class="sort-btn" onclick="sortCards('rr',this)">風報比</button>
       </div>
     </div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar" id="filter-bar">
+      <label>RSI</label>
+      <div class="filter-range-group">
+        <input type="number" id="f-rsi-min" value="0" min="0" max="100" oninput="applyFilter()">
+        <span class="filter-sep">~</span>
+        <input type="number" id="f-rsi-max" value="100" min="0" max="100" oninput="applyFilter()">
+      </div>
+      <label style="margin-left:8px">評分 ≥</label>
+      <input type="number" id="f-score-min" value="0" min="0" max="100" style="width:54px" oninput="applyFilter()">
+      <label style="margin-left:8px">市場</label>
+      <select class="filter-select" id="f-market" onchange="applyFilter()">
+        <option value="all">全部</option>
+        <option value="tw">台股</option>
+        <option value="us">美股</option>
+      </select>
+      <button class="fav-only-btn" id="fav-only-btn" onclick="toggleFavOnly()">⭐ 只看收藏</button>
+      <span class="filter-count" id="filter-count"></span>
+    </div>
+
     <div class="cards-grid" id="cards-grid"></div>
   </div>
 
-  <!-- Empty state -->
   <div id="empty-state" class="empty-state" style="padding-top:80px">
     <div class="empty-icon">📡</div>
     <div class="empty-title">選擇清單或輸入代號</div>
-    <div class="empty-sub">勾選預設清單，或自行輸入股票代號<br>系統將自動抓取資料、計算技術指標，並由 Gemini AI 分析買入點</div>
+    <div class="empty-sub">勾選預設清單，或輸入股票代號<br>系統將自動計算技術指標、買賣訊號、回測績效，並由 Gemini AI 深度分析</div>
   </div>
 </div>
 
@@ -390,23 +320,26 @@ header .inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: c
 // ===== PRESETS =====
 const PRESETS = {
   tw: [
-    { id: 'tw-50', label: '台股龍頭50', syms: ['2330.TW','2317.TW','2454.TW','2382.TW','2308.TW','2881.TW','2882.TW','1301.TW','1303.TW','2886.TW'] },
-    { id: 'tw-etf', label: '台股 ETF', syms: ['0050.TW','0056.TW','00878.TW','00757.TW','00662.TW','00933B.TW'] },
-    { id: 'tw-semi', label: '半導體', syms: ['2330.TW','2303.TW','2454.TW','3711.TW','2379.TW','2408.TW'] },
-    { id: 'tw-finance', label: '金融股', syms: ['2881.TW','2882.TW','2884.TW','2886.TW','2891.TW','5880.TW'] },
-    { id: 'tw-green', label: '綠能', syms: ['6869.TW','9958.TW','6806.TW','3576.TW','3691.TW'] },
+    { id:'tw-50', label:'台股龍頭50', syms:['2330.TW','2317.TW','2454.TW','2382.TW','2308.TW','2881.TW','2882.TW','1301.TW','1303.TW','2886.TW'] },
+    { id:'tw-etf', label:'台股 ETF', syms:['0050.TW','0056.TW','00878.TW','00757.TW','00662.TW'] },
+    { id:'tw-semi', label:'半導體', syms:['2330.TW','2303.TW','2454.TW','3711.TW','2379.TW','2408.TW'] },
+    { id:'tw-finance', label:'金融股', syms:['2881.TW','2882.TW','2884.TW','2886.TW','2891.TW','5880.TW'] },
+    { id:'tw-green', label:'綠能', syms:['6869.TW','9958.TW','6806.TW','3576.TW','3691.TW'] },
   ],
   us: [
-    { id: 'us-mag7', label: 'Magnificent 7', syms: ['NVDA','MSFT','AAPL','GOOGL','META','AMZN','TSLA'] },
-    { id: 'us-ai', label: 'AI 概念', syms: ['NVDA','AMD','AVGO','ARM','SMCI','PLTR','CRM'] },
-    { id: 'us-etf', label: '美股 ETF', syms: ['QQQ','VOO','VT','QQQM','XLI','XLE'] },
-    { id: 'us-semi', label: '半導體', syms: ['NVDA','AMD','INTC','AVGO','LRCX','AMAT','TSM'] },
-    { id: 'us-finance', label: '金融科技', syms: ['PYPL','HOOD','V','MA','SQ','COIN'] },
+    { id:'us-mag7', label:'Magnificent 7', syms:['NVDA','MSFT','AAPL','GOOGL','META','AMZN','TSLA'] },
+    { id:'us-ai', label:'AI 概念', syms:['NVDA','AMD','AVGO','ARM','SMCI','PLTR','CRM'] },
+    { id:'us-etf', label:'美股 ETF', syms:['QQQ','VOO','VT','QQQM','XLI','XLE'] },
+    { id:'us-semi', label:'半導體', syms:['NVDA','AMD','INTC','AVGO','LRCX','AMAT','TSM'] },
+    { id:'us-finance', label:'金融科技', syms:['PYPL','HOOD','V','MA','SQ','COIN'] },
   ]
 };
 
 let currentMarket = 'all';
 let allResults = [];
+let displayedResults = [];
+let favourites = JSON.parse(localStorage.getItem('sr_favs') || '[]');
+let favOnlyMode = false;
 let geminiKey = localStorage.getItem('gemini_key_radar') || '';
 document.getElementById('gemini-key').value = geminiKey;
 document.getElementById('gemini-key').addEventListener('input', e => {
@@ -424,18 +357,51 @@ function setMarket(mkt, btn) {
 function renderPresets() {
   const grid = document.getElementById('presets-grid');
   let groups = [];
-  if (currentMarket === 'all' || currentMarket === 'tw') groups = groups.concat(PRESETS.tw);
-  if (currentMarket === 'all' || currentMarket === 'us') groups = groups.concat(PRESETS.us);
+  if (currentMarket==='all'||currentMarket==='tw') groups = groups.concat(PRESETS.tw);
+  if (currentMarket==='all'||currentMarket==='us') groups = groups.concat(PRESETS.us);
   grid.innerHTML = groups.map(g => `
     <label class="preset-group">
-      <input type="checkbox" value="${g.id}" onchange="syncCustomInput()">
+      <input type="checkbox" value="${g.id}">
       <span>${g.label}</span>
-    </label>
-  `).join('');
+    </label>`).join('');
 }
 
-function syncCustomInput() {
-  // Keep custom input separate; just a helper
+function renderFavSection() {
+  const sec = document.getElementById('fav-section');
+  const chips = document.getElementById('fav-chips');
+  if (!favourites.length) { sec.classList.remove('visible'); return; }
+  sec.classList.add('visible');
+  chips.innerHTML = favourites.map(sym => `
+    <div class="fav-chip" onclick="loadFav('${sym}')" title="載入 ${sym}">
+      ⭐ ${sym}
+      <span onclick="event.stopPropagation();removeFav('${sym}')" style="color:var(--text3);font-size:11px;margin-left:2px">✕</span>
+    </div>`).join('');
+}
+
+function loadFav(sym) {
+  document.getElementById('custom-syms').value = sym;
+  toast(`載入 ${sym}，點擊掃描開始分析`);
+}
+
+function toggleFav(symbol) {
+  const idx = favourites.indexOf(symbol);
+  if (idx === -1) {
+    favourites.push(symbol);
+    toast(`⭐ 已收藏 ${symbol}`);
+  } else {
+    favourites.splice(idx, 1);
+    toast(`移除收藏 ${symbol}`);
+  }
+  localStorage.setItem('sr_favs', JSON.stringify(favourites));
+  renderFavSection();
+  renderCards();
+}
+
+function removeFav(sym) {
+  favourites = favourites.filter(f => f !== sym);
+  localStorage.setItem('sr_favs', JSON.stringify(favourites));
+  renderFavSection();
+  renderCards();
 }
 
 function getSelectedSymbols() {
@@ -447,15 +413,40 @@ function getSelectedSymbols() {
   });
   const customRaw = document.getElementById('custom-syms').value;
   const fromCustom = customRaw.split(/[,\s，]+/).map(s => s.trim().toUpperCase()).filter(Boolean);
-  const combined = [...new Set([...fromPresets, ...fromCustom])];
-  return combined;
+  return [...new Set([...fromPresets, ...fromCustom])];
+}
+
+// ===== FILTER =====
+function applyFilter() {
+  const rsiMin = +document.getElementById('f-rsi-min').value || 0;
+  const rsiMax = +document.getElementById('f-rsi-max').value || 100;
+  const scoreMin = +document.getElementById('f-score-min').value || 0;
+  const mkt = document.getElementById('f-market').value;
+
+  displayedResults = allResults.filter(r => {
+    if (r.rsi < rsiMin || r.rsi > rsiMax) return false;
+    if (r.score < scoreMin) return false;
+    if (mkt === 'tw' && !r.isTW) return false;
+    if (mkt === 'us' && r.isTW) return false;
+    if (favOnlyMode && !favourites.includes(r.symbol)) return false;
+    return true;
+  });
+
+  document.getElementById('filter-count').textContent =
+    `顯示 ${displayedResults.length} / ${allResults.length} 支`;
+  renderCards();
+}
+
+function toggleFavOnly() {
+  favOnlyMode = !favOnlyMode;
+  document.getElementById('fav-only-btn').classList.toggle('active', favOnlyMode);
+  applyFilter();
 }
 
 // ===== SCANNER =====
 async function startScan() {
   const syms = getSelectedSymbols();
   if (!syms.length) { toast('⚠️ 請勾選清單或輸入代號'); return; }
-
   const btn = document.getElementById('scan-btn');
   btn.disabled = true;
   document.getElementById('scan-btn-icon').innerHTML = '<div class="spinner"></div>';
@@ -465,33 +456,27 @@ async function startScan() {
   document.getElementById('empty-state').style.display = 'none';
 
   allResults = [];
-  const total = syms.length;
-
   for (let i = 0; i < syms.length; i++) {
-    const sym = syms[i];
-    setProgress((i / total) * 100, `分析 ${sym}... (${i+1}/${total})`);
+    setProgress((i / syms.length) * 100, `分析 ${syms[i]}... (${i+1}/${syms.length})`);
     try {
-      const result = await analyzeSymbol(sym);
+      const result = await analyzeSymbol(syms[i]);
       if (result) allResults.push(result);
-      else console.warn('No result for', sym);
     } catch(e) {
-      console.warn('Failed:', sym, e.message);
-      toast(`⚠️ ${sym} 取得失敗：${e.message.split('\n')[0]}`);
+      console.warn('Failed:', syms[i], e.message);
+      toast(`⚠️ ${syms[i]} 失敗：${e.message.split('\n')[0]}`);
     }
-    await sleep(300); // rate limit
+    await sleep(300);
   }
 
-  setProgress(100, '完成！正在載入 AI 分析...');
+  setProgress(100, '完成！');
   await sleep(300);
-
   document.getElementById('progress-wrap').style.display = 'none';
   document.getElementById('results-section').style.display = 'block';
-  document.getElementById('results-meta').textContent = `共分析 ${allResults.length} 支股票 · ${new Date().toLocaleTimeString('zh-TW')}`;
+  document.getElementById('results-meta').textContent =
+    `共分析 ${allResults.length} 支股票 · ${new Date().toLocaleTimeString('zh-TW')}`;
 
   sortCards('score', document.querySelector('.sort-btn'));
-  renderCards();
-
-  // Then load AI for each
+  applyFilter();
   loadAllAI();
 
   btn.disabled = false;
@@ -504,8 +489,7 @@ function setProgress(pct, text) {
   document.getElementById('progress-text').textContent = text;
 }
 
-// ===== DATA FETCH =====
-// Proxy factories — ordered by reliability
+// ===== PROXY / FETCH =====
 const PROXIES = [
   url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
   url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
@@ -516,11 +500,8 @@ const PROXIES = [
 async function fetchWithTimeout(url, ms, options = {}) {
   const ctrl = new AbortController();
   const id = setTimeout(() => ctrl.abort(), ms);
-  try {
-    const r = await fetch(url, { signal: ctrl.signal, ...options });
-    clearTimeout(id);
-    return r;
-  } catch(e) { clearTimeout(id); throw e; }
+  try { const r = await fetch(url, { signal: ctrl.signal, ...options }); clearTimeout(id); return r; }
+  catch(e) { clearTimeout(id); throw e; }
 }
 
 async function fetchYahoo(symbol, range = '6mo', interval = '1d') {
@@ -529,178 +510,227 @@ async function fetchYahoo(symbol, range = '6mo', interval = '1d') {
     `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=${interval}&range=${range}&includePrePost=false&events=div%2Csplit`,
   ];
   const errors = [];
-
   for (const targetUrl of targets) {
     for (const makeProxy of PROXIES) {
       const proxyUrl = makeProxy(targetUrl);
       try {
         const resp = await fetchWithTimeout(proxyUrl, 12000);
-        if (!resp.ok) { errors.push(`HTTP ${resp.status} ← ${proxyUrl}`); continue; }
+        if (!resp.ok) { errors.push(`HTTP ${resp.status}`); continue; }
         const text = await resp.text();
-        if (!text || text.trim() === '') { errors.push(`empty ← ${proxyUrl}`); continue; }
-        let data;
-        try { data = JSON.parse(text); } catch { errors.push(`JSON parse fail ← ${proxyUrl}`); continue; }
+        if (!text || !text.trim()) { errors.push('empty'); continue; }
+        let data; try { data = JSON.parse(text); } catch { errors.push('JSON fail'); continue; }
         if (data?.chart?.result?.[0]) return data;
         if (data?.chart?.error) errors.push(`Yahoo: ${data.chart.error.description}`);
-        else errors.push(`no result ← ${proxyUrl}`);
-      } catch(e) {
-        errors.push(`${e.name}: ${e.message}`);
-      }
+      } catch(e) { errors.push(`${e.name}: ${e.message}`); }
       await sleep(150);
     }
   }
-  throw new Error('所有代理均失敗\n' + errors.slice(0, 4).join('\n'));
+  throw new Error('所有代理均失敗\n' + errors.slice(0,4).join('\n'));
 }
 
+// ===== ANALYSIS =====
 async function analyzeSymbol(symbol) {
   const isTW = symbol.endsWith('.TW') || symbol.endsWith('.TWO');
-  const data6m = await fetchYahoo(symbol, '6mo', '1d');
-  const result = data6m?.chart?.result?.[0];
+  const data = await fetchYahoo(symbol, '6mo', '1d');
+  const result = data?.chart?.result?.[0];
   if (!result) return null;
 
   const meta = result.meta;
-  const closes = result.indicators.quote[0].close.filter(v => v != null);
-  const highs = result.indicators.quote[0].high?.filter(v => v != null) || closes;
-  const lows = result.indicators.quote[0].low?.filter(v => v != null) || closes;
+  const closes  = result.indicators.quote[0].close.filter(v => v != null);
+  const highs   = result.indicators.quote[0].high?.filter(v => v != null) || closes;
+  const lows    = result.indicators.quote[0].low?.filter(v => v != null) || closes;
   const volumes = result.indicators.quote[0].volume?.filter(v => v != null) || [];
+  const timestamps = result.timestamp || [];
 
   if (closes.length < 30) return null;
 
-  const price = meta.regularMarketPrice || closes[closes.length - 1];
-  const prevClose = meta.chartPreviousClose || closes[closes.length - 2];
+  const price     = meta.regularMarketPrice || closes.at(-1);
+  const prevClose = meta.chartPreviousClose  || closes.at(-2);
   const changePct = prevClose ? (price - prevClose) / prevClose : 0;
-  const currency = meta.currency || (isTW ? 'TWD' : 'USD');
+  const currency  = meta.currency || (isTW ? 'TWD' : 'USD');
+  const dp        = isTW ? 1 : 2;
 
   // Indicators
-  const rsi14 = calcRSI(closes, 14);
-  const rsiVal = rsi14[rsi14.length - 1] || 50;
-  const macdData = calcMACD(closes);
-  const macdVal = macdData.macd[macdData.macd.length - 1];
-  const signalVal = macdData.signal[macdData.signal.length - 1];
-  const macdHist = macdVal - signalVal;
-  const bb = calcBB(closes, 20, 2);
-  const bbU = bb.upper[bb.upper.length - 1];
-  const bbM = bb.mid[bb.upper.length - 1];
-  const bbL = bb.lower[bb.upper.length - 1];
-  const ma20 = calcMA(closes, 20);
-  const ma60 = calcMA(closes, 60);
-  const ma120 = closes.length >= 120 ? calcMA(closes, 120) : null;
-
-  // Volume trend
+  const rsi14   = calcRSI(closes, 14);
+  const rsiVal  = rsi14.at(-1) || 50;
+  const macdData  = calcMACD(closes);
+  const macdHist  = macdData.macd.at(-1) - macdData.signal.at(-1);
+  const bb        = calcBB(closes, 20, 2);
+  const bbU = bb.upper.at(-1), bbM = bb.mid.at(-1), bbL = bb.lower.at(-1);
+  const ma20  = calcMA(closes, 20);
+  const ma60  = calcMA(closes, 60);
+  const atr   = calcATR(highs, lows, closes, 14);
+  const atrVal = atr.at(-1) || price * 0.02;
   const volAvg20 = volumes.length >= 20 ? avg(volumes.slice(-20)) : 0;
-  const volToday = volumes[volumes.length - 1] || 0;
-  const volRatio = volAvg20 ? volToday / volAvg20 : 1;
+  const volRatio = volAvg20 ? (volumes.at(-1) || 0) / volAvg20 : 1;
 
-  // Support / resistance (simple: recent lows / highs)
-  const recentLows = lows.slice(-20);
+  // Support / Resistance
+  const recentLows  = lows.slice(-20);
   const recentHighs = highs.slice(-20);
-  const support1 = Math.min(...recentLows);
-  const resist1 = Math.max(...recentHighs);
+  const support1  = Math.min(...recentLows);
+  const resist1   = Math.max(...recentHighs);
 
-  // ATR (14)
-  const atr = calcATR(highs, lows, closes, 14);
-  const atrVal = atr[atr.length - 1] || price * 0.02;
+  // ── Buy / Sell Signals (精確版) ──
+  // 短線買入：RSI 低檔 + 接近布林下軌或 MA20 支撐
+  const buyShort  = Math.max(bbL, ma20 - atrVal * 0.5, support1);
+  // 波段買入：MA60 支撐區
+  const buySwing  = (ma60 || price * 0.9) * 0.99;
+  // 短線目標價：阻力位 or 布林上軌
+  const targetShort = Math.min(resist1, bbU || price * 1.05);
+  // 波段目標價：前高 + 1 ATR
+  const targetSwing = resist1 + atrVal;
+  // 停損：支撐下方 3%
+  const stopLoss  = support1 * 0.97;
+  // 風險報酬比 (short)
+  const risk   = price - stopLoss;
+  const reward = targetShort - price;
+  const rrRatio = risk > 0 ? (reward / risk) : 0;
 
-  // Buy zones
-  // Short-term: near BB lower, RSI oversold bounce, MA20 support
-  const shortBuyLow = Math.max(bbL, ma20 - atrVal * 0.5, support1).toFixed(isTW ? 1 : 2);
-  const shortBuyHigh = (ma20 + atrVal * 0.3).toFixed(isTW ? 1 : 2);
-
-  // Swing: MA60 support zone, pullback to 8-12% from recent high
-  const swingBuyLow = (Math.max(ma60 || price * 0.88, support1) * 0.99).toFixed(isTW ? 1 : 2);
-  const swingBuyHigh = ((ma60 || price * 0.92) * 1.02).toFixed(isTW ? 1 : 2);
-
-  // Stop loss
-  const stopLoss = (support1 * 0.97).toFixed(isTW ? 1 : 2);
-
-  // Score (0-100)
+  // Score
   let score = 50;
   if (rsiVal < 40) score += 15; else if (rsiVal < 50) score += 8; else if (rsiVal > 70) score -= 12;
   if (macdHist > 0) score += 10; else score -= 5;
   if (price > ma20) score += 8; else score -= 8;
   if (ma60 && price > ma60) score += 8; else if (ma60) score -= 5;
   if (price > bbM) score += 5; else score -= 3;
-  if (price < bbL * 1.02) score += 10; // near lower band = opportunity
+  if (price < bbL * 1.02) score += 10;
   if (volRatio > 1.5) score += 5;
   score = Math.max(0, Math.min(100, Math.round(score)));
 
   const verdict = score >= 70 ? '強烈買入機會' : score >= 55 ? '可考慮布局' : score >= 40 ? '中性觀察' : '偏空，暫緩';
   const verdictColor = score >= 70 ? '#059669' : score >= 55 ? '#2563eb' : score >= 40 ? '#d97706' : '#dc2626';
 
+  // ── Backtest: RSI 策略 (RSI<35 買, RSI>65 賣) ──
+  const bt = runBacktest(closes, rsi14, isTW);
+
   return {
-    symbol, isTW, price, changePct, currency,
+    symbol, isTW, price, changePct, currency, dp,
     name: meta.shortName || meta.longName || symbol,
-    rsi: rsiVal, macdVal, signalVal, macdHist,
+    rsi: rsiVal, macdHist,
     bbU, bbM, bbL, ma20, ma60,
-    shortBuyLow, shortBuyHigh, swingBuyLow, swingBuyHigh, stopLoss,
-    score, verdict, verdictColor,
     atrVal, volRatio,
+    buyShort, buySwing, targetShort, targetSwing, stopLoss, rrRatio,
+    score, verdict, verdictColor, rrRatio,
     closes: closes.slice(-60), highs: highs.slice(-60), lows: lows.slice(-60),
+    bt,
   };
 }
 
-// ===== RENDER CARDS =====
+// ===== BACKTEST: RSI 策略 =====
+function runBacktest(closes, rsiArr, isTW) {
+  const trades = [];
+  let position = null;
+
+  for (let i = 1; i < closes.length; i++) {
+    const rsi = rsiArr[i];
+    if (rsi == null) continue;
+
+    if (!position && rsi < 35) {
+      position = { buyPrice: closes[i], buyIdx: i };
+    } else if (position && rsi > 65) {
+      const ret = (closes[i] - position.buyPrice) / position.buyPrice;
+      trades.push({ buy: position.buyPrice, sell: closes[i], ret, win: ret > 0 });
+      position = null;
+    }
+  }
+  // 未平倉：以最後收盤計算
+  if (position) {
+    const ret = (closes.at(-1) - position.buyPrice) / position.buyPrice;
+    trades.push({ buy: position.buyPrice, sell: closes.at(-1), ret, win: ret > 0, open: true });
+  }
+
+  if (!trades.length) return { trades: [], winRate: 0, totalReturn: 0, avgReturn: 0, count: 0 };
+
+  const winRate = trades.filter(t => t.win).length / trades.length;
+  const totalReturn = trades.reduce((s, t) => s + t.ret, 0);
+  const avgReturn = totalReturn / trades.length;
+  return { trades, winRate, totalReturn, avgReturn, count: trades.length };
+}
+
+// ===== RENDER =====
 function renderCards() {
   const grid = document.getElementById('cards-grid');
-  if (!allResults.length) {
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3)">無法取得資料，請檢查代號格式</div>';
+  if (!displayedResults.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3)">${allResults.length ? '沒有符合篩選條件的股票' : '無法取得資料，請檢查代號格式'}</div>`;
     return;
   }
-  grid.innerHTML = allResults.map((r, idx) => buildCard(r, idx)).join('');
+  grid.innerHTML = displayedResults.map((r, idx) => buildCard(r, idx)).join('');
 }
 
 function buildCard(r, idx) {
-  const priceFmt = r.isTW ? r.price.toFixed(1) : r.price.toFixed(2);
-  const changeSign = r.changePct >= 0 ? '+' : '';
-  const changeCls = r.changePct >= 0 ? 'c-bull' : 'c-bear';
-  const mktBadge = r.isTW ? '<span class="mkt-badge mkt-tw">台股</span>' : '<span class="mkt-badge mkt-us">美股</span>';
-  const sym = r.symbol.replace('.TW', '').replace('.TWO', '');
+  const pFmt = r.price.toFixed(r.dp);
+  const cs   = r.changePct >= 0 ? '+' : '';
+  const cCls = r.changePct >= 0 ? 'c-bull' : 'c-bear';
+  const mktB = r.isTW ? '<span class="mkt-badge mkt-tw">台股</span>' : '<span class="mkt-badge mkt-us">美股</span>';
+  const sym  = r.symbol.replace('.TW','').replace('.TWO','');
+  const isFav = favourites.includes(r.symbol);
 
-  // RSI signal
   const rsiSig = r.rsi < 30 ? '🟢 超賣' : r.rsi < 45 ? '🟡 偏低' : r.rsi < 55 ? '⚪ 中性' : r.rsi < 70 ? '🟡 偏高' : '🔴 超買';
   const rsiCls = r.rsi < 45 ? 'c-bull' : r.rsi > 65 ? 'c-bear' : 'c-neu';
-
-  // MACD signal
   const macdSig = r.macdHist > 0 ? '🟢 多頭' : '🔴 空頭';
   const macdCls = r.macdHist > 0 ? 'c-bull' : 'c-bear';
-
-  // BB position
-  const bbPct = r.bbU !== r.bbL ? ((r.price - r.bbL) / (r.bbU - r.bbL) * 100).toFixed(0) : 50;
+  const bbPct = (r.bbU && r.bbL && r.bbU !== r.bbL) ? ((r.price - r.bbL) / (r.bbU - r.bbL) * 100).toFixed(0) : 50;
   const bbSig = bbPct < 20 ? '🟢 近下軌' : bbPct > 80 ? '🔴 近上軌' : '⚪ 中性';
   const bbCls = bbPct < 20 ? 'c-bull' : bbPct > 80 ? 'c-bear' : 'c-neu';
 
-  // Score ring
-  const scoreColor = r.verdictColor;
-  const C = 2 * Math.PI * 20;
+  const C = 2 * Math.PI * 18;
   const scoreDash = (r.score / 100) * C;
 
+  // Risk/reward badge
+  let rrClass = 'rr-bad', rrText = '風報比差';
+  if (r.rrRatio >= 2)      { rrClass = 'rr-good'; rrText = `風報比 ${r.rrRatio.toFixed(1)}x ✓`; }
+  else if (r.rrRatio >= 1) { rrClass = 'rr-ok';   rrText = `風報比 ${r.rrRatio.toFixed(1)}x`; }
+  else                     { rrText = `風報比 ${r.rrRatio.toFixed(1)}x`; }
+
+  // Backtest stats
+  const bt = r.bt;
+  const btColor = bt.totalReturn >= 0 ? '#059669' : '#dc2626';
+  const btBlock = bt.count > 0 ? `
+    <div class="bt-stats">
+      <div class="bt-stat"><div class="bt-stat-val" style="color:${btColor}">${(bt.totalReturn*100).toFixed(1)}%</div><div class="bt-stat-lbl">總報酬</div></div>
+      <div class="bt-stat"><div class="bt-stat-val">${(bt.winRate*100).toFixed(0)}%</div><div class="bt-stat-lbl">勝率</div></div>
+      <div class="bt-stat"><div class="bt-stat-val" style="color:${bt.avgReturn>=0?'#059669':'#dc2626'}">${(bt.avgReturn*100).toFixed(1)}%</div><div class="bt-stat-lbl">均報酬</div></div>
+      <div class="bt-stat"><div class="bt-stat-val">${bt.count}</div><div class="bt-stat-lbl">交易次數</div></div>
+    </div>
+    <div class="bt-detail" id="btd-${r.symbol.replace(/\./g,'-')}">
+      ${bt.trades.map((t,i) => `
+        <div class="bt-trade-row">
+          <span>#${i+1} ${t.open ? '(持倉中)' : ''}</span>
+          <span>${t.buy.toFixed(r.dp)} → ${t.sell.toFixed(r.dp)}</span>
+          <span class="${t.win ? 'bt-win' : 'bt-loss'}">${t.ret >= 0 ? '+' : ''}${(t.ret*100).toFixed(1)}%</span>
+        </div>`).join('')}
+    </div>` : '<div style="font-size:12px;color:var(--text3)">回測期間內無符合 RSI 訊號的交易</div>';
+
   return `
-  <div class="stock-card" style="animation-delay:${idx * 0.06}s" id="card-${r.symbol.replace(/\./g,'-')}">
+  <div class="stock-card ${isFav ? 'fav-card' : ''}" style="animation-delay:${idx*0.05}s" id="card-${r.symbol.replace(/\./g,'-')}">
+
     <div class="card-head">
-      <div>
-        <div class="card-symbol">${sym}${mktBadge}</div>
-        <div class="card-name">${r.name}</div>
+      <div class="card-head-left">
+        <button class="fav-btn" onclick="toggleFav('${r.symbol}')" title="${isFav ? '取消收藏' : '加入收藏'}">${isFav ? '⭐' : '☆'}</button>
+        <div>
+          <div class="card-symbol">${sym}${mktB}</div>
+          <div class="card-name">${r.name}</div>
+        </div>
       </div>
       <div class="card-price-wrap">
-        <div class="card-price">${r.isTW ? '' : '$'}${priceFmt}</div>
-        <div class="card-change ${changeCls}">${changeSign}${(r.changePct*100).toFixed(2)}%</div>
+        <div class="card-price">${r.isTW ? '' : '$'}${pFmt}</div>
+        <div class="card-change ${cCls}">${cs}${(r.changePct*100).toFixed(2)}%</div>
       </div>
     </div>
 
     <div class="score-section">
       <div class="score-ring">
-        <svg width="56" height="56" viewBox="0 0 56 56">
-          <circle cx="28" cy="28" r="20" fill="none" stroke="var(--line)" stroke-width="5"/>
-          <circle cx="28" cy="28" r="20" fill="none" stroke="${scoreColor}" stroke-width="5"
-            stroke-dasharray="${scoreDash.toFixed(1)} ${C.toFixed(1)}"
-            stroke-linecap="round"/>
+        <svg width="52" height="52" viewBox="0 0 52 52">
+          <circle cx="26" cy="26" r="18" fill="none" stroke="var(--line)" stroke-width="5"/>
+          <circle cx="26" cy="26" r="18" fill="none" stroke="${r.verdictColor}" stroke-width="5"
+            stroke-dasharray="${scoreDash.toFixed(1)} ${C.toFixed(1)}" stroke-linecap="round"/>
         </svg>
-        <div class="score-ring-val" style="color:${scoreColor}">${r.score}</div>
+        <div class="score-ring-val" style="color:${r.verdictColor}">${r.score}</div>
       </div>
       <div class="score-desc">
         <div class="score-label">綜合評分</div>
-        <div class="score-verdict" style="color:${scoreColor}">${r.verdict}</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:3px">ATR: ${r.atrVal.toFixed(2)} · 量比: ${r.volRatio.toFixed(1)}x</div>
+        <div class="score-verdict" style="color:${r.verdictColor}">${r.verdict}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">ATR: ${r.atrVal.toFixed(r.dp)} · 量比: ${r.volRatio.toFixed(1)}x</div>
       </div>
     </div>
 
@@ -722,25 +752,54 @@ function buildCard(r, idx) {
       </div>
     </div>
 
-    <div class="buy-zones">
-      <div class="buy-zones-title">📍 建議買入區間</div>
-      <div class="zone-row">
-        <span class="zone-tag zone-short">短線</span>
-        <span class="zone-vals">${r.shortBuyLow} ~ ${r.shortBuyHigh}</span>
-        <span class="zone-note">週內進出</span>
+    <!-- Buy / Sell Signals -->
+    <div class="trade-signals">
+      <div class="trade-title">📊 買賣訊號與目標價</div>
+      <div class="signal-grid">
+        <div class="signal-box buy">
+          <div class="signal-box-label">🟢 短線買入</div>
+          <div class="signal-price">${r.buyShort.toFixed(r.dp)}</div>
+          <div class="signal-sub">週內進出</div>
+        </div>
+        <div class="signal-box target">
+          <div class="signal-box-label">🎯 短線目標</div>
+          <div class="signal-price">${r.targetShort.toFixed(r.dp)}</div>
+          <div class="signal-sub">預期阻力位</div>
+        </div>
+        <div class="signal-box buy" style="background:rgba(37,99,235,0.06);border-color:rgba(37,99,235,0.2)">
+          <div class="signal-box-label" style="color:#1e40af">🔵 波段買入</div>
+          <div class="signal-price" style="color:#2563eb">${r.buySwing.toFixed(r.dp)}</div>
+          <div class="signal-sub">數週~數月</div>
+        </div>
+        <div class="signal-box target">
+          <div class="signal-box-label">🚀 波段目標</div>
+          <div class="signal-price">${r.targetSwing.toFixed(r.dp)}</div>
+          <div class="signal-sub">前高 + ATR</div>
+        </div>
       </div>
-      <div class="zone-row">
-        <span class="zone-tag zone-swing">波段</span>
-        <span class="zone-vals">${r.swingBuyLow} ~ ${r.swingBuyHigh}</span>
-        <span class="zone-note">數週~數月</span>
-      </div>
-      <div class="zone-row">
-        <span class="zone-tag zone-stop">停損</span>
-        <span class="zone-vals">${r.stopLoss}</span>
-        <span class="zone-note">跌破出場</span>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+        <div class="signal-box stop" style="flex:1;margin-right:8px">
+          <div class="signal-box-label">🛑 停損價</div>
+          <div class="signal-price">${r.stopLoss.toFixed(r.dp)}</div>
+          <div class="signal-sub">支撐下方 3%</div>
+        </div>
+        <div>
+          <div class="rr-badge ${rrClass}">${rrText}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:4px;text-align:right">潛在報酬/風險</div>
+        </div>
       </div>
     </div>
 
+    <!-- Backtest -->
+    <div class="backtest-section">
+      <div class="backtest-title">
+        <span>🧪 回測結果（RSI&lt;35買 / RSI&gt;65賣，6個月）</span>
+        ${bt.count > 0 ? `<button class="backtest-toggle" onclick="toggleBtDetail('${r.symbol.replace(/\./g,'-')}',this)">展開明細</button>` : ''}
+      </div>
+      ${btBlock}
+    </div>
+
+    <!-- AI Analysis -->
     <div class="ai-section">
       <div class="ai-section-head">
         <span class="ai-badge">GEMINI AI</span>
@@ -753,180 +812,185 @@ function buildCard(r, idx) {
   </div>`;
 }
 
-// ===== AI ANALYSIS =====
-async function loadAllAI() {
-  if (!geminiKey) {
-    allResults.forEach(r => {
-      const el = document.getElementById('ai-' + r.symbol.replace(/\./g, '-'));
-      if (el) el.innerHTML = '<span style="color:var(--text3);font-size:12px">請在右上角輸入 Gemini API Key 以啟用 AI 分析</span>';
-    });
-    return;
-  }
-  for (const r of allResults) {
-    await loadAIForStock(r);
-    await sleep(500); // rate limit
-  }
-}
-
-async function loadAIForStock(r) {
-  const elId = 'ai-' + r.symbol.replace(/\./g, '-');
-  const el = document.getElementById(elId);
+function toggleBtDetail(id, btn) {
+  const el = document.getElementById('btd-' + id);
   if (!el) return;
-
-  const sym = r.symbol.replace('.TW', '').replace('.TWO', '');
-  const prompt = `你是專業股票技術分析師。分析以下股票的技術面，並給出具體操作建議：
-
-股票：${r.name}（${r.symbol}）
-現價：${r.price.toFixed(2)} ${r.currency}
-今日漲跌：${(r.changePct*100).toFixed(2)}%
-RSI(14)：${r.rsi.toFixed(1)}
-MACD 柱狀：${r.macdHist.toFixed(4)}（${r.macdHist > 0 ? '多頭' : '空頭'}）
-布林帶：上軌${r.bbU?.toFixed(2)} / 中軌${r.bbM?.toFixed(2)} / 下軌${r.bbL?.toFixed(2)}
-MA20：${r.ma20?.toFixed(2)}
-MA60：${r.ma60?.toFixed(2) || '資料不足'}
-ATR(14)：${r.atrVal.toFixed(2)}
-量比（今日/20日均量）：${r.volRatio.toFixed(2)}x
-綜合評分：${r.score}/100
-
-請用繁體中文，3~5句話，說明：
-1. 目前技術面狀況（偏多/偏空/震盪）
-2. 短線（週內）和波段（月線）的買入時機判斷
-3. 最需注意的風險點
-
-語氣要像專業分析師，不要有免責聲明。`;
-
-  // Dynamically fetch available models from the API to avoid hardcoded names becoming stale
-  let modelsToTry = ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-2.5-flash'];
-  try {
-    const listResp = await fetchWithTimeout(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${geminiKey}&pageSize=50`, 8000
-    );
-    if (listResp.ok) {
-      const listData = await listResp.json();
-      const available = (listData.models || [])
-        .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
-        .map(m => m.name.replace('models/', ''))
-        // prefer flash/lite variants — fast and cheap
-        .filter(m => m.includes('flash') && !m.includes('image') && !m.includes('audio') && !m.includes('tts'))
-        .sort((a, b) => {
-          // lite first, then by recency (higher version number first)
-          const score = m => (m.includes('lite') ? 0 : 1) + (m.includes('2.5') ? 0 : m.includes('2.0') ? 10 : 20);
-          return score(a) - score(b);
-        });
-      if (available.length) modelsToTry = available.slice(0, 4);
-    }
-  } catch(_) { /* fall back to hardcoded list */ }
-
-  let lastErr = '';
-  for (const model of modelsToTry) {
-    try {
-      const resp = await fetchWithTimeout(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`, 20000,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }
-      );
-      const data = await resp.json();
-      if (data.error) {
-        const msg = data.error.message || '';
-        if (msg.includes('quota') || msg.includes('RESOURCE_EXHAUSTED') || resp.status === 429) {
-          lastErr = `[${model}] 額度用盡，明天重置或換新 Key`;
-          await sleep(500);
-          continue;
-        }
-        if (msg.includes('not found') || msg.includes('not supported')) {
-          lastErr = `[${model}] 模型不存在`;
-          continue;
-        }
-        throw new Error(msg);
-      }
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '無回應';
-      if (el) el.textContent = text;
-      return;
-    } catch(e) {
-      lastErr = e.message;
-    }
-  }
-  if (el) el.innerHTML = `<span style="color:var(--ember);font-size:12px">AI 分析失敗（所有模型額度用盡）：${lastErr}</span>`;
+  const open = el.classList.toggle('open');
+  btn.textContent = open ? '收起' : '展開明細';
 }
 
 // ===== SORT =====
 function sortCards(by, btn) {
   document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
-  if (by === 'score') allResults.sort((a, b) => b.score - a.score);
-  else if (by === 'rsi') allResults.sort((a, b) => a.rsi - b.rsi);
-  else if (by === 'price') allResults.sort((a, b) => b.price - a.price);
-  else if (by === 'change') allResults.sort((a, b) => b.changePct - a.changePct);
+  const s = arr => {
+    if (by === 'score')  arr.sort((a,b) => b.score - a.score);
+    if (by === 'rsi')    arr.sort((a,b) => a.rsi - b.rsi);
+    if (by === 'price')  arr.sort((a,b) => b.price - a.price);
+    if (by === 'change') arr.sort((a,b) => b.changePct - a.changePct);
+    if (by === 'rr')     arr.sort((a,b) => b.rrRatio - a.rrRatio);
+  };
+  s(allResults); s(displayedResults);
   renderCards();
 }
 
-// ===== INDICATORS =====
-function avg(arr) { return arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0; }
-function calcMA(closes, period) {
-  if (closes.length < period) return null;
-  return avg(closes.slice(-period));
+// ===== AI ANALYSIS =====
+async function loadAllAI() {
+  if (!geminiKey) {
+    allResults.forEach(r => {
+      const el = document.getElementById('ai-' + r.symbol.replace(/\./g,'-'));
+      if (el) el.innerHTML = '<span style="color:var(--text3);font-size:12px">請在右上角輸入 Gemini API Key 以啟用 AI 分析</span>';
+    });
+    return;
+  }
+  for (const r of allResults) {
+    await loadAIForStock(r);
+    await sleep(600);
+  }
 }
-function calcRSI(closes, period = 14) {
+
+// Simple markdown → HTML (bold, lists, headers)
+function md2html(text) {
+  return text
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^[\-\*] (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, s => `<ul>${s}</ul>`)
+    .replace(/\n{2,}/g, '</p><p>')
+    .replace(/^(?!<[hul])(.+)$/gm, '$1')
+    .trim()
+    .replace(/^/, '<p>').replace(/$/, '</p>')
+    .replace(/<p><\/p>/g, '')
+    .replace(/<p>(<[hul])/g, '$1')
+    .replace(/(<\/[hul][^>]*>)<\/p>/g, '$1');
+}
+
+async function loadAIForStock(r) {
+  const elId = 'ai-' + r.symbol.replace(/\./g,'-');
+  const el = document.getElementById(elId);
+  if (!el) return;
+
+  const prompt = `你是專業股票技術分析師。分析以下股票，給出具體操作建議：
+
+股票：${r.name}（${r.symbol}）
+現價：${r.price.toFixed(r.dp)} ${r.currency}
+今日漲跌：${(r.changePct*100).toFixed(2)}%
+RSI(14)：${r.rsi.toFixed(1)}
+MACD 柱狀：${r.macdHist.toFixed(4)}（${r.macdHist>0?'多頭':'空頭'}）
+布林帶：上軌${r.bbU?.toFixed(r.dp)} / 中軌${r.bbM?.toFixed(r.dp)} / 下軌${r.bbL?.toFixed(r.dp)}
+MA20：${r.ma20?.toFixed(r.dp)} / MA60：${r.ma60?.toFixed(r.dp)||'不足'}
+ATR(14)：${r.atrVal.toFixed(r.dp)}，量比：${r.volRatio.toFixed(2)}x
+綜合評分：${r.score}/100
+短線買入點：${r.buyShort.toFixed(r.dp)}，短線目標：${r.targetShort.toFixed(r.dp)}
+波段買入點：${r.buySwing.toFixed(r.dp)}，波段目標：${r.targetSwing.toFixed(r.dp)}
+停損價：${r.stopLoss.toFixed(r.dp)}，風險報酬比：${r.rrRatio.toFixed(2)}x
+回測（6個月，RSI策略）：${r.bt.count}次交易，勝率${(r.bt.winRate*100).toFixed(0)}%，總報酬${(r.bt.totalReturn*100).toFixed(1)}%
+
+請用繁體中文，用 Markdown 格式（可用粗體、條列），5~8句話分析：
+1. **技術面現況**：多空偏向與強弱
+2. **操作建議**：買入時機、目標價、停損的具體說明
+3. **風險提示**：最關鍵的 1~2 個風險點
+
+語氣專業直接，不要免責聲明。`;
+
+  let modelsToTry = ['gemini-2.0-flash-lite','gemini-2.0-flash','gemini-2.5-flash'];
+  try {
+    const listResp = await fetchWithTimeout(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${geminiKey}&pageSize=50`, 8000);
+    if (listResp.ok) {
+      const listData = await listResp.json();
+      const available = (listData.models||[])
+        .filter(m => (m.supportedGenerationMethods||[]).includes('generateContent'))
+        .map(m => m.name.replace('models/',''))
+        .filter(m => m.includes('flash') && !m.includes('image') && !m.includes('audio') && !m.includes('tts'))
+        .sort((a,b) => {
+          const sc = m => (m.includes('lite')?0:1)+(m.includes('2.5')?0:m.includes('2.0')?10:20);
+          return sc(a)-sc(b);
+        });
+      if (available.length) modelsToTry = available.slice(0,4);
+    }
+  } catch(_) {}
+
+  let lastErr = '';
+  for (const model of modelsToTry) {
+    try {
+      const resp = await fetchWithTimeout(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`, 25000,
+        { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ contents:[{ parts:[{ text: prompt }] }] }) }
+      );
+      const data = await resp.json();
+      if (data.error) {
+        const msg = data.error.message || '';
+        if (msg.includes('quota')||msg.includes('RESOURCE_EXHAUSTED')||resp.status===429) { lastErr=`[${model}] 額度用盡`; await sleep(500); continue; }
+        if (msg.includes('not found')||msg.includes('not supported')) { lastErr=`[${model}] 模型不存在`; continue; }
+        throw new Error(msg);
+      }
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '無回應';
+      if (el) el.innerHTML = md2html(text);
+      return;
+    } catch(e) { lastErr = e.message; }
+  }
+  if (el) el.innerHTML = `<span style="color:var(--ember);font-size:12px">AI 分析失敗：${lastErr}</span>`;
+}
+
+// ===== INDICATORS =====
+function avg(arr) { return arr.length ? arr.reduce((s,v)=>s+v,0)/arr.length : 0; }
+function calcMA(closes, period) { return closes.length < period ? null : avg(closes.slice(-period)); }
+function calcRSI(closes, period=14) {
   const rsi = new Array(closes.length).fill(null);
   if (closes.length <= period) return rsi;
-  let gains = 0, losses = 0;
-  for (let i = 1; i <= period; i++) {
-    const d = closes[i] - closes[i-1];
-    if (d > 0) gains += d; else losses -= d;
-  }
-  let ag = gains / period, al = losses / period;
-  rsi[period] = 100 - 100 / (1 + ag / (al || 1e-9));
-  for (let i = period + 1; i < closes.length; i++) {
-    const d = closes[i] - closes[i-1];
-    ag = (ag * (period-1) + Math.max(d, 0)) / period;
-    al = (al * (period-1) + Math.max(-d, 0)) / period;
-    rsi[i] = 100 - 100 / (1 + ag / (al || 1e-9));
+  let gains=0, losses=0;
+  for (let i=1;i<=period;i++) { const d=closes[i]-closes[i-1]; d>0?gains+=d:losses-=d; }
+  let ag=gains/period, al=losses/period;
+  rsi[period] = 100-100/(1+ag/(al||1e-9));
+  for (let i=period+1;i<closes.length;i++) {
+    const d=closes[i]-closes[i-1];
+    ag=(ag*(period-1)+Math.max(d,0))/period;
+    al=(al*(period-1)+Math.max(-d,0))/period;
+    rsi[i]=100-100/(1+ag/(al||1e-9));
   }
   return rsi;
 }
 function calcEMA(arr, period) {
-  const k = 2 / (period + 1);
-  const result = [arr[0]];
-  for (let i = 1; i < arr.length; i++) result.push(arr[i] * k + result[i-1] * (1-k));
+  const k=2/(period+1), result=[arr[0]];
+  for (let i=1;i<arr.length;i++) result.push(arr[i]*k+result[i-1]*(1-k));
   return result;
 }
 function calcMACD(closes) {
-  const fast = calcEMA(closes, 12), slow = calcEMA(closes, 26);
-  const macd = fast.map((v, i) => v - slow[i]);
-  const signal = calcEMA(macd, 9);
-  return { macd, signal };
+  const fast=calcEMA(closes,12), slow=calcEMA(closes,26);
+  const macd=fast.map((v,i)=>v-slow[i]);
+  return { macd, signal:calcEMA(macd,9) };
 }
-function calcBB(closes, period = 20, mult = 2) {
-  const mid = [], upper = [], lower = [];
-  for (let i = 0; i < closes.length; i++) {
-    if (i < period - 1) { mid.push(null); upper.push(null); lower.push(null); continue; }
-    const slice = closes.slice(i - period + 1, i + 1);
-    const m = avg(slice);
-    const std = Math.sqrt(slice.reduce((s, v) => s + (v-m)**2, 0) / period);
-    mid.push(m); upper.push(m + mult * std); lower.push(m - mult * std);
+function calcBB(closes, period=20, mult=2) {
+  const mid=[],upper=[],lower=[];
+  for (let i=0;i<closes.length;i++) {
+    if (i<period-1) { mid.push(null);upper.push(null);lower.push(null);continue; }
+    const sl=closes.slice(i-period+1,i+1), m=avg(sl);
+    const std=Math.sqrt(sl.reduce((s,v)=>s+(v-m)**2,0)/period);
+    mid.push(m); upper.push(m+mult*std); lower.push(m-mult*std);
   }
-  return { mid, upper, lower };
+  return {mid,upper,lower};
 }
-function calcATR(highs, lows, closes, period = 14) {
-  const tr = highs.map((h, i) => {
-    if (i === 0) return h - lows[i];
-    return Math.max(h - lows[i], Math.abs(h - closes[i-1]), Math.abs(lows[i] - closes[i-1]));
-  });
-  const atr = [tr[0]];
-  for (let i = 1; i < tr.length; i++) atr.push((atr[i-1] * (period-1) + tr[i]) / period);
+function calcATR(highs, lows, closes, period=14) {
+  const tr=highs.map((h,i)=>i===0?h-lows[i]:Math.max(h-lows[i],Math.abs(h-closes[i-1]),Math.abs(lows[i]-closes[i-1])));
+  const atr=[tr[0]];
+  for (let i=1;i<tr.length;i++) atr.push((atr[i-1]*(period-1)+tr[i])/period);
   return atr;
 }
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
 
 // ===== TOAST =====
 function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 3000);
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),3000);
 }
 
 // ===== INIT =====
 renderPresets();
+renderFavSection();
 </script>
 </body>
 </html>
