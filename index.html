@@ -236,16 +236,9 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
         <div class="brand-sub">AI 選股技術分析儀 v3 · 台股 + 美股</div>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-      <div id="vix-wrap" style="display:none;align-items:center;gap:7px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 12px">
-        <span id="vix-lbl" style="font-size:10px;color:var(--text3);font-weight:600;letter-spacing:0.5px">VIX</span>
-        <span id="vix-val" style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700">--</span>
-        <span id="vix-tag" style="font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600"></span>
-      </div>
-      <div class="key-bar">
-        <label>Gemini Key</label>
-        <input class="key-input" type="password" id="gemini-key" placeholder="AIza... (免費申請)" autocomplete="off">
-      </div>
+    <div class="key-bar">
+      <label>Gemini Key</label>
+      <input class="key-input" type="password" id="gemini-key" placeholder="AIza... (免費申請)" autocomplete="off">
     </div>
   </div>
 </header>
@@ -436,78 +429,6 @@ async function startScan(){
   btn.disabled=false;document.getElementById('scan-btn-icon').textContent='🔍';document.getElementById('scan-btn-text').textContent='重新掃描';
 }
 function setProgress(pct,text){document.getElementById('progress-fill').style.width=pct+'%';document.getElementById('progress-text').textContent=text;}
-
-// ===== VIX =====
-async function fetchVIX(){
-  // Strategy 1: CBOE official delayed quote — public CORS API, no proxy needed
-  try{
-    var cboe=await fetch('https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json');
-    if(cboe.ok){
-      var d=await cboe.json();
-      var price=d?.data?.last||d?.last;
-      if(price){renderVIX(+price,false);setTimeout(fetchVIX,5*60*1000);return;}
-    }
-  }catch(e){}
-
-  // Strategy 2: Use the same proxy that successfully fetches stock data,
-  // but use VIXY (ETF) which has no ^ symbol — proxy-friendly
-  var proxies=[
-    'https://corsproxy.io/?url=',
-    'https://api.allorigins.win/raw?url=',
-    'https://corsproxy.org/?',
-    'https://api.codetabs.com/v1/proxy?quest=',
-  ];
-  // Symbols to try: VIXY (ProShares VIX ETF), UVXY (1.5x VIX ETF)
-  var etfSymbols=['VIXY','UVXY'];
-  for(var p=0;p<proxies.length;p++){
-    for(var s=0;s<etfSymbols.length;s++){
-      try{
-        var url='https://query1.finance.yahoo.com/v8/finance/chart/'+etfSymbols[s]+'?interval=1d&range=1d';
-        var resp=await fetch(proxies[p]+encodeURIComponent(url));
-        if(!resp.ok) continue;
-        var text=await resp.text();
-        if(!text||!text.trim()||text[0]==='{' === false) continue;
-        var data=JSON.parse(text);
-        var price=data?.chart?.result?.[0]?.meta?.regularMarketPrice;
-        if(!price) continue;
-        renderVIX(price,etfSymbols[s]);
-        setTimeout(fetchVIX,5*60*1000);
-        return;
-      }catch(e){continue;}
-    }
-  }
-
-  // Strategy 3: hardcode a stale fallback so widget still shows something
-  // rather than just disappearing silently
-  document.getElementById('vix-wrap').style.display='flex';
-  document.getElementById('vix-val').textContent='--';
-  document.getElementById('vix-tag').textContent='無法取得';
-  document.getElementById('vix-tag').style.background='rgba(107,114,128,0.08)';
-  document.getElementById('vix-tag').style.color='var(--text3)';
-}
-function renderVIX(vix, isEtf){
-  var wrap=document.getElementById('vix-wrap');
-  var valEl=document.getElementById('vix-val');
-  var tagEl=document.getElementById('vix-tag');
-  var lblEl=document.getElementById('vix-lbl');
-  if(!wrap||!valEl||!tagEl) return;
-  valEl.textContent=vix.toFixed(2);
-  if(lblEl) lblEl.textContent=(isEtf&&isEtf!==false)?String(isEtf):'VIX';
-  var level,bg,color;
-  // For VIXY ETF: price ~2-30 range, use same thresholds as VIX
-  // For actual VIX: standard thresholds
-  if(vix<15){level='極低恐慌';bg='rgba(5,150,105,0.1)';color='#065f46';}
-  else if(vix<20){level='低恐慌';bg='rgba(5,150,105,0.08)';color='#059669';}
-  else if(vix<25){level='正常';bg='rgba(217,119,6,0.08)';color='#92400e';}
-  else if(vix<30){level='偏高';bg='rgba(220,38,38,0.08)';color='#991b1b';}
-  else if(vix<40){level='高恐慌';bg='rgba(220,38,38,0.12)';color='#dc2626';}
-  else{level='極度恐慌';bg='rgba(220,38,38,0.18)';color='#b91c1c';}
-  valEl.style.color=color;
-  tagEl.textContent=level;
-  tagEl.style.background=bg;
-  tagEl.style.color=color;
-  wrap.style.display='flex';
-}
 
 // ===== TODAY HOT STOCKS =====
 async function loadHotStocks(){
@@ -1108,8 +1029,7 @@ function toast(msg){const el=document.getElementById('toast');el.textContent=msg
 // ===== INIT =====
 renderPresets();
 renderFavSection();
-// Start VIX after a short delay (fetchWithTimeout needs to be defined first)
-setTimeout(fetchVIX, 500);
+
 </script>
 </body>
 </html>
