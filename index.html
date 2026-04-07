@@ -35,9 +35,6 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 .key-input:focus{border-color:var(--sky);box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
 .key-input::placeholder{color:var(--text3)}
 
-/* Alert Banner */
-#alert-banner{display:none;background:linear-gradient(135deg,#059669,#047857);color:#fff;padding:10px 20px;text-align:center;font-size:13px;font-weight:600;position:sticky;top:73px;z-index:190;cursor:pointer;letter-spacing:0.2px}
-#alert-banner span{opacity:0.75;font-weight:400;margin-left:8px;font-size:12px}
 
 /* Controls */
 .controls{padding:16px 0 0}
@@ -74,28 +71,7 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 .progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--sky),var(--mint));border-radius:2px;transition:width 0.4s;width:0%}
 .progress-text{font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace}
 
-/* Dashboard */
-#dashboard{display:none;margin-bottom:16px}
-.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:12px}
-.dash-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;text-align:center}
-.dash-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:800}
-.dash-lbl{font-size:11px;color:var(--text3);margin-top:3px;letter-spacing:0.3px}
-.dash-card.green .dash-val{color:var(--mint)}
-.dash-card.amber .dash-val{color:var(--gold)}
-.dash-card.red   .dash-val{color:var(--ember)}
-.dash-card.blue  .dash-val{color:var(--sky)}
-.market-mood{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 16px;font-size:13px}
-.mood-bar-bg{flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden}
-.mood-bar-fill{height:100%;border-radius:3px;transition:width 0.6s}
 
-/* Heatmap */
-#heatmap-section{display:none;margin-bottom:16px}
-.heatmap-title{font-size:12px;color:var(--text3);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
-.heatmap-grid{display:flex;flex-wrap:wrap;gap:5px}
-.hm-cell{border-radius:8px;padding:7px 10px;cursor:pointer;transition:transform 0.15s;min-width:64px;text-align:center}
-.hm-cell:hover{transform:scale(1.05)}
-.hm-sym{font-family:'Syne',sans-serif;font-size:12px;font-weight:700}
-.hm-rsi{font-size:10px;margin-top:1px;font-family:'JetBrains Mono',monospace}
 
 /* Results */
 .results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:10px}
@@ -231,6 +207,13 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 .toast.show{transform:translateY(0);opacity:1}
 .spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,0.25);border-top-color:white;border-radius:50%;animation:spin 0.6s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+/* Safety rating */
+.safety-bar{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line)}
+.safety-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;font-weight:600}
+.safety-stars{display:flex;gap:3px}
+.safety-star{width:14px;height:14px;border-radius:3px}
+.safety-tag{font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;white-space:nowrap}
+.safety-desc{font-size:10px;color:var(--text3);flex:1;text-align:right}
 ::-webkit-scrollbar{width:6px}
 ::-webkit-scrollbar-track{background:var(--ink)}
 ::-webkit-scrollbar-thumb{background:var(--line2);border-radius:3px}
@@ -243,10 +226,6 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 </head>
 <body>
 
-<div id="alert-banner" onclick="scrollToEntries()">
-  <span id="alert-text"></span>
-  <span>點此查看 ↓</span>
-</div>
 
 <header>
   <div class="inner">
@@ -257,9 +236,16 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
         <div class="brand-sub">AI 選股技術分析儀 v3 · 台股 + 美股</div>
       </div>
     </div>
-    <div class="key-bar">
-      <label>Gemini Key</label>
-      <input class="key-input" type="password" id="gemini-key" placeholder="AIza... (免費申請)" autocomplete="off">
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <div id="vix-wrap" style="display:none;align-items:center;gap:7px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 12px">
+        <span id="vix-lbl" style="font-size:10px;color:var(--text3);font-weight:600;letter-spacing:0.5px">VIX</span>
+        <span id="vix-val" style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700">--</span>
+        <span id="vix-tag" style="font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600"></span>
+      </div>
+      <div class="key-bar">
+        <label>Gemini Key</label>
+        <input class="key-input" type="password" id="gemini-key" placeholder="AIza... (免費申請)" autocomplete="off">
+      </div>
     </div>
   </div>
 </header>
@@ -272,7 +258,10 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
       <button class="mkt-btn" onclick="setMarket('us',this)">🇺🇸 美股</button>
     </div>
     <div class="presets-section">
-      <div class="presets-label">預設清單</div>
+      <div class="presets-label" style="display:flex;align-items:center;justify-content:space-between">
+        <span>預設清單</span>
+        <button onclick="loadHotStocks()" style="font-size:11px;padding:3px 10px;border:1px solid var(--line2);border-radius:6px;background:#fff;color:var(--text2);cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.borderColor='var(--sky)';this.style.color='var(--sky)'" onmouseout="this.style.borderColor='var(--line2)';this.style.color='var(--text2)'">🔥 今日熱門</button>
+      </div>
       <div class="presets-grid" id="presets-grid"></div>
     </div>
     <div class="fav-section" id="fav-section">
@@ -293,20 +282,6 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
       <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
       <div class="progress-text" id="progress-text">準備中...</div>
     </div>
-  </div>
-
-  <!-- Dashboard -->
-  <div id="dashboard">
-    <div class="dash-grid" id="dash-grid"></div>
-    <div class="market-mood" id="market-mood"></div>
-  </div>
-
-  <!-- Heatmap -->
-  <div id="heatmap-section">
-    <div class="heatmap-title">
-      <span>RSI 熱力圖 — 深綠=超賣機會 / 深紅=超買警示</span>
-    </div>
-    <div class="heatmap-grid" id="heatmap-grid"></div>
   </div>
 
   <!-- Results -->
@@ -356,7 +331,7 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 
 <script>
 // ===== PRESETS =====
-const PRESETS = {
+const PRESETS={
   tw:[
     {id:'tw-50',label:'台股龍頭50',syms:['2330.TW','2317.TW','2454.TW','2382.TW','2308.TW','2881.TW','2882.TW','1301.TW','1303.TW','2886.TW']},
     {id:'tw-etf',label:'台股 ETF',syms:['0050.TW','0056.TW','00878.TW','00757.TW','00662.TW']},
@@ -372,237 +347,201 @@ const PRESETS = {
     {id:'us-fin',label:'金融科技',syms:['PYPL','HOOD','V','MA','SQ','COIN']},
   ]
 };
-
-let currentMarket='all', allResults=[], displayedResults=[];
+let currentMarket='all',allResults=[],displayedResults=[];
 let favourites=JSON.parse(localStorage.getItem('sr_favs')||'[]');
 let favOnlyMode=false;
 let geminiKey=localStorage.getItem('gemini_key_radar')||'';
-let scanHistory=JSON.parse(localStorage.getItem('sr_history')||'{}'); // {symbol: {score, time}}
-
+let scanHistory=JSON.parse(localStorage.getItem('sr_history')||'{}');
 document.getElementById('gemini-key').value=geminiKey;
 document.getElementById('gemini-key').addEventListener('input',e=>{
-  geminiKey=e.target.value.trim();
-  localStorage.setItem('gemini_key_radar',geminiKey);
+  geminiKey=e.target.value.trim();localStorage.setItem('gemini_key_radar',geminiKey);
 });
-
-// ===== CACHE (30 min) =====
-const CACHE_TTL = 30*60*1000;
-function cacheGet(symbol) {
-  try {
-    const raw=localStorage.getItem('sr_cache_'+symbol);
-    if(!raw) return null;
-    const obj=JSON.parse(raw);
-    if(Date.now()-obj.ts > CACHE_TTL) { localStorage.removeItem('sr_cache_'+symbol); return null; }
-    return obj.data;
-  } catch { return null; }
+const CACHE_TTL=30*60*1000;
+function cacheGet(symbol){
+  try{const raw=localStorage.getItem('sr_cache_'+symbol);if(!raw)return null;
+  const obj=JSON.parse(raw);if(Date.now()-obj.ts>CACHE_TTL){localStorage.removeItem('sr_cache_'+symbol);return null;}return obj.data;}catch{return null;}
 }
-function cacheSet(symbol, data) {
-  try { localStorage.setItem('sr_cache_'+symbol, JSON.stringify({ts:Date.now(), data})); } catch {}
+function cacheSet(symbol,data){try{localStorage.setItem('sr_cache_'+symbol,JSON.stringify({ts:Date.now(),data}));}catch{}}
+function setMarket(mkt,btn){
+  currentMarket=mkt;document.querySelectorAll('.mkt-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderPresets();
 }
-
-// ===== PRESETS / FAV =====
-function setMarket(mkt,btn) {
-  currentMarket=mkt;
-  document.querySelectorAll('.mkt-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  renderPresets();
-}
-function renderPresets() {
-  const grid=document.getElementById('presets-grid');
-  let groups=[];
+function renderPresets(){
+  var grid=document.getElementById('presets-grid');var groups=[];
   if(currentMarket==='all'||currentMarket==='tw') groups=groups.concat(PRESETS.tw);
   if(currentMarket==='all'||currentMarket==='us') groups=groups.concat(PRESETS.us);
-  grid.innerHTML=groups.map(g=>`<label class="preset-group"><input type="checkbox" value="${g.id}"><span>${g.label}</span></label>`).join('');
+  grid.innerHTML=groups.map(function(g){
+    return '<label class="preset-group"><input type="checkbox" value="'+g.id+'"><span>'+g.label+'</span></label>';
+  }).join('');
 }
-function renderFavSection() {
-  const sec=document.getElementById('fav-section');
-  const chips=document.getElementById('fav-chips');
+function renderFavSection(){
+  var sec=document.getElementById('fav-section'),chips=document.getElementById('fav-chips');
   if(!favourites.length){sec.classList.remove('visible');return;}
   sec.classList.add('visible');
-  chips.innerHTML=favourites.map(sym=>`
-    <div class="fav-chip" onclick="loadFav('${sym}')">⭐ ${sym}
-      <span onclick="event.stopPropagation();removeFav('${sym}')" style="color:var(--text3);font-size:10px;margin-left:2px">✕</span>
-    </div>`).join('');
+  chips.innerHTML=favourites.map(function(sym){
+    return '<div class="fav-chip" onclick="loadFav(' + "'" + sym + "'" + ')">⭐ '+sym+
+      '<span onclick="event.stopPropagation();removeFav(' + "'" + sym + "'" + ')" style="color:var(--text3);font-size:10px;margin-left:2px">✕</span></div>';
+  }).join('');
 }
 function loadFav(sym){document.getElementById('custom-syms').value=sym;toast('載入 '+sym+'，點擊掃描開始分析');}
 function toggleFav(symbol){
-  const idx=favourites.indexOf(symbol);
+  var idx=favourites.indexOf(symbol);
   if(idx===-1){favourites.push(symbol);toast('⭐ 已收藏 '+symbol);}
   else{favourites.splice(idx,1);toast('移除收藏 '+symbol);}
   localStorage.setItem('sr_favs',JSON.stringify(favourites));
   renderFavSection();renderCards();
 }
 function removeFav(sym){
-  favourites=favourites.filter(f=>f!==sym);
-  localStorage.setItem('sr_favs',JSON.stringify(favourites));
-  renderFavSection();renderCards();
+  favourites=favourites.filter(f=>f!==sym);localStorage.setItem('sr_favs',JSON.stringify(favourites));renderFavSection();renderCards();
 }
 function getSelectedSymbols(){
   const checked=[...document.querySelectorAll('.preset-group input:checked')];
-  const fromPresets=checked.flatMap(cb=>{
-    const all=[...PRESETS.tw,...PRESETS.us];
-    const found=all.find(g=>g.id===cb.value);
-    return found?found.syms:[];
-  });
-  const customRaw=document.getElementById('custom-syms').value;
-  const fromCustom=customRaw.split(/[,\s，]+/).map(s=>s.trim().toUpperCase()).filter(Boolean);
-  return [...new Set([...fromPresets,...fromCustom])];
+  const fromPresets=checked.flatMap(cb=>{const all=[...PRESETS.tw,...PRESETS.us];const found=all.find(g=>g.id===cb.value);return found?found.syms:[];});
+  const fromCustom=document.getElementById('custom-syms').value.split(/[,\s，]+/).map(s=>s.trim().toUpperCase()).filter(Boolean);
+  return[...new Set([...fromPresets,...fromCustom])];
 }
-
-// ===== FILTER =====
 function applyFilter(){
-  const rsiMin=+document.getElementById('f-rsi-min').value||0;
-  const rsiMax=+document.getElementById('f-rsi-max').value||100;
-  const scoreMin=+document.getElementById('f-score-min').value||0;
-  const mkt=document.getElementById('f-market').value;
+  const rsiMin=+document.getElementById('f-rsi-min').value||0,rsiMax=+document.getElementById('f-rsi-max').value||100;
+  const scoreMin=+document.getElementById('f-score-min').value||0,mkt=document.getElementById('f-market').value;
   displayedResults=allResults.filter(r=>{
-    if(r.rsi<rsiMin||r.rsi>rsiMax) return false;
-    if(r.score<scoreMin) return false;
-    if(mkt==='tw'&&!r.isTW) return false;
-    if(mkt==='us'&&r.isTW) return false;
-    if(favOnlyMode&&!favourites.includes(r.symbol)) return false;
-    return true;
+    if(r.rsi<rsiMin||r.rsi>rsiMax)return false;if(r.score<scoreMin)return false;
+    if(mkt==='tw'&&!r.isTW)return false;if(mkt==='us'&&r.isTW)return false;
+    if(favOnlyMode&&!favourites.includes(r.symbol))return false;return true;
   });
-  document.getElementById('filter-count').textContent='顯示 '+displayedResults.length+' / '+allResults.length+' 支';
-  renderCards();
+  document.getElementById('filter-count').textContent='顯示 '+displayedResults.length+' / '+allResults.length+' 支';renderCards();
 }
-function toggleFavOnly(){
-  favOnlyMode=!favOnlyMode;
-  document.getElementById('fav-only-btn').classList.toggle('active',favOnlyMode);
-  applyFilter();
-}
-
-// ===== SCAN =====
+function toggleFavOnly(){favOnlyMode=!favOnlyMode;document.getElementById('fav-only-btn').classList.toggle('active',favOnlyMode);applyFilter();}
 async function startScan(){
-  const syms=getSelectedSymbols();
-  if(!syms.length){toast('⚠️ 請勾選清單或輸入代號');return;}
-  const btn=document.getElementById('scan-btn');
-  btn.disabled=true;
+  const syms=getSelectedSymbols();if(!syms.length){toast('⚠️ 請勾選清單或輸入代號');return;}
+  const btn=document.getElementById('scan-btn');btn.disabled=true;
   document.getElementById('scan-btn-icon').innerHTML='<div class="spinner"></div>';
   document.getElementById('scan-btn-text').textContent='掃描中...';
   document.getElementById('progress-wrap').style.display='block';
   document.getElementById('results-section').style.display='none';
   document.getElementById('empty-state').style.display='none';
-  document.getElementById('dashboard').style.display='none';
-  document.getElementById('heatmap-section').style.display='none';
-
   allResults=[];
   for(let i=0;i<syms.length;i++){
-    setProgress((i/syms.length)*100,'分析 '+syms[i]+'... ('+( i+1)+'/'+syms.length+')');
-    try{
-      const result=await analyzeSymbol(syms[i]);
-      if(result) allResults.push(result);
-    } catch(e){
-      console.warn('Failed:',syms[i],e.message);
-      toast('⚠️ '+syms[i]+' 失敗：'+e.message.split('\n')[0]);
-    }
+    setProgress((i/syms.length)*100,'分析 '+syms[i]+'... ('+(i+1)+'/'+syms.length+')');
+    try{const result=await analyzeSymbol(syms[i]);if(result)allResults.push(result);}
+    catch(e){console.warn('Failed:',syms[i],e.message);toast('⚠️ '+syms[i]+' 失敗：'+e.message.split('\n')[0]);}
     await sleep(200);
   }
-
-  setProgress(100,'完成！');
-  await sleep(200);
+  setProgress(100,'完成！');await sleep(200);
   document.getElementById('progress-wrap').style.display='none';
   document.getElementById('results-section').style.display='block';
   document.getElementById('results-meta').textContent='共分析 '+allResults.length+' 支 · '+new Date().toLocaleTimeString('zh-TW');
-
-  // Save history
   const now=Date.now();
-  allResults.forEach(r=>{
-    const prev=scanHistory[r.symbol];
-    scanHistory[r.symbol]={score:r.score,time:now,prev:prev?prev.score:null};
-  });
+  allResults.forEach(r=>{const prev=scanHistory[r.symbol];scanHistory[r.symbol]={score:r.score,time:now,prev:prev?prev.score:null};});
   localStorage.setItem('sr_history',JSON.stringify(scanHistory));
-
-  sortCards('score',document.querySelector('.sort-btn'));
-  applyFilter();
-  renderDashboard();
-  renderHeatmap();
-  showAlertBanner();
-  loadAllAI();
-
-  btn.disabled=false;
-  document.getElementById('scan-btn-icon').textContent='🔍';
-  document.getElementById('scan-btn-text').textContent='重新掃描';
+  sortCards('score',document.querySelector('.sort-btn'));applyFilter();loadAllAI();
+  btn.disabled=false;document.getElementById('scan-btn-icon').textContent='🔍';document.getElementById('scan-btn-text').textContent='重新掃描';
 }
-function setProgress(pct,text){
-  document.getElementById('progress-fill').style.width=pct+'%';
-  document.getElementById('progress-text').textContent=text;
-}
+function setProgress(pct,text){document.getElementById('progress-fill').style.width=pct+'%';document.getElementById('progress-text').textContent=text;}
 
-// ===== DASHBOARD =====
-function renderDashboard(){
-  if(!allResults.length) return;
-  const entryReady=allResults.filter(r=>r.shortEntryNow||r.swingEntryNow);
-  const waiting=allResults.filter(r=>!r.shortEntryNow&&!r.swingEntryNow&&r.score>=40);
-  const bearish=allResults.filter(r=>r.score<40);
-  const avgScore=Math.round(allResults.reduce((s,r)=>s+r.score,0)/allResults.length);
-  const bullPct=Math.round(allResults.filter(r=>r.macdHist>0).length/allResults.length*100);
+// ===== VIX =====
+async function fetchVIX(){
+  // Strategy 1: CBOE official delayed quote — public CORS API, no proxy needed
+  try{
+    var cboe=await fetch('https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json');
+    if(cboe.ok){
+      var d=await cboe.json();
+      var price=d?.data?.last||d?.last;
+      if(price){renderVIX(+price,false);setTimeout(fetchVIX,5*60*1000);return;}
+    }
+  }catch(e){}
 
-  const dash=document.getElementById('dash-grid');
-  dash.innerHTML=
-    '<div class="dash-card green"><div class="dash-val">'+entryReady.length+'</div><div class="dash-lbl">可進場</div></div>'+
-    '<div class="dash-card amber"><div class="dash-val">'+waiting.length+'</div><div class="dash-lbl">等待回調</div></div>'+
-    '<div class="dash-card red"><div class="dash-val">'+bearish.length+'</div><div class="dash-lbl">偏空暫緩</div></div>'+
-    '<div class="dash-card blue"><div class="dash-val">'+avgScore+'</div><div class="dash-lbl">平均評分</div></div>'+
-    '<div class="dash-card '+(bullPct>=50?'green':'red')+'"><div class="dash-val">'+bullPct+'%</div><div class="dash-lbl">MACD 多頭比</div></div>';
-
-  const moodColor=bullPct>=60?'#059669':bullPct>=40?'#d97706':'#dc2626';
-  const moodText=bullPct>=60?'整體偏多':bullPct>=40?'多空拉鋸':'整體偏空';
-  document.getElementById('market-mood').innerHTML=
-    '<span style="font-size:12px;color:var(--text3);white-space:nowrap">市場情緒</span>'+
-    '<div class="mood-bar-bg"><div class="mood-bar-fill" style="width:'+bullPct+'%;background:'+moodColor+'"></div></div>'+
-    '<span style="font-size:13px;font-weight:700;color:'+moodColor+';white-space:nowrap">'+moodText+'</span>';
-
-  document.getElementById('dashboard').style.display='block';
-}
-
-// ===== HEATMAP =====
-function rsiToColor(rsi){
-  // RSI 0-30: 深綠 → 淺綠；30-70: 淺灰；70-100: 淺紅 → 深紅
-  if(rsi<=30){
-    const t=rsi/30;
-    const g=Math.round(100+t*56); // 100→156
-    return {bg:'rgba(5,150,105,'+(0.9-t*0.4)+')',text:'#fff',border:'rgba(5,150,105,0.3)'};
-  } else if(rsi<=70){
-    const t=(rsi-30)/40;
-    return {bg:'rgba(230,234,242,'+(0.6+t*0.3)+')',text:'#374151',border:'rgba(200,206,223,0.5)'};
-  } else {
-    const t=(rsi-70)/30;
-    return {bg:'rgba(220,38,38,'+(0.25+t*0.65)+')',text:t>0.5?'#fff':'#991b1b',border:'rgba(220,38,38,0.3)'};
+  // Strategy 2: Use the same proxy that successfully fetches stock data,
+  // but use VIXY (ETF) which has no ^ symbol — proxy-friendly
+  var proxies=[
+    'https://corsproxy.io/?url=',
+    'https://api.allorigins.win/raw?url=',
+    'https://corsproxy.org/?',
+    'https://api.codetabs.com/v1/proxy?quest=',
+  ];
+  // Symbols to try: VIXY (ProShares VIX ETF), UVXY (1.5x VIX ETF)
+  var etfSymbols=['VIXY','UVXY'];
+  for(var p=0;p<proxies.length;p++){
+    for(var s=0;s<etfSymbols.length;s++){
+      try{
+        var url='https://query1.finance.yahoo.com/v8/finance/chart/'+etfSymbols[s]+'?interval=1d&range=1d';
+        var resp=await fetch(proxies[p]+encodeURIComponent(url));
+        if(!resp.ok) continue;
+        var text=await resp.text();
+        if(!text||!text.trim()||text[0]==='{' === false) continue;
+        var data=JSON.parse(text);
+        var price=data?.chart?.result?.[0]?.meta?.regularMarketPrice;
+        if(!price) continue;
+        renderVIX(price,etfSymbols[s]);
+        setTimeout(fetchVIX,5*60*1000);
+        return;
+      }catch(e){continue;}
+    }
   }
+
+  // Strategy 3: hardcode a stale fallback so widget still shows something
+  // rather than just disappearing silently
+  document.getElementById('vix-wrap').style.display='flex';
+  document.getElementById('vix-val').textContent='--';
+  document.getElementById('vix-tag').textContent='無法取得';
+  document.getElementById('vix-tag').style.background='rgba(107,114,128,0.08)';
+  document.getElementById('vix-tag').style.color='var(--text3)';
 }
-function renderHeatmap(){
-  if(!allResults.length) return;
-  const sorted=[...allResults].sort((a,b)=>a.rsi-b.rsi);
-  const grid=document.getElementById('heatmap-grid');
-  grid.innerHTML=sorted.map(r=>{
-    const c=rsiToColor(r.rsi);
-    const sym=r.symbol.replace('.TW','').replace('.TWO','');
-    return '<div class="hm-cell" style="background:'+c.bg+';border:1px solid '+c.border+';color:'+c.text+'" onclick="scrollToCard(\''+r.symbol+'\')" title="'+r.name+' · RSI '+r.rsi.toFixed(1)+'">'+
-      '<div class="hm-sym" style="color:'+c.text+'">'+sym+'</div>'+
-      '<div class="hm-rsi" style="color:'+c.text+';opacity:0.85">RSI '+r.rsi.toFixed(0)+'</div>'+
-    '</div>';
-  }).join('');
-  document.getElementById('heatmap-section').style.display='block';
-}
-function scrollToCard(symbol){
-  const el=document.getElementById('card-'+symbol.replace(/\./g,'-'));
-  if(el) el.scrollIntoView({behavior:'smooth',block:'center'});
-}
-function scrollToEntries(){
-  const first=allResults.find(r=>r.shortEntryNow||r.swingEntryNow);
-  if(first) scrollToCard(first.symbol);
+function renderVIX(vix, isEtf){
+  var wrap=document.getElementById('vix-wrap');
+  var valEl=document.getElementById('vix-val');
+  var tagEl=document.getElementById('vix-tag');
+  var lblEl=document.getElementById('vix-lbl');
+  if(!wrap||!valEl||!tagEl) return;
+  valEl.textContent=vix.toFixed(2);
+  if(lblEl) lblEl.textContent=(isEtf&&isEtf!==false)?String(isEtf):'VIX';
+  var level,bg,color;
+  // For VIXY ETF: price ~2-30 range, use same thresholds as VIX
+  // For actual VIX: standard thresholds
+  if(vix<15){level='極低恐慌';bg='rgba(5,150,105,0.1)';color='#065f46';}
+  else if(vix<20){level='低恐慌';bg='rgba(5,150,105,0.08)';color='#059669';}
+  else if(vix<25){level='正常';bg='rgba(217,119,6,0.08)';color='#92400e';}
+  else if(vix<30){level='偏高';bg='rgba(220,38,38,0.08)';color='#991b1b';}
+  else if(vix<40){level='高恐慌';bg='rgba(220,38,38,0.12)';color='#dc2626';}
+  else{level='極度恐慌';bg='rgba(220,38,38,0.18)';color='#b91c1c';}
+  valEl.style.color=color;
+  tagEl.textContent=level;
+  tagEl.style.background=bg;
+  tagEl.style.color=color;
+  wrap.style.display='flex';
 }
 
-// ===== ALERT BANNER =====
-function showAlertBanner(){
-  const entries=allResults.filter(r=>r.shortEntryNow||r.swingEntryNow);
-  const banner=document.getElementById('alert-banner');
-  if(!entries.length){banner.style.display='none';return;}
-  const syms=entries.slice(0,5).map(r=>r.symbol.replace('.TW','').replace('.TWO','')).join(' · ');
-  document.getElementById('alert-text').textContent=
-    '🟢 '+entries.length+' 支股票已進入買入區：'+syms+(entries.length>5?' 等':'');
-  banner.style.display='block';
+// ===== TODAY HOT STOCKS =====
+async function loadHotStocks(){
+  toast('🔥 正在抓取今日熱門股票...');
+  var hotSyms=[];
+  var proxy='https://corsproxy.io/?url=';
+  try{
+    var usUrl='https://query1.finance.yahoo.com/v1/finance/trending/US?count=10&useQuotes=true';
+    var usResp=await fetch(proxy+encodeURIComponent(usUrl));
+    if(usResp.ok){
+      var usData=await usResp.json();
+      var usSyms=(usData?.finance?.result?.[0]?.quotes||[]).slice(0,7).map(function(q){return q.symbol;});
+      hotSyms=hotSyms.concat(usSyms);
+    }
+  }catch(e){console.warn('US hot failed',e);}
+  try{
+    var twUrl='https://query1.finance.yahoo.com/v1/finance/trending/TW?count=10&useQuotes=true';
+    var twResp=await fetch(proxy+encodeURIComponent(twUrl));
+    if(twResp.ok){
+      var twData=await twResp.json();
+      var twSyms=(twData?.finance?.result?.[0]?.quotes||[]).slice(0,5).map(function(q){return q.symbol;});
+      hotSyms=hotSyms.concat(twSyms);
+    }
+  }catch(e){console.warn('TW hot failed',e);}
+
+  // Fallback: curated high-volume defaults if API fails
+  if(!hotSyms.length){
+    hotSyms=['NVDA','TSLA','AAPL','AMD','AMZN','META','MSFT','2330.TW','2317.TW','0050.TW'];
+    toast('⚠️ 無法取得即時熱門，使用預設清單');
+  } else {
+    hotSyms=[...new Set(hotSyms)].slice(0,12);
+    toast('🔥 已載入 '+hotSyms.length+' 支今日熱門，點擊掃描開始分析');
+  }
+  document.getElementById('custom-syms').value=hotSyms.join(', ');
 }
 
 // ===== PROXY / FETCH =====
@@ -739,7 +678,17 @@ async function analyzeSymbol(symbol){
 
   const obj={
     symbol,isTW,price,changePct,currency,dp,
-    name:meta.shortName||meta.longName||symbol,
+    name:(function(){
+      // Yahoo Finance returns Chinese name in shortName for TW stocks
+      var sn=meta.shortName||'', ln=meta.longName||'';
+      // If shortName contains Chinese characters, use it; else try longName
+      if(isTW){
+        var hasChinese=function(s){return /[\u4e00-\u9fff]/.test(s);};
+        if(hasChinese(sn)) return sn;
+        if(hasChinese(ln)) return ln;
+      }
+      return sn||ln||symbol;
+    })(),
     rsi:rsiVal,macdHist,bbU,bbM,bbL,ma20,ma60,
     atrVal,volRatio,
     buyShort,buySwing,targetShort,targetSwing,stopLoss,rrRatio,
@@ -830,6 +779,69 @@ function drawMiniChart(r){
   ctx.fillStyle=isUp?'#059669':'#dc2626';ctx.fill();
 }
 
+// ===== SAFETY RATING =====
+function calcSafety(r) {
+  // 五個維度各自評估，累計扣分
+  var issues = 0;
+  var blockers = 0; // 嚴重問題直接降級
+
+  // 1. 風報比
+  if (r.rrRatio >= 2.5)      {} // 優秀
+  else if (r.rrRatio >= 1.5) issues += 1;
+  else if (r.rrRatio >= 1)   issues += 2;
+  else                        blockers += 1; // 風報比 <1 直接扣大分
+
+  // 2. 評分
+  if (r.score >= 60)      {} // 良好
+  else if (r.score >= 45) issues += 1;
+  else if (r.score >= 35) issues += 2;
+  else                    blockers += 1;
+
+  // 3. 警示數量
+  var dangerCount = (r.warnings||[]).filter(function(w){return w.level==='danger';}).length;
+  var warnCount   = (r.warnings||[]).filter(function(w){return w.level==='warn';}).length;
+  blockers += dangerCount;
+  issues   += warnCount;
+
+  // 4. 是否在買入區（現在進場合不合理）
+  if (!r.shortEntryNow && !r.swingEntryNow) issues += 1;
+
+  // 5. 布林位置
+  var bbPctRaw = (r.bbU && r.bbL && r.bbU !== r.bbL) ? (r.price - r.bbL) / (r.bbU - r.bbL) : 0.5;
+  if (bbPctRaw > 1.0)       blockers += 1;
+  else if (bbPctRaw > 0.85) issues   += 1;
+  else if (bbPctRaw < 0.25) issues   -= 1; // 接近下軌是加分
+
+  // 計算等級
+  var total = blockers * 2 + issues;
+  if (blockers >= 2 || total >= 5) {
+    return { level: 1, tag: '⚠️ 高風險', color: '#dc2626', bg: 'rgba(220,38,38,0.08)', border: 'rgba(220,38,38,0.2)', stars: 1, desc: '多項風險指標亮燈，不建議現在進場' };
+  } else if (blockers === 1 || total >= 3) {
+    return { level: 2, tag: '🟡 中等風險', color: '#d97706', bg: 'rgba(217,119,6,0.08)', border: 'rgba(217,119,6,0.2)', stars: 2, desc: '有一定風險，需謹慎評估後再進場' };
+  } else if (total >= 1) {
+    return { level: 3, tag: '🔵 尚可', color: '#2563eb', bg: 'rgba(37,99,235,0.07)', border: 'rgba(37,99,235,0.2)', stars: 3, desc: '結構尚可，留意小型風險後可考慮布局' };
+  } else if (total <= 0 && r.rrRatio >= 2) {
+    return { level: 5, tag: '✅ 低風險', color: '#059669', bg: 'rgba(5,150,105,0.08)', border: 'rgba(5,150,105,0.2)', stars: 5, desc: '風報比佳、無警示、評分良好，進場結構健康' };
+  } else {
+    return { level: 4, tag: '🟢 較低風險', color: '#059669', bg: 'rgba(5,150,105,0.06)', border: 'rgba(5,150,105,0.18)', stars: 4, desc: '進場條件良好，風報比和指標均屬正常' };
+  }
+}
+
+function buildSafetyBar(r) {
+  var s = calcSafety(r);
+  var stars = '';
+  for (var i = 1; i <= 5; i++) {
+    var filled = i <= s.stars;
+    stars += '<div class="safety-star" style="background:' + (filled ? s.color : 'var(--line)') + ';opacity:' + (filled ? '1' : '0.3') + '"></div>';
+  }
+  return '<div class="safety-bar" style="background:' + s.bg + ';border-bottom:1px solid ' + s.border + '">' +
+    '<span class="safety-label">安全評級</span>' +
+    '<div class="safety-stars">' + stars + '</div>' +
+    '<span class="safety-tag" style="color:' + s.color + ';background:' + s.bg + ';border:1px solid ' + s.border + '">' + s.tag + '</span>' +
+    '<span class="safety-desc">' + s.desc + '</span>' +
+  '</div>';
+}
+
 // ===== BUILD CARD =====
 function buildCard(r,idx){
   const pFmt=r.price.toFixed(r.dp);
@@ -894,6 +906,8 @@ function buildCard(r,idx){
     '</div>' +
 
     '<div class="mini-chart-wrap"><canvas id="mc-'+r.symbol.replace(/\./g,'-')+'" height="60"></canvas></div>' +
+
+    buildSafetyBar(r) +
 
     '<div class="score-section">' +
       '<div class="score-ring">' +
@@ -1094,6 +1108,8 @@ function toast(msg){const el=document.getElementById('toast');el.textContent=msg
 // ===== INIT =====
 renderPresets();
 renderFavSection();
+// Start VIX after a short delay (fetchWithTimeout needs to be defined first)
+setTimeout(fetchVIX, 500);
 </script>
 </body>
 </html>
