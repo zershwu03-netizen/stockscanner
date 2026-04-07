@@ -513,11 +513,11 @@ const PROXIES = [
   url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
 ];
 
-async function fetchWithTimeout(url, ms) {
+async function fetchWithTimeout(url, ms, options = {}) {
   const ctrl = new AbortController();
   const id = setTimeout(() => ctrl.abort(), ms);
   try {
-    const r = await fetch(url, { signal: ctrl.signal });
+    const r = await fetch(url, { signal: ctrl.signal, ...options });
     clearTimeout(id);
     return r;
   } catch(e) { clearTimeout(id); throw e; }
@@ -795,16 +795,35 @@ ATR(14)：${r.atrVal.toFixed(2)}
 
 語氣要像專業分析師，不要有免責聲明。`;
 
-  // Try models in order: flash-lite (higher free quota) → flash → flash-8b
-  const MODELS = ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash-latest'];
+  // Dynamically fetch available models from the API to avoid hardcoded names becoming stale
+  let modelsToTry = ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-2.5-flash'];
+  try {
+    const listResp = await fetchWithTimeout(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${geminiKey}&pageSize=50`, 8000
+    );
+    if (listResp.ok) {
+      const listData = await listResp.json();
+      const available = (listData.models || [])
+        .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
+        .map(m => m.name.replace('models/', ''))
+        // prefer flash/lite variants — fast and cheap
+        .filter(m => m.includes('flash') && !m.includes('image') && !m.includes('audio') && !m.includes('tts'))
+        .sort((a, b) => {
+          // lite first, then by recency (higher version number first)
+          const score = m => (m.includes('lite') ? 0 : 1) + (m.includes('2.5') ? 0 : m.includes('2.0') ? 10 : 20);
+          return score(a) - score(b);
+        });
+      if (available.length) modelsToTry = available.slice(0, 4);
+    }
+  } catch(_) { /* fall back to hardcoded list */ }
+
   let lastErr = '';
-  for (const model of MODELS) {
+  for (const model of modelsToTry) {
     try {
-      const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-      });
+      const resp = await fetchWithTimeout(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`, 20000,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }
+      );
       const data = await resp.json();
       if (data.error) {
         const msg = data.error.message || '';
@@ -820,8 +839,8 @@ ATR(14)：${r.atrVal.toFixed(2)}
         throw new Error(msg);
       }
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '無回應';
-      if (el) el.textContent = `[${model}] ${text}`;
-      return; // success
+      if (el) el.textContent = text;
+      return;
     } catch(e) {
       lastErr = e.message;
     }
