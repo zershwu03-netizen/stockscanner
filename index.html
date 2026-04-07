@@ -796,7 +796,7 @@ ATR(14)：${r.atrVal.toFixed(2)}
 語氣要像專業分析師，不要有免責聲明。`;
 
   // Try models in order: flash-lite (higher free quota) → flash → flash-8b
-  const MODELS = ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash-8b'];
+  const MODELS = ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash-latest'];
   let lastErr = '';
   for (const model of MODELS) {
     try {
@@ -808,10 +808,13 @@ ATR(14)：${r.atrVal.toFixed(2)}
       const data = await resp.json();
       if (data.error) {
         const msg = data.error.message || '';
-        // Quota exceeded → try next model
         if (msg.includes('quota') || msg.includes('RESOURCE_EXHAUSTED') || resp.status === 429) {
-          lastErr = `[${model}] 額度用盡`;
-          await sleep(1000);
+          lastErr = `[${model}] 額度用盡，明天重置或換新 Key`;
+          await sleep(500);
+          continue;
+        }
+        if (msg.includes('not found') || msg.includes('not supported')) {
+          lastErr = `[${model}] 模型不存在`;
           continue;
         }
         throw new Error(msg);
