@@ -1241,8 +1241,14 @@ async function fetchPortfolioPrice(market, idx) {
     const dp = market === 'tw' ? 1 : 2;
 
     // Sell suggestion: target price
-    pos.sellTarget = Math.max(resist, bbU || pos.price * 1.05, pos.price + atrVal).toFixed(dp);
-    pos.sellStop = (Math.min(...lows.slice(-20)) * 0.97).toFixed(dp);
+    var rawTarget = Math.max(resist, bbU || pos.price * 1.05, pos.price + atrVal);
+    // Ensure target is always above current price
+    if (rawTarget <= pos.price) rawTarget = pos.price + atrVal * 1.5;
+    pos.sellTarget = rawTarget.toFixed(dp);
+    var rawStop = Math.min(...lows.slice(-20)) * 0.97;
+    // Ensure stop is always below current price
+    if (rawStop >= pos.price) rawStop = pos.price * 0.95;
+    pos.sellStop = rawStop.toFixed(dp);
 
     // Health decision
     const bbPct = (bbU && bbL && bbU !== bbL) ? (pos.price - bbL) / (bbU - bbL) : 0.5;
@@ -1304,9 +1310,10 @@ function renderPortfolioTable(market) {
     var health = p.health || { cls: 'health-watch', label: '⏳ 待更新', tip: '' };
     var pnlStr = pnl != null ? (pnl>=0?'+':'') + cur + pnl.toFixed(dp) : '⏳';
     var pnlPctStr = pnlPct != null ? (pnlPct>=0?'+':'') + pnlPct.toFixed(2) + '%' : '';
-    var sellStr = p.sellTarget
-      ? '<span style="color:#059669;font-size:11px;font-family:monospace">▲'+cur+p.sellTarget+'</span> <span style="color:#dc2626;font-size:11px">止損'+cur+p.sellStop+'</span>'
-      : '<span style="color:var(--text3);font-size:11px">建議賣出待更新</span>';
+    var hasSell = p.sellTarget && parseFloat(p.sellTarget) > 0;
+    var sellStr = hasSell
+      ? '<span style="color:#059669;font-size:11px;font-weight:700;font-family:monospace">▲ '+cur+p.sellTarget+'</span>　<span style="color:#dc2626;font-size:11px;font-weight:600">▼ 止損 '+cur+p.sellStop+'</span>'
+      : '<span style="color:var(--text3);font-size:11px">⏳ 待更新報價</span>';
     return '<div class="pos-card ' + cardCls + '">' +
       '<div class="pos-top">' +
         '<div><div class="pos-sym">' + p.displaySym +
