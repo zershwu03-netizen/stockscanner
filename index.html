@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>StockRadar v3</title>
+<title>StockRadar v4</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 :root {
@@ -214,6 +214,53 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 .safety-star{width:14px;height:14px;border-radius:3px}
 .safety-tag{font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;white-space:nowrap}
 .safety-desc{font-size:10px;color:var(--text3);flex:1;text-align:right}
+.nav-tab-btn{padding:7px 16px;border-radius:8px;border:1px solid var(--line2);background:#fff;color:var(--text2);cursor:pointer;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;transition:all 0.2s}
+.nav-tab-btn:hover{border-color:var(--sky);color:var(--sky)}
+
+/* Portfolio page */
+.portfolio-page{display:none;padding-bottom:48px}
+.portfolio-page.active{display:block}
+.scan-page{display:block}
+.scan-page.hidden{display:none}
+
+.port-section{background:#fff;border:1px solid var(--line);border-radius:16px;margin-bottom:16px;overflow:hidden}
+.port-section-head{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+.port-section-head h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:700}
+.port-add-form{padding:14px 16px;border-bottom:1px solid var(--line);background:var(--ink2);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.port-input{padding:8px 12px;border:1px solid var(--line2);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text);background:#fff;outline:none;transition:border-color 0.2s}
+.port-input:focus{border-color:var(--sky)}
+.port-input::placeholder{color:var(--text3)}
+.port-input.sym{width:100px}
+.port-input.num{width:100px}
+.port-table{width:100%;border-collapse:collapse;font-size:13px}
+.port-table th{padding:10px 14px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;background:var(--ink2);border-bottom:1px solid var(--line)}
+.port-table td{padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+.port-table tr:last-child td{border-bottom:none}
+.port-table tr:hover td{background:var(--ink2)}
+.port-mono{font-family:'JetBrains Mono',monospace;font-size:12px}
+
+/* Health check badge */
+.health-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.health-buy{background:rgba(5,150,105,0.1);color:#065f46;border:1px solid rgba(5,150,105,0.25)}
+.health-sell{background:rgba(220,38,38,0.08);color:#991b1b;border:1px solid rgba(220,38,38,0.2)}
+.health-hold{background:rgba(37,99,235,0.08);color:#1e40af;border:1px solid rgba(37,99,235,0.2)}
+.health-watch{background:rgba(217,119,6,0.08);color:#92400e;border:1px solid rgba(217,119,6,0.2)}
+
+/* Decision banner */
+.decision-banner{padding:14px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line)}
+.decision-icon{font-size:28px;flex-shrink:0}
+.decision-text{flex:1}
+.decision-action{font-size:18px;font-weight:800;font-family:'Syne',sans-serif;margin-bottom:2px}
+.decision-reason{font-size:12px;color:var(--text2);line-height:1.5}
+
+/* Summary cards */
+.port-summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.port-sum-card{background:var(--ink2);border-radius:10px;padding:12px;border:1px solid var(--line)}
+.port-sum-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px}
+.port-sum-val{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700}
+.port-sum-sub{font-size:11px;color:var(--text3);margin-top:2px}
+
+.loading-row{text-align:center;padding:16px;color:var(--text3);font-size:12px}
 ::-webkit-scrollbar{width:6px}
 ::-webkit-scrollbar-track{background:var(--ink)}
 ::-webkit-scrollbar-thumb{background:var(--line2);border-radius:3px}
@@ -233,17 +280,17 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
       <div class="brand-mark">🔭</div>
       <div>
         <div class="brand-name">Stock<span>Radar</span></div>
-        <div class="brand-sub">AI 選股技術分析儀 v3 · 台股 + 美股</div>
+        <div class="brand-sub">AI 選股技術分析儀 v4 · 台股 + 美股</div>
       </div>
     </div>
     <div class="key-bar">
-      <label>Gemini Key</label>
-      <input class="key-input" type="password" id="gemini-key" placeholder="AIza... (免費申請)" autocomplete="off">
+      <button class="nav-tab-btn" id="nav-scan" onclick="switchNav('scan')" style="background:var(--sky);color:white;border-color:var(--sky)">🔍 選股掃描</button>
+      <button class="nav-tab-btn" id="nav-portfolio" onclick="switchNav('portfolio')">💼 我的持倉</button>
     </div>
   </div>
 </header>
 
-<div class="wrap">
+<div class="wrap scan-page" id="scan-page">
   <div class="controls section-pad">
     <div class="market-tabs">
       <button class="mkt-btn active" onclick="setMarket('all',this)">全部</button>
@@ -258,13 +305,20 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
       <div class="presets-grid" id="presets-grid"></div>
     </div>
     <div class="fav-section" id="fav-section">
-      <div class="fav-header">⭐ 收藏清單（點擊載入）</div>
+      <div class="fav-header">
+        <span>⭐ 收藏清單</span>
+        <button id="fav-batch-btn" onclick="batchAddFavs()" style="display:none;font-size:11px;padding:3px 10px;border:1px solid var(--sky);border-radius:6px;background:rgba(37,99,235,0.07);color:var(--sky);cursor:pointer;font-family:inherit">＋ 批次加入搜尋</button>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px">點擊單支載入 · 勾選多支後批次加入</div>
       <div class="fav-chips" id="fav-chips"></div>
     </div>
     <div class="custom-section">
-      <div class="custom-label">自訂代號（逗號分隔，台股加 .TW）</div>
+      <div class="custom-label">自訂代號（逗號分隔，台股直接輸入代號即可）</div>
       <div class="custom-input-row">
-        <input class="custom-input" id="custom-syms" placeholder="例如：NVDA, TSLA, 2330.TW">
+        <div style="position:relative;flex:1;max-width:500px;min-width:200px">
+          <input class="custom-input" id="custom-syms" placeholder="例如：NVDA, TSLA, 2330, 0050" style="width:100%;padding-right:32px">
+          <button id="clear-syms-btn" onclick="clearCustomInput()" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;line-height:1;padding:2px">✕</button>
+        </div>
         <button class="scan-btn" id="scan-btn" onclick="startScan()">
           <span id="scan-btn-icon">🔍</span>
           <span id="scan-btn-text">開始掃描</span>
@@ -316,7 +370,67 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
   <div id="empty-state" class="empty-state" style="padding-top:80px">
     <div class="empty-icon">📡</div>
     <div class="empty-title">選擇清單或輸入代號</div>
-    <div class="empty-sub">勾選預設清單或輸入股票代號<br>自動計算技術指標、買賣訊號、回測績效，Gemini AI 深度分析</div>
+    <div class="empty-sub">勾選預設清單或輸入股票代號<br>自動計算技術指標、買賣訊號、回測績效</div>
+  </div>
+</div>
+
+<!-- Portfolio Page -->
+<div class="wrap portfolio-page" id="portfolio-page">
+  <div style="padding:20px 0 8px">
+    <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px">💼 我的持倉</div>
+    <div style="font-size:13px;color:var(--text3)">新增持倉後自動抓取現價，顯示損益與健檢建議</div>
+  </div>
+
+  <!-- Summary -->
+  <div class="port-summary" id="port-summary" style="background:#fff;border:1px solid var(--line);border-radius:16px;margin-bottom:16px"></div>
+
+  <!-- US Stocks -->
+  <div class="port-section">
+    <div class="port-section-head">
+      <h3>🇺🇸 美股持倉</h3>
+      <button onclick="refreshPortfolio('us')" style="font-size:11px;padding:4px 10px;border:1px solid var(--line2);border-radius:6px;background:#fff;color:var(--text2);cursor:pointer;font-family:inherit">🔄 更新報價</button>
+    </div>
+    <div class="port-add-form">
+      <input class="port-input sym" id="us-sym" placeholder="代號 NVDA">
+      <input class="port-input num" id="us-cost" placeholder="成本 $176.4" type="number" step="0.01">
+      <input class="port-input num" id="us-qty" placeholder="股數 10" type="number" step="0.01">
+      <input class="port-input num" id="us-broker" placeholder="券商" style="width:80px" list="broker-list">
+      <datalist id="broker-list"><option value="國泰"><option value="元大"><option value="兆豐"></datalist>
+      <button class="scan-btn" style="padding:8px 16px;font-size:13px" onclick="addPosition('us')">＋ 新增</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="port-table">
+        <thead><tr>
+          <th>代號</th><th>名稱</th><th>券商</th><th>成本</th><th>股數</th>
+          <th>現價</th><th>損益</th><th>損益%</th><th>建議賣出</th><th>健檢</th><th></th>
+        </tr></thead>
+        <tbody id="us-port-tbody"><tr><td colspan="11" class="loading-row">尚無美股持倉，點擊「＋ 新增」加入</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TW Stocks -->
+  <div class="port-section">
+    <div class="port-section-head">
+      <h3>🇹🇼 台股持倉</h3>
+      <button onclick="refreshPortfolio('tw')" style="font-size:11px;padding:4px 10px;border:1px solid var(--line2);border-radius:6px;background:#fff;color:var(--text2);cursor:pointer;font-family:inherit">🔄 更新報價</button>
+    </div>
+    <div class="port-add-form">
+      <input class="port-input sym" id="tw-sym" placeholder="代號 2330">
+      <input class="port-input num" id="tw-cost" placeholder="成本 1000" type="number" step="0.1">
+      <input class="port-input num" id="tw-qty" placeholder="股數 1000" type="number">
+      <input class="port-input num" id="tw-broker-input" placeholder="券商" style="width:80px" list="broker-list">
+      <button class="scan-btn" style="padding:8px 16px;font-size:13px" onclick="addPosition('tw')">＋ 新增</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="port-table">
+        <thead><tr>
+          <th>代號</th><th>名稱</th><th>券商</th><th>成本</th><th>股數</th>
+          <th>現價</th><th>損益</th><th>損益%</th><th>建議賣出</th><th>健檢</th><th></th>
+        </tr></thead>
+        <tbody id="tw-port-tbody"><tr><td colspan="11" class="loading-row">尚無台股持倉，點擊「＋ 新增」加入</td></tr></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -343,12 +457,7 @@ const PRESETS={
 let currentMarket='all',allResults=[],displayedResults=[];
 let favourites=JSON.parse(localStorage.getItem('sr_favs')||'[]');
 let favOnlyMode=false;
-let geminiKey=localStorage.getItem('gemini_key_radar')||'';
 let scanHistory=JSON.parse(localStorage.getItem('sr_history')||'{}');
-document.getElementById('gemini-key').value=geminiKey;
-document.getElementById('gemini-key').addEventListener('input',e=>{
-  geminiKey=e.target.value.trim();localStorage.setItem('gemini_key_radar',geminiKey);
-});
 const CACHE_TTL=30*60*1000;
 function cacheGet(symbol){
   try{const raw=localStorage.getItem('sr_cache_'+symbol);if(!raw)return null;
@@ -366,16 +475,6 @@ function renderPresets(){
     return '<label class="preset-group"><input type="checkbox" value="'+g.id+'"><span>'+g.label+'</span></label>';
   }).join('');
 }
-function renderFavSection(){
-  var sec=document.getElementById('fav-section'),chips=document.getElementById('fav-chips');
-  if(!favourites.length){sec.classList.remove('visible');return;}
-  sec.classList.add('visible');
-  chips.innerHTML=favourites.map(function(sym){
-    return '<div class="fav-chip" onclick="loadFav(' + "'" + sym + "'" + ')">⭐ '+sym+
-      '<span onclick="event.stopPropagation();removeFav(' + "'" + sym + "'" + ')" style="color:var(--text3);font-size:10px;margin-left:2px">✕</span></div>';
-  }).join('');
-}
-function loadFav(sym){document.getElementById('custom-syms').value=sym;toast('載入 '+sym+'，點擊掃描開始分析');}
 function toggleFav(symbol){
   var idx=favourites.indexOf(symbol);
   if(idx===-1){favourites.push(symbol);toast('⭐ 已收藏 '+symbol);}
@@ -386,10 +485,20 @@ function toggleFav(symbol){
 function removeFav(sym){
   favourites=favourites.filter(f=>f!==sym);localStorage.setItem('sr_favs',JSON.stringify(favourites));renderFavSection();renderCards();
 }
+// Auto-detect TW symbols: pure digits 4-6 chars (e.g. 2330, 0050, 00878)
+function autoSymbol(s) {
+  s = s.trim().toUpperCase();
+  if (!s) return '';
+  if (s.endsWith('.TW') || s.endsWith('.TWO')) return s;
+  // Pure digits 4-6 chars = Taiwan stock
+  if (/^\d{4,6}[Bb]?$/.test(s)) return s + '.TW';
+  return s;
+}
+
 function getSelectedSymbols(){
   const checked=[...document.querySelectorAll('.preset-group input:checked')];
   const fromPresets=checked.flatMap(cb=>{const all=[...PRESETS.tw,...PRESETS.us];const found=all.find(g=>g.id===cb.value);return found?found.syms:[];});
-  const fromCustom=document.getElementById('custom-syms').value.split(/[,\s，]+/).map(s=>s.trim().toUpperCase()).filter(Boolean);
+  const fromCustom=document.getElementById('custom-syms').value.split(/[,\s，]+/).map(s=>autoSymbol(s)).filter(Boolean);
   return[...new Set([...fromPresets,...fromCustom])];
 }
 function applyFilter(){
@@ -599,17 +708,7 @@ async function analyzeSymbol(symbol){
 
   const obj={
     symbol,isTW,price,changePct,currency,dp,
-    name:(function(){
-      // Yahoo Finance returns Chinese name in shortName for TW stocks
-      var sn=meta.shortName||'', ln=meta.longName||'';
-      // If shortName contains Chinese characters, use it; else try longName
-      if(isTW){
-        var hasChinese=function(s){return /[\u4e00-\u9fff]/.test(s);};
-        if(hasChinese(sn)) return sn;
-        if(hasChinese(ln)) return ln;
-      }
-      return sn||ln||symbol;
-    })(),
+    name:meta.shortName||meta.longName||symbol,
     rsi:rsiVal,macdHist,bbU,bbM,bbL,ma20,ma60,
     atrVal,volRatio,
     buyShort,buySwing,targetShort,targetSwing,stopLoss,rrRatio,
@@ -623,26 +722,36 @@ async function analyzeSymbol(symbol){
   return obj;
 }
 
-// ===== BACKTEST =====
-function runBacktest(closes,rsiArr){
-  const trades=[];let position=null;
-  for(let i=1;i<closes.length;i++){
-    const rsi=rsiArr[i];if(rsi==null) continue;
-    if(!position&&rsi<35) position={buyPrice:closes[i]};
-    else if(position&&rsi>65){
-      const ret=(closes[i]-position.buyPrice)/position.buyPrice;
-      trades.push({buy:position.buyPrice,sell:closes[i],ret,win:ret>0});
-      position=null;
+// ===== BACKTEST (upgraded: RSI + MACD + MA60) =====
+function runBacktest(closes, rsiArr) {
+  const trades = []; let position = null;
+  const macdData = calcMACD(closes);
+  const ma60Arr = closes.map((_, i) => i >= 59 ? avg(closes.slice(i-59, i+1)) : null);
+
+  for (let i = 1; i < closes.length; i++) {
+    const rsi = rsiArr[i]; if (rsi == null) continue;
+    const macdHist = macdData.macd[i] - macdData.signal[i];
+    const ma60 = ma60Arr[i];
+    // Buy: RSI<40 + MACD turning positive + price above MA60 (trend filter)
+    const buySignal = rsi < 40 && macdHist > 0 && (!ma60 || closes[i] > ma60 * 0.97);
+    // Sell: RSI>60 + MACD turning negative
+    const sellSignal = rsi > 60 && macdHist < 0;
+
+    if (!position && buySignal) position = { buyPrice: closes[i] };
+    else if (position && sellSignal) {
+      const ret = (closes[i] - position.buyPrice) / position.buyPrice;
+      trades.push({ buy: position.buyPrice, sell: closes[i], ret, win: ret > 0 });
+      position = null;
     }
   }
-  if(position){
-    const ret=(closes.at(-1)-position.buyPrice)/position.buyPrice;
-    trades.push({buy:position.buyPrice,sell:closes.at(-1),ret,win:ret>0,open:true});
+  if (position) {
+    const ret = (closes.at(-1) - position.buyPrice) / position.buyPrice;
+    trades.push({ buy: position.buyPrice, sell: closes.at(-1), ret, win: ret > 0, open: true });
   }
-  if(!trades.length) return{trades:[],winRate:0,totalReturn:0,avgReturn:0,count:0};
-  const winRate=trades.filter(t=>t.win).length/trades.length;
-  const totalReturn=trades.reduce((s,t)=>s+t.ret,0);
-  return{trades,winRate,totalReturn,avgReturn:totalReturn/trades.length,count:trades.length};
+  if (!trades.length) return { trades: [], winRate: 0, totalReturn: 0, avgReturn: 0, count: 0 };
+  const winRate = trades.filter(t => t.win).length / trades.length;
+  const totalReturn = trades.reduce((s, t) => s + t.ret, 0);
+  return { trades, winRate, totalReturn, avgReturn: totalReturn / trades.length, count: trades.length };
 }
 
 // ===== RENDER =====
@@ -855,16 +964,11 @@ function buildCard(r,idx){
     buildSignals(r,rrClass,rrText) +
 
     '<div class="backtest-section">' +
-      '<div class="backtest-title"><span>🧪 回測（RSI&lt;35買/RSI&gt;65賣，6個月）</span>'+(bt.count>0?'<button class="backtest-toggle" onclick="toggleBtDetail(\''+r.symbol.replace(/\./g,'-')+'\',this)">展開明細</button>':'')+'</div>'+
+      '<div class="backtest-title"><span>🧪 回測（RSI+MACD+MA60 多指標，6個月）</span>'+(bt.count>0?'<button class="backtest-toggle" onclick="toggleBtDetail(\''+r.symbol.replace(/\./g,'-')+'\',this)">展開明細</button>':'')+'</div>'+
       btBlock+
     '</div>' +
 
-    '<div class="ai-section">' +
-      '<div class="ai-section-head"><span class="ai-badge">GEMINI AI</span><span style="font-size:11px;color:var(--text3)">深度分析</span></div>' +
-      '<div class="ai-text" id="ai-'+r.symbol.replace(/\./g,'-')+'">' +
-        '<div class="ai-loading"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><span>等待 AI 分析...</span></div>' +
-      '</div>' +
-    '</div>' +
+    buildDecisionBanner(r) +
 
   '</div>';
 }
@@ -926,67 +1030,8 @@ function sortCards(by,btn){
   s(allResults);s(displayedResults);renderCards();
 }
 
-// ===== AI =====
-async function loadAllAI(){
-  if(!geminiKey){
-    allResults.forEach(r=>{
-      const el=document.getElementById('ai-'+r.symbol.replace(/\./g,'-'));
-      if(el) el.innerHTML='<span style="color:var(--text3);font-size:11px">請在右上角輸入 Gemini API Key</span>';
-    });return;
-  }
-  for(const r of allResults){await loadAIForStock(r);await sleep(600);}
-}
-function md2html(text){
-  return text
-    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
-    .replace(/^## (.+)$/gm,'<h3>$1</h3>')
-    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g,'<em>$1</em>')
-    .replace(/^[\-\*] (.+)$/gm,'<li>$1</li>')
-    .replace(/(<li>.*<\/li>\n?)+/g,s=>'<ul>'+s+'</ul>')
-    .replace(/\n{2,}/g,'</p><p>')
-    .trim().replace(/^/,'<p>').replace(/$/,'</p>')
-    .replace(/<p><\/p>/g,'').replace(/<p>(<[hul])/g,'$1').replace(/(<\/[hul][^>]*>)<\/p>/g,'$1');
-}
-async function loadAIForStock(r){
-  const elId='ai-'+r.symbol.replace(/\./g,'-');
-  const el=document.getElementById(elId);
-  if(!el) return;
-  const prompt='你是專業股票技術分析師。分析以下股票，給出具體操作建議：\n\n股票：'+r.name+'（'+r.symbol+'）\n現價：'+r.price.toFixed(r.dp)+' '+r.currency+'\n今日漲跌：'+(r.changePct*100).toFixed(2)+'%\nRSI(14)：'+r.rsi.toFixed(1)+'\nMACD 柱狀：'+r.macdHist.toFixed(4)+'（'+(r.macdHist>0?'多頭':'空頭')+'）\n布林帶：上軌'+(r.bbU?.toFixed(r.dp))+' / 中軌'+(r.bbM?.toFixed(r.dp))+' / 下軌'+(r.bbL?.toFixed(r.dp))+'\nMA20：'+(r.ma20?.toFixed(r.dp))+' / MA60：'+(r.ma60?.toFixed(r.dp)||'不足')+'\nATR(14)：'+r.atrVal.toFixed(r.dp)+'，量比：'+r.volRatio.toFixed(2)+'x\n綜合評分：'+r.score+'/100\n短線買入：'+r.buyShortLow.toFixed(r.dp)+' ~ '+r.buyShortHigh.toFixed(r.dp)+'，目標：'+r.targetShort.toFixed(r.dp)+'\n波段買入：'+r.buySwingLow.toFixed(r.dp)+' ~ '+r.buySwingHigh.toFixed(r.dp)+'，目標：'+r.targetSwing.toFixed(r.dp)+'\n停損：'+r.stopLoss.toFixed(r.dp)+'，風報比：'+r.rrRatio.toFixed(2)+'x\n回測（RSI策略）：'+r.bt.count+'次，勝率'+(r.bt.winRate*100).toFixed(0)+'%，總報酬'+(r.bt.totalReturn*100).toFixed(1)+'%\n\n請用繁體中文，Markdown 格式（粗體、條列），5~8句話分析：\n1. **技術面現況**：多空偏向\n2. **操作建議**：買入時機、目標、停損\n3. **風險提示**：1~2 個關鍵風險\n\n語氣專業直接，不要免責聲明。';
-
-  let modelsToTry=['gemini-2.0-flash-lite','gemini-2.0-flash','gemini-2.5-flash'];
-  try{
-    const listResp=await fetchWithTimeout('https://generativelanguage.googleapis.com/v1beta/models?key='+geminiKey+'&pageSize=50',8000);
-    if(listResp.ok){
-      const listData=await listResp.json();
-      const available=(listData.models||[])
-        .filter(m=>(m.supportedGenerationMethods||[]).includes('generateContent'))
-        .map(m=>m.name.replace('models/',''))
-        .filter(m=>m.includes('flash')&&!m.includes('image')&&!m.includes('audio')&&!m.includes('tts'))
-        .sort((a,b)=>{const sc=m=>(m.includes('lite')?0:1)+(m.includes('2.5')?0:m.includes('2.0')?10:20);return sc(a)-sc(b);});
-      if(available.length) modelsToTry=available.slice(0,4);
-    }
-  }catch(_){}
-
-  let lastErr='';
-  for(const model of modelsToTry){
-    try{
-      const resp=await fetchWithTimeout('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+geminiKey,25000,
-        {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
-      const data=await resp.json();
-      if(data.error){
-        const msg=data.error.message||'';
-        if(msg.includes('quota')||msg.includes('RESOURCE_EXHAUSTED')||resp.status===429){lastErr='['+model+'] 額度用盡';await sleep(500);continue;}
-        if(msg.includes('not found')||msg.includes('not supported')){lastErr='['+model+'] 模型不存在';continue;}
-        throw new Error(msg);
-      }
-      const text=data.candidates?.[0]?.content?.parts?.[0]?.text||'無回應';
-      if(el) el.innerHTML=md2html(text);
-      return;
-    }catch(e){lastErr=e.message;}
-  }
-  if(el) el.innerHTML='<span style="color:var(--ember);font-size:11px">AI 分析失敗：'+lastErr+'</span>';
-}
+// AI removed - using pure technical decision banner instead
+function loadAllAI() { /* no-op */ }
 
 // ===== INDICATORS =====
 function avg(arr){return arr.length?arr.reduce((s,v)=>s+v,0)/arr.length:0;}
@@ -1029,6 +1074,259 @@ function toast(msg){const el=document.getElementById('toast');el.textContent=msg
 // ===== INIT =====
 renderPresets();
 renderFavSection();
+// Setup custom input X button
+document.getElementById('custom-syms').addEventListener('input', function() {
+  document.getElementById('clear-syms-btn').style.display = this.value ? 'block' : 'none';
+});
+function clearCustomInput() {
+  document.getElementById('custom-syms').value = '';
+  document.getElementById('clear-syms-btn').style.display = 'none';
+}
+
+// ===== NAV =====
+function switchNav(page) {
+  const scanPage = document.querySelector('.scan-page');
+  const portPage = document.getElementById('portfolio-page');
+  document.getElementById('nav-scan').style.background = page==='scan' ? 'var(--sky)' : '#fff';
+  document.getElementById('nav-scan').style.color = page==='scan' ? 'white' : 'var(--text2)';
+  document.getElementById('nav-scan').style.borderColor = page==='scan' ? 'var(--sky)' : 'var(--line2)';
+  document.getElementById('nav-portfolio').style.background = page==='portfolio' ? 'var(--sky)' : '#fff';
+  document.getElementById('nav-portfolio').style.color = page==='portfolio' ? 'white' : 'var(--text2)';
+  document.getElementById('nav-portfolio').style.borderColor = page==='portfolio' ? 'var(--sky)' : 'var(--line2)';
+  if (page === 'scan') { scanPage.classList.remove('hidden'); portPage.classList.remove('active'); }
+  else { scanPage.classList.add('hidden'); portPage.classList.add('active'); renderPortfolio(); }
+}
+
+// ===== DECISION BANNER =====
+function buildDecisionBanner(r) {
+  const d = calcDecision(r);
+  return '<div class="decision-banner" style="background:' + d.bg + ';border-top:2px solid ' + d.color + '">' +
+    '<div class="decision-icon">' + d.icon + '</div>' +
+    '<div class="decision-text">' +
+      '<div class="decision-action" style="color:' + d.color + '">' + d.action + '</div>' +
+      '<div class="decision-reason">' + d.reason + '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function calcDecision(r) {
+  const bbPct = (r.bbU && r.bbL && r.bbU !== r.bbL) ? (r.price - r.bbL) / (r.bbU - r.bbL) : 0.5;
+  const dangerCount = (r.warnings||[]).filter(w => w.level==='danger').length;
+
+  // SELL signals
+  if (r.rsi > 70 && r.macdHist < 0 && bbPct > 0.8)
+    return { action:'🔴 建議賣出', icon:'🔴', color:'#dc2626', bg:'rgba(220,38,38,0.05)',
+      reason:'RSI 超買（'+r.rsi.toFixed(0)+'）+ MACD 轉空 + 接近布林上軌，短線回調風險高，建議考慮獲利了結或減倉。' };
+  if (r.score < 38 || dangerCount >= 2)
+    return { action:'🔴 建議觀望或賣出', icon:'🔴', color:'#dc2626', bg:'rgba(220,38,38,0.05)',
+      reason:'綜合評分偏低（'+r.score+'分），多項風險警示亮燈，不建議現在進場或持有。' };
+
+  // BUY signals
+  if (r.rsi < 35 && r.macdHist > 0 && r.score >= 60)
+    return { action:'🟢 強烈建議買入', icon:'🟢', color:'#059669', bg:'rgba(5,150,105,0.05)',
+      reason:'RSI 超賣（'+r.rsi.toFixed(0)+'）+ MACD 轉多 + 綜合評分 '+r.score+' 分，技術面出現明確反彈訊號，短線進場機會良好。' };
+  if (r.score >= 65 && r.rrRatio >= 2 && dangerCount === 0)
+    return { action:'🟢 建議買入', icon:'🟢', color:'#059669', bg:'rgba(5,150,105,0.05)',
+      reason:'評分 '+r.score+' 分、風報比 '+r.rrRatio.toFixed(1)+'x，技術結構健康，可考慮分批進場布局。' };
+  if (r.score >= 55 && r.shortEntryNow && dangerCount === 0)
+    return { action:'🟢 可考慮買入', icon:'🟡', color:'#2563eb', bg:'rgba(37,99,235,0.04)',
+      reason:'現價在短線買入區內，評分 '+r.score+' 分，技術面尚可，可小倉試單，注意停損 '+r.stopLoss.toFixed(r.dp)+'。' };
+
+  // HOLD / WAIT
+  if (r.rsi > 55 && bbPct > 0.6 && !r.shortEntryNow)
+    return { action:'🟡 等待回調', icon:'🟡', color:'#d97706', bg:'rgba(217,119,6,0.04)',
+      reason:'現價高於建議買入區，RSI '+r.rsi.toFixed(0)+'，建議等待回調至 '+r.buyShortLow.toFixed(r.dp)+' ~ '+r.buyShortHigh.toFixed(r.dp)+' 再進場。' };
+
+  return { action:'🟡 觀望', icon:'🟡', color:'#d97706', bg:'rgba(217,119,6,0.04)',
+    reason:'目前訊號不夠明確（評分 '+r.score+' 分，RSI '+r.rsi.toFixed(0)+'），建議持續觀察，等待更清晰的進出場訊號。' };
+}
+
+// ===== BATCH FAV =====
+let selectedFavs = new Set();
+function renderFavSection() {
+  const sec = document.getElementById('fav-section'), chips = document.getElementById('fav-chips');
+  if (!favourites.length) { sec.classList.remove('visible'); return; }
+  sec.classList.add('visible');
+  chips.innerHTML = favourites.map(sym => {
+    const sel = selectedFavs.has(sym);
+    return '<div class="fav-chip" style="'+(sel?'border-color:var(--sky);background:rgba(37,99,235,0.08);color:var(--sky)':'')+'" onclick="toggleFavSelect(\''+sym+'\')">' +
+      (sel?'✅':'⭐') + ' ' + sym +
+      '<span onclick="event.stopPropagation();removeFav(\''+sym+'\')" style="color:var(--text3);font-size:10px;margin-left:4px">✕</span>' +
+    '</div>';
+  }).join('');
+  document.getElementById('fav-batch-btn').style.display = selectedFavs.size > 0 ? 'block' : 'none';
+}
+function toggleFavSelect(sym) {
+  if (selectedFavs.has(sym)) selectedFavs.delete(sym); else selectedFavs.add(sym);
+  renderFavSection();
+}
+function batchAddFavs() {
+  const current = document.getElementById('custom-syms').value.trim();
+  const existing = current ? current.split(/[,\s，]+/).map(s=>s.trim()).filter(Boolean) : [];
+  const merged = [...new Set([...existing, ...selectedFavs])];
+  document.getElementById('custom-syms').value = merged.join(', ');
+  document.getElementById('clear-syms-btn').style.display = 'block';
+  selectedFavs.clear();
+  renderFavSection();
+  toast('✅ 已批次加入 ' + merged.length + ' 支，點擊掃描開始分析');
+}
+
+// ===== PORTFOLIO =====
+let portfolio = JSON.parse(localStorage.getItem('sr_portfolio') || '{"us":[],"tw":[]}');
+
+function savePortfolio() { localStorage.setItem('sr_portfolio', JSON.stringify(portfolio)); }
+
+function addPosition(market) {
+  const symEl = document.getElementById(market+'-sym');
+  const costEl = document.getElementById(market+'-cost');
+  const qtyEl = document.getElementById(market+'-qty');
+  const brokerEl = document.getElementById(market==='us' ? 'us-broker' : 'tw-broker-input');
+  const sym = symEl.value.trim().toUpperCase();
+  const cost = parseFloat(costEl.value);
+  const qty = parseFloat(qtyEl.value);
+  const broker = brokerEl.value.trim();
+  if (!sym || !cost || !qty) { toast('⚠️ 請填入代號、成本和股數'); return; }
+  const fullSym = market === 'tw' ? autoSymbol(sym) : sym;
+  const displaySym = fullSym.replace('.TW','').replace('.TWO','');
+  portfolio[market].push({ sym: fullSym, displaySym, cost, qty, broker, name: '', price: null, lastUpdate: null });
+  savePortfolio();
+  symEl.value = ''; costEl.value = ''; qtyEl.value = '';
+  renderPortfolio();
+  toast('✅ 已新增 ' + sym + '，正在抓取現價...');
+  fetchPortfolioPrice(market, portfolio[market].length - 1);
+}
+
+function removePosition(market, idx) {
+  portfolio[market].splice(idx, 1);
+  savePortfolio();
+  renderPortfolio();
+}
+
+async function fetchPortfolioPrice(market, idx) {
+  const pos = portfolio[market][idx];
+  if (!pos) return;
+  try {
+    const data = await fetchYahoo(pos.sym, '6mo', '1d');
+    const result = data?.chart?.result?.[0];
+    if (!result) return;
+    const meta = result.meta;
+    const closes = result.indicators.quote[0].close.filter(v => v != null);
+    const highs = result.indicators.quote[0].high?.filter(v => v != null) || closes;
+    const lows = result.indicators.quote[0].low?.filter(v => v != null) || closes;
+    pos.price = meta.regularMarketPrice || closes.at(-1);
+    pos.name = meta.shortName || meta.longName || pos.sym;
+    pos.lastUpdate = new Date().toLocaleTimeString('zh-TW');
+
+    // Calculate health indicators for sell suggestion and health check
+    const rsiArr = calcRSI(closes, 14);
+    const rsi = rsiArr.at(-1) || 50;
+    const macdData = calcMACD(closes);
+    const macdHist = macdData.macd.at(-1) - macdData.signal.at(-1);
+    const bb = calcBB(closes, 20, 2);
+    const bbU = bb.upper.at(-1), bbL = bb.lower.at(-1), bbM = bb.mid.at(-1);
+    const ma20 = calcMA(closes, 20);
+    const ma60 = calcMA(closes, 60);
+    const atr = calcATR(highs, lows, closes, 14);
+    const atrVal = atr.at(-1) || pos.price * 0.02;
+    const recentHighs = highs.slice(-20);
+    const resist = Math.max(...recentHighs);
+    const dp = market === 'tw' ? 1 : 2;
+
+    // Sell suggestion: target price
+    pos.sellTarget = Math.max(resist, bbU || pos.price * 1.05, pos.price + atrVal).toFixed(dp);
+    pos.sellStop = (Math.min(...lows.slice(-20)) * 0.97).toFixed(dp);
+
+    // Health decision
+    const bbPct = (bbU && bbL && bbU !== bbL) ? (pos.price - bbL) / (bbU - bbL) : 0.5;
+    let score = 50;
+    if (rsi < 30) score += 18; else if (rsi < 40) score += 12; else if (rsi < 50) score += 6;
+    else if (rsi > 75) score -= 15; else if (rsi > 65) score -= 8;
+    if (macdHist > 0) score += 10; else score -= 5;
+    if (pos.price > ma20) score += 6; else score -= 8;
+    if (ma60 && pos.price > ma60) score += 6; else if (ma60) score -= 5;
+    if (bbPct < 0.1) score += 12; else if (bbPct > 0.85) score -= 12;
+    score = Math.max(0, Math.min(100, Math.round(score)));
+
+    let health;
+    if (rsi > 70 && macdHist < 0) health = { cls: 'health-sell', label: '🔴 建議賣出', tip: 'RSI超買+MACD轉空' };
+    else if (score < 38) health = { cls: 'health-sell', label: '🔴 考慮減倉', tip: '技術面偏弱' };
+    else if (score >= 65 && rsi < 50) health = { cls: 'health-buy', label: '🟢 持有加碼', tip: '技術面良好' };
+    else if (score >= 50) health = { cls: 'health-hold', label: '🔵 繼續持有', tip: '結構尚可' };
+    else health = { cls: 'health-watch', label: '🟡 注意觀察', tip: '訊號混合' };
+    pos.health = health;
+
+    savePortfolio();
+    renderPortfolio();
+  } catch(e) { console.warn('Portfolio price fetch failed:', pos.sym, e.message); }
+}
+
+async function refreshPortfolio(market) {
+  toast('🔄 更新 ' + (market==='us'?'美股':'台股') + ' 報價中...');
+  for (let i = 0; i < portfolio[market].length; i++) {
+    await fetchPortfolioPrice(market, i);
+    await sleep(400);
+  }
+  toast('✅ 報價已更新');
+}
+
+function renderPortfolio() {
+  renderPortfolioTable('us');
+  renderPortfolioTable('tw');
+  renderPortfolioSummary();
+}
+
+function renderPortfolioTable(market) {
+  const tbody = document.getElementById(market + '-port-tbody');
+  const positions = portfolio[market];
+  if (!positions.length) {
+    tbody.innerHTML = '<tr><td colspan="11" class="loading-row">尚無' + (market==='us'?'美股':'台股') + '持倉，點擊「＋ 新增」加入</td></tr>';
+    return;
+  }
+  const dp = market === 'tw' ? 1 : 2;
+  tbody.innerHTML = positions.map((p, i) => {
+    const hasPrice = p.price != null;
+    const invested = p.cost * p.qty;
+    const value = hasPrice ? p.price * p.qty : null;
+    const pnl = hasPrice ? value - invested : null;
+    const pnlPct = hasPrice ? (pnl / invested) : null;
+    const pnlColor = pnl > 0 ? '#059669' : pnl < 0 ? '#dc2626' : 'var(--text)';
+    const health = p.health || { cls: 'health-watch', label: '⏳ 待更新', tip: '' };
+    return '<tr>' +
+      '<td class="port-mono" style="font-weight:700">' + p.displaySym + '</td>' +
+      '<td style="font-size:12px;color:var(--text2)">' + (p.name||'-') + '</td>' +
+      '<td style="font-size:12px">' + (p.broker||'-') + '</td>' +
+      '<td class="port-mono">' + (market==='us'?'$':'') + p.cost.toFixed(dp) + '</td>' +
+      '<td class="port-mono">' + p.qty + '</td>' +
+      '<td class="port-mono">' + (hasPrice ? (market==='us'?'$':'') + p.price.toFixed(dp) : '⏳') + '</td>' +
+      '<td class="port-mono" style="color:' + pnlColor + '">' + (pnl!=null ? (pnl>=0?'+':'') + (market==='us'?'$':'') + pnl.toFixed(dp) : '-') + '</td>' +
+      '<td class="port-mono" style="color:' + pnlColor + ';font-weight:700">' + (pnlPct!=null ? (pnlPct>=0?'+':'') + (pnlPct*100).toFixed(2)+'%' : '-') + '</td>' +
+      '<td style="font-size:12px">' + (p.sellTarget ? '<span style="color:#059669;font-family:\'JetBrains Mono\',monospace">▲ '+(market==='us'?'$':'')+p.sellTarget+'</span><br><span style="color:#dc2626;font-size:11px">止損 '+(market==='us'?'$':'')+p.sellStop+'</span>' : '-') + '</td>' +
+      '<td><span class="health-badge ' + health.cls + '" title="' + health.tip + '">' + health.label + '</span></td>' +
+      '<td><button onclick="removePosition(\''+market+'\','+i+')" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px">🗑</button></td>' +
+    '</tr>';
+  }).join('');
+}
+
+function renderPortfolioSummary() {
+  const usPos = portfolio.us.filter(p => p.price != null);
+  const twPos = portfolio.tw.filter(p => p.price != null);
+  const usInvested = portfolio.us.reduce((s, p) => s + p.cost * p.qty, 0);
+  const usValue = usPos.reduce((s, p) => s + p.price * p.qty, 0);
+  const twInvested = portfolio.tw.reduce((s, p) => s + p.cost * p.qty, 0);
+  const twValue = twPos.reduce((s, p) => s + p.price * p.qty, 0);
+  const usdTwd = 32;
+  const totalInvTWD = twInvested + usInvested * usdTwd;
+  const totalValTWD = twValue + usValue * usdTwd;
+  const totalPnl = totalValTWD - totalInvTWD;
+  const pnlColor = totalPnl >= 0 ? '#059669' : '#dc2626';
+
+  document.getElementById('port-summary').innerHTML =
+    '<div class="port-sum-card"><div class="port-sum-label">總市值(TWD)</div><div class="port-sum-val">' + (totalValTWD/10000).toFixed(1) + '<span style="font-size:13px">萬</span></div><div class="port-sum-sub">投入 ' + (totalInvTWD/10000).toFixed(1) + ' 萬</div></div>' +
+    '<div class="port-sum-card"><div class="port-sum-label">總損益(TWD)</div><div class="port-sum-val" style="color:' + pnlColor + '">' + (totalPnl>=0?'+':'') + (totalPnl/10000).toFixed(1) + '<span style="font-size:13px">萬</span></div><div class="port-sum-sub">' + (totalInvTWD?(totalPnl/totalInvTWD*100).toFixed(2):'0') + '%</div></div>' +
+    '<div class="port-sum-card"><div class="port-sum-label">美股市值</div><div class="port-sum-val">$' + usValue.toFixed(0) + '</div><div class="port-sum-sub">' + portfolio.us.length + ' 支</div></div>' +
+    '<div class="port-sum-card"><div class="port-sum-label">台股市值</div><div class="port-sum-val">' + (twValue/10000).toFixed(1) + '<span style="font-size:13px">萬</span></div><div class="port-sum-sub">' + portfolio.tw.length + ' 支</div></div>';
+}
+
 
 </script>
 </body>
