@@ -295,6 +295,7 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 .opt-row.top2{background:rgba(37,99,235,0.05);border:1px solid rgba(37,99,235,0.15)}
 
 </style>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -402,9 +403,20 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 
 <!-- Portfolio Page -->
 <div class="wrap portfolio-page" id="portfolio-page">
-  <div style="padding:20px 0 8px">
-    <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px">💼 我的持倉</div>
-    <div style="font-size:13px;color:var(--text3)">新增持倉後自動抓取現價，顯示損益與健檢建議</div>
+  <div style="padding:20px 0 8px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+    <div>
+      <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px">💼 我的持倉</div>
+      <div style="font-size:13px;color:var(--text3)">新增持倉後自動抓取現價，顯示損益與健檢建議</div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:4px">
+      <button onclick="exportPortfolio()" style="font-size:12px;padding:7px 14px;border:1px solid var(--sky);border-radius:8px;background:rgba(37,99,235,0.06);color:var(--sky);cursor:pointer;font-weight:600;font-family:inherit">📤 備份</button>
+      <label style="font-size:12px;padding:7px 14px;border:1px solid var(--mint);border-radius:8px;background:rgba(5,150,105,0.06);color:var(--mint);cursor:pointer;font-weight:600;font-family:inherit">
+        📥 還原<input type="file" accept=".json" onchange="importPortfolio(event)" style="display:none">
+      </label>
+      <label style="font-size:12px;padding:7px 14px;border:1px solid var(--gold);border-radius:8px;background:rgba(217,119,6,0.06);color:var(--gold);cursor:pointer;font-weight:600;font-family:inherit">
+        📊 匯入Excel<input type="file" accept=".xlsx,.xls,.csv" onchange="importExcel(event)" style="display:none">
+      </label>
+    </div>
   </div>
 
   <!-- Summary -->
@@ -1970,6 +1982,170 @@ async function runOptimize() {
   document.getElementById('bt-progress').style.display = 'none';
   optBtn.disabled = false;
   document.getElementById('opt-btn-txt').textContent = '🎯 一鍵最佳化';
+}
+
+// ===== PORTFOLIO BACKUP / RESTORE =====
+function exportPortfolio() {
+  var data = {
+    version: 1,
+    exported: new Date().toISOString(),
+    portfolio: portfolio
+  };
+  var json = JSON.stringify(data, null, 2);
+  var blob = new Blob([json], {type: 'application/json'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'stockradar-portfolio-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✅ 持倉資料已備份下載');
+}
+
+function importPortfolio(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var data = JSON.parse(e.target.result);
+      // Support both raw portfolio and wrapped format
+      var imported = data.portfolio || data;
+      if (!imported.us || !imported.tw) throw new Error('格式不正確');
+      var usCount = imported.us.length, twCount = imported.tw.length;
+      portfolio = imported;
+      savePortfolio();
+      renderPortfolio();
+      toast('✅ 已還原 美股' + usCount + '筆 + 台股' + twCount + '筆持倉');
+      // Refresh prices
+      setTimeout(function() {
+        refreshPortfolio('us');
+        setTimeout(function() { refreshPortfolio('tw'); }, 500);
+      }, 300);
+    } catch(err) {
+      toast('❌ 還原失敗：' + err.message);
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ===== EXCEL IMPORT =====
+async function importExcel(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  event.target.value = '';
+  toast('📊 正在解析 Excel...');
+
+  try {
+    var buf = await file.arrayBuffer();
+    var wb = XLSX.read(buf, { type: 'array' });
+    var ws = wb.Sheets[wb.SheetNames[0]];
+    // Get raw array to handle multi-header files
+    var raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    if (!raw.length) { toast('❌ 試算表是空的'); return; }
+
+    // Collect all valid data rows — handle multiple header sections
+    // (e.g. your file has TW block then US block with its own header)
+    var COL_SYNONYMS = {
+      sym:    ['代號','股票代號','symbol','ticker','code'],
+      cost:   ['平均成本','成本','cost','均價','買入價','purchase price'],
+      qty:    ['持股數量','股數','數量','張數','qty','quantity','shares'],
+      broker: ['券商','broker','帳戶','account'],
+      name:   ['名稱','股票名稱','name'],
+      mkt:    ['市場','market','類別'],
+    };
+
+    function findIdx(headers, candidates) {
+      for (var c of candidates) {
+        var idx = headers.findIndex(function(h){
+          return String(h).replace(/\s/g,'').toLowerCase().includes(c.toLowerCase());
+        });
+        if (idx >= 0) return idx;
+      }
+      return -1;
+    }
+
+    var imported = { tw: 0, us: 0, skip: 0 };
+    var currentMap = null; // current column index mapping
+
+    raw.forEach(function(row) {
+      // Check if this row looks like a header row
+      var nonEmpty = row.filter(function(c){ return String(c).trim() !== ''; });
+      if (!nonEmpty.length) { currentMap = null; return; } // blank row resets context
+
+      var symIdx = findIdx(row, COL_SYNONYMS.sym);
+      if (symIdx >= 0) {
+        // This is a header row — build new column map
+        currentMap = {
+          sym:    symIdx,
+          cost:   findIdx(row, COL_SYNONYMS.cost),
+          qty:    findIdx(row, COL_SYNONYMS.qty),
+          broker: findIdx(row, COL_SYNONYMS.broker),
+          name:   findIdx(row, COL_SYNONYMS.name),
+          mkt:    findIdx(row, COL_SYNONYMS.mkt),
+        };
+        return; // skip header row itself
+      }
+
+      if (!currentMap || currentMap.sym < 0 || currentMap.cost < 0 || currentMap.qty < 0) return;
+
+      var sym    = String(row[currentMap.sym]    || '').trim().toUpperCase().replace(/\s/g,'');
+      var cost   = parseFloat(row[currentMap.cost]   || 0);
+      var qty    = parseFloat(row[currentMap.qty]    || 0);
+      var broker = currentMap.broker >= 0 ? String(row[currentMap.broker] || '').trim() : '';
+      var name   = currentMap.name   >= 0 ? String(row[currentMap.name]   || '').trim() : '';
+      var mktHint= currentMap.mkt    >= 0 ? String(row[currentMap.mkt]    || '').toLowerCase() : '';
+
+      if (!sym || isNaN(cost) || cost <= 0 || isNaN(qty) || qty <= 0) { imported.skip++; return; }
+
+      // Market detection
+      var isTW = mktHint.includes('tw') || mktHint.includes('台') ? true
+               : mktHint.includes('us') || mktHint.includes('美') ? false
+               : /^\d{4,6}[A-Ba-b]?$/.test(sym);
+
+      var market = isTW ? 'tw' : 'us';
+      var fullSym = isTW ? sym + '.TW' : sym;
+
+      // Merge same symbol+broker
+      var existing = portfolio[market].find(function(p){ return p.sym===fullSym && p.broker===broker; });
+      if (existing) {
+        var totalQty = existing.qty + qty;
+        existing.cost = parseFloat(((existing.cost * existing.qty + cost * qty) / totalQty).toFixed(4));
+        existing.qty  = totalQty;
+        if (name && !existing.name) existing.name = name;
+      } else {
+        portfolio[market].push({
+          sym: fullSym, displaySym: sym,
+          cost: cost, qty: qty, broker: broker,
+          name: name, price: null, lastUpdate: null
+        });
+      }
+      isTW ? imported.tw++ : imported.us++;
+    });
+
+    if (imported.tw + imported.us === 0) {
+      toast('⚠️ 沒有成功匯入任何資料，請確認欄位名稱（需有：代號/股票代號、平均成本、持股數量）');
+      return;
+    }
+
+    savePortfolio();
+    renderPortfolio();
+    toast('✅ 台股 ' + imported.tw + ' 筆、美股 ' + imported.us + ' 筆匯入完成！' + (imported.skip ? ' 跳過 '+imported.skip+' 筆無效行' : ''));
+
+    // Auto-fetch prices
+    await sleep(400);
+    for (var i = 0; i < portfolio.tw.length; i++) {
+      if (!portfolio.tw[i].price) { await fetchPortfolioPrice('tw', i); await sleep(350); }
+    }
+    for (var i = 0; i < portfolio.us.length; i++) {
+      if (!portfolio.us[i].price) { await fetchPortfolioPrice('us', i); await sleep(350); }
+    }
+
+  } catch(e) {
+    console.error(e);
+    toast('❌ 解析失敗：' + e.message);
+  }
 }
 
 </script>
