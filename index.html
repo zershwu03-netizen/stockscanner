@@ -1219,7 +1219,7 @@ function calcRSI(closes,period=14){
   return rsi;
 }
 function calcEMA(arr,period){const k=2/(period+1),result=[arr[0]];for(let i=1;i<arr.length;i++) result.push(arr[i]*k+result[i-1]*(1-k));return result;}
-function calcMACD(closes){const fast=calcEMA(closes,12),slow=calcEMA(closes,26),macd=fast.map((v,i)=>v-slow[i]);return{macd,signal:calcEMA(macd,9)};}
+function calcMACD(closes){const fast=calcEMA(closes,12),slow=calcEMA(closes,26),macd=fast.map((v,i)=>v-slow[i]),signal=calcEMA(macd,9),hist=macd.map((v,i)=>v-signal[i]);return{macd,signal,hist};}
 function calcBB(closes,period=20,mult=2){
   const mid=[],upper=[],lower=[];
   for(let i=0;i<closes.length;i++){
@@ -1587,26 +1587,26 @@ async function fetchAndCalcROI() {
 }
 
 function calcROI() {
-  var amount  = parseFloat(document.getElementById('roi-amount').value)  || 100000;
-  var rate    = parseFloat(document.getElementById('roi-rate').value)    || 12;
-  var monthly = parseFloat(document.getElementById('roi-monthly').value) || 0;
-  var years   = parseInt(document.getElementById('roi-years').value)     || 10;
+  var amountRaw = document.getElementById("roi-amount").value;
+  var amount  = amountRaw === "" ? 0 : (parseFloat(amountRaw) || 0);
+  var rate    = parseFloat(document.getElementById("roi-rate").value)    || 12;
+  var monthly = parseFloat(document.getElementById("roi-monthly").value) || 0;
+  var years   = parseInt(document.getElementById("roi-years").value)     || 10;
+  if (amount <= 0 && monthly <= 0) { toast("⚠️ 請輸入投入金額或每月定期定額"); return; }
   var r = rate / 100;
-
   var rows = [], cumVal = amount;
   for (var y = 1; y <= years; y++) {
     for (var m = 0; m < 12; m++) cumVal = cumVal * (1 + r/12) + monthly;
     var invested = amount + monthly * 12 * y;
-    rows.push({ y: y, val: cumVal, inv: invested, gain: cumVal - invested, pct: (cumVal/invested - 1)*100 });
+    rows.push({ y: y, val: cumVal, inv: invested, gain: cumVal - invested, pct: invested > 0 ? (cumVal/invested - 1)*100 : 0 });
   }
-
   var last = rows[rows.length-1];
-  var statsEl = document.getElementById('roi-stats');
+  var statsEl = document.getElementById("roi-stats");
   statsEl.innerHTML =
-    '<div class="sim-stat-box"><div class="sim-stat-lbl">第'+years+'年市值</div><div class="sim-stat-val" style="color:var(--sky)">' + fmtMoney(last.val) + '</div><div class="sim-stat-sub">本金 '+fmtMoney(last.inv)+'</div></div>' +
-    '<div class="sim-stat-box"><div class="sim-stat-lbl">總獲利</div><div class="sim-stat-val" style="color:'+(last.gain>=0?'var(--mint)':'var(--ember)')+'">' + (last.gain>=0?'+':'') + fmtMoney(last.gain) + '</div><div class="sim-stat-sub">'+(last.gain/last.inv*100).toFixed(1)+'% 總報酬</div></div>' +
-    '<div class="sim-stat-box"><div class="sim-stat-lbl">本金倍數</div><div class="sim-stat-val" style="color:var(--sky)">' + (last.val/amount).toFixed(1) + 'x</div><div class="sim-stat-sub">年化 '+rate.toFixed(1)+'%</div></div>' +
-    (monthly > 0 ? '<div class="sim-stat-box"><div class="sim-stat-lbl">總投入</div><div class="sim-stat-val" style="color:var(--gold)">' + fmtMoney(last.inv) + '</div><div class="sim-stat-sub">每月 '+fmtMoney(monthly)+'</div></div>' : '');
+    '<div class="sim-stat-box"><div class="sim-stat-lbl">第'+years+'年市值</div><div class="sim-stat-val" style="color:var(--sky)">' + fmtMoney(last.val) + '</div><div class="sim-stat-sub">總投入 '+fmtMoney(last.inv)+'</div></div>' +
+    '<div class="sim-stat-box"><div class="sim-stat-lbl">總獲利</div><div class="sim-stat-val" style="color:'+(last.gain>=0?"var(--mint)":"var(--ember)")+'">' + (last.gain>=0?"+":"") + fmtMoney(last.gain) + '</div><div class="sim-stat-sub">'+(last.inv>0?(last.gain/last.inv*100).toFixed(1)+"% 總報酬":"—")+'</div></div>' +
+    (amount > 0 ? '<div class="sim-stat-box"><div class="sim-stat-lbl">本金倍數</div><div class="sim-stat-val" style="color:var(--sky)">'+(last.val/amount).toFixed(1)+'x</div><div class="sim-stat-sub">年化 '+rate.toFixed(1)+'%</div></div>' : "") +
+    (monthly > 0 ? '<div class="sim-stat-box"><div class="sim-stat-lbl">每月定額</div><div class="sim-stat-val" style="color:var(--gold)">'+fmtMoney(monthly)+'</div><div class="sim-stat-sub">共投入 '+fmtMoney(monthly*12*years)+'</div></div>' : "");
 
   document.getElementById('roi-result').style.display = 'block';
 
@@ -2066,38 +2066,74 @@ async function importExcel(event) {
       return -1;
     }
 
+    // Also try positional detection if header row has no matching text
+    // (e.g. first col is broker, second is sym code, etc.)
+    function buildMapFromHeader(row) {
+      var map = {
+        sym:    findIdx(row, COL_SYNONYMS.sym),
+        cost:   findIdx(row, COL_SYNONYMS.cost),
+        qty:    findIdx(row, COL_SYNONYMS.qty),
+        broker: findIdx(row, COL_SYNONYMS.broker),
+        name:   findIdx(row, COL_SYNONYMS.name),
+        mkt:    findIdx(row, COL_SYNONYMS.mkt),
+      };
+      return map;
+    }
+
     var imported = { tw: 0, us: 0, skip: 0 };
-    var currentMap = null; // current column index mapping
+    var currentMap = null;
 
     raw.forEach(function(row) {
-      // Check if this row looks like a header row
-      var nonEmpty = row.filter(function(c){ return String(c).trim() !== ''; });
-      if (!nonEmpty.length) { currentMap = null; return; } // blank row resets context
+      var nonEmpty = row.filter(function(c){ return c !== null && c !== undefined && String(c).trim() !== ''; });
+      if (!nonEmpty.length) { currentMap = null; return; }
 
+      // Detect header row: contains text matching known column names
       var symIdx = findIdx(row, COL_SYNONYMS.sym);
-      if (symIdx >= 0) {
-        // This is a header row — build new column map
-        currentMap = {
-          sym:    symIdx,
-          cost:   findIdx(row, COL_SYNONYMS.cost),
-          qty:    findIdx(row, COL_SYNONYMS.qty),
-          broker: findIdx(row, COL_SYNONYMS.broker),
-          name:   findIdx(row, COL_SYNONYMS.name),
-          mkt:    findIdx(row, COL_SYNONYMS.mkt),
-        };
-        return; // skip header row itself
+      var costIdx = findIdx(row, COL_SYNONYMS.cost);
+      if (symIdx >= 0 && costIdx >= 0) {
+        currentMap = buildMapFromHeader(row);
+        return;
+      }
+
+      // If no header yet, try to auto-detect from first data-like row
+      // by checking if column 1 looks like a stock code (string with letters or 4+ digit number)
+      if (!currentMap) {
+        // Try to guess: look for a row where one cell is a broker name and another is a stock-like code
+        var guessedSym = -1, guessedCost = -1, guessedQty = -1, guessedBroker = -1, guessedName = -1;
+        row.forEach(function(cell, idx) {
+          var s = String(cell || '').trim();
+          if (!s || s === 'null') return;
+          if (/^[\d]{4,6}[A-Za-z]?$/.test(s) || /^[A-Z]{1,5}$/.test(s)) { if (guessedSym < 0) guessedSym = idx; }
+          if (['元大','國泰','兆豐','富邦','永豐','凱基','玉山'].includes(s)) { if (guessedBroker < 0) guessedBroker = idx; }
+        });
+        if (guessedSym < 0) { imported.skip++; return; }
+        // Cost and qty: numbers after sym
+        row.forEach(function(cell, idx) {
+          if (idx === guessedSym || idx === guessedBroker) return;
+          var n = parseFloat(cell);
+          if (!isNaN(n) && n > 0) {
+            if (guessedCost < 0) { guessedCost = idx; }
+            else if (guessedQty < 0) { guessedQty = idx; }
+          } else if (typeof cell === 'string' && cell.trim() && guessedName < 0 && idx > guessedSym) {
+            guessedName = idx;
+          }
+        });
+        if (guessedSym >= 0 && guessedCost >= 0 && guessedQty >= 0) {
+          currentMap = { sym: guessedSym, cost: guessedCost, qty: guessedQty, broker: guessedBroker, name: guessedName, mkt: -1 };
+        } else { imported.skip++; return; }
       }
 
       if (!currentMap || currentMap.sym < 0 || currentMap.cost < 0 || currentMap.qty < 0) return;
 
-      var sym    = String(row[currentMap.sym]    || '').trim().toUpperCase().replace(/\s/g,'');
-      var cost   = parseFloat(row[currentMap.cost]   || 0);
-      var qty    = parseFloat(row[currentMap.qty]    || 0);
-      var broker = currentMap.broker >= 0 ? String(row[currentMap.broker] || '').trim() : '';
-      var name   = currentMap.name   >= 0 ? String(row[currentMap.name]   || '').trim() : '';
-      var mktHint= currentMap.mkt    >= 0 ? String(row[currentMap.mkt]    || '').toLowerCase() : '';
+      var sym    = String(row[currentMap.sym] ?? '').trim().toUpperCase().replace(/\s/g,'');
+      var cost   = parseFloat(row[currentMap.cost] ?? 0);
+      var qty    = parseFloat(row[currentMap.qty]  ?? 0);
+      var broker = currentMap.broker >= 0 ? String(row[currentMap.broker] ?? '').trim() : '';
+      var rawName = currentMap.name >= 0 ? row[currentMap.name] : null;
+      var name   = (rawName !== null && rawName !== undefined && String(rawName).trim() !== 'null') ? String(rawName).trim() : '';
+      var mktHint= currentMap.mkt >= 0 ? String(row[currentMap.mkt] ?? '').toLowerCase() : '';
 
-      if (!sym || isNaN(cost) || cost <= 0 || isNaN(qty) || qty <= 0) { imported.skip++; return; }
+      if (!sym || sym === 'NULL' || isNaN(cost) || cost <= 0 || isNaN(qty) || qty <= 0) { imported.skip++; return; }
 
       // Market detection
       var isTW = mktHint.includes('tw') || mktHint.includes('台') ? true
