@@ -294,6 +294,26 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 .opt-row.top1{background:rgba(5,150,105,0.07);border:1px solid rgba(5,150,105,0.2)}
 .opt-row.top2{background:rgba(37,99,235,0.05);border:1px solid rgba(37,99,235,0.15)}
 
+@media (max-width: 900px){
+  .wrap{padding:0 12px}
+  header{padding:10px 12px}
+  .key-bar{width:100%;overflow-x:auto;flex-wrap:nowrap}
+  .custom-input-row{flex-direction:column}
+  .custom-input{min-width:0;max-width:none}
+  .port-add-form{display:grid;grid-template-columns:1fr 1fr}
+}
+@media (max-width: 720px){
+  #sim-roi > div:first-child{grid-template-columns:1fr !important}
+  #sim-bt > div:first-child{grid-template-columns:1fr !important}
+  #sim-bt > div:nth-of-type(3){grid-template-columns:1fr !important}
+  .bt-trade-row{grid-template-columns:1fr}
+  .opt-row{grid-template-columns:1fr}
+}
+@media (max-width: 480px){
+  .port-add-form{grid-template-columns:1fr}
+  .brand-name{font-size:16px}
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -479,7 +499,7 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
       </div>
       <div>
         <div class="sim-label">投入金額（台幣）</div>
-        <input class="sim-input" id="roi-amount" type="number" value="100000">
+        <input class="sim-input" id="roi-amount" type="number" value="0">
       </div>
       <div>
         <div class="sim-label">年化報酬率 % <span id="roi-cagr-note" style="color:var(--sky);font-size:10px"></span></div>
@@ -529,26 +549,19 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
         <input class="sim-input" id="bt-sym" placeholder="NVDA / 2330">
       </div>
       <div>
-        <div class="sim-label">每次投入金額（台幣）</div>
+        <div class="sim-label">每月投入金額（台幣）</div>
         <input class="sim-input" id="bt-amount" type="number" value="100000">
       </div>
-      <div>
+      <div style="display:none">
         <div class="sim-label">買入策略</div>
         <select class="sim-input" id="bt-strategy">
-          <option value="rsi">RSI 超賣買入（RSI &lt; 35）</option>
-          <option value="macd">MACD 金叉買入</option>
-          <option value="bb">布林下軌買入</option>
-          <option value="dip">單日跌幅 -5% 買入</option>
-          <option value="dca">每月定期定額（DCA）</option>
+          <option value="dca" selected>每月定期定額（DCA）</option>
         </select>
       </div>
-      <div>
+      <div style="display:none">
         <div class="sim-label">賣出策略</div>
         <select class="sim-input" id="bt-sell">
-          <option value="rsi">RSI 超買賣出（RSI &gt; 65）</option>
-          <option value="target">目標報酬 +15% 賣出</option>
-          <option value="macd">MACD 死叉賣出</option>
-          <option value="stop">停損 -8% 賣出</option>
+          <option value="target" selected>目標報酬 +15% 賣出</option>
         </select>
       </div>
       <div>
@@ -560,10 +573,13 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
           <option value="5y">5 年</option>
         </select>
       </div>
-      <div>
+      <div style="display:none">
         <div class="sim-label">強制停損 %（損失超過此值出場）</div>
         <input class="sim-input" id="bt-stoploss" type="number" value="8" step="0.5">
       </div>
+    </div>
+    <div style="margin-top:10px;background:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:12px;color:var(--text2);line-height:1.6">
+      回測邏輯：每月固定投入，同步輸出總報酬、年化報酬、最大回撤（MDD），並自動判斷這檔股票是否適合定期定額投資。
     </div>
     <div id="bt-progress" style="display:none;margin-top:8px">
       <div style="height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin-bottom:6px">
@@ -576,7 +592,7 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
         <span id="opt-btn-txt">🎯 一鍵最佳化</span>
       </button>
       <button onclick="runBT()" id="bt-btn" style="padding:11px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--sky),#1d4ed8);color:#fff;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer">
-        <span id="bt-btn-txt">▶ 執行回測</span>
+        <span id="bt-btn-txt">▶ 執行DCA回測</span>
       </button>
     </div>
 
@@ -593,6 +609,7 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
       <div style="background:var(--ink);border-radius:10px;padding:10px;margin-bottom:12px">
         <canvas id="bt-chart" style="width:100%;height:160px;display:block"></canvas>
       </div>
+      <div id="bt-analysis" style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:10px;font-size:12px;color:var(--text2);line-height:1.6"></div>
       <div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">交易明細</div>
       <div id="bt-trades" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto"></div>
       <div style="font-size:11px;color:var(--text3);background:var(--ink);border-radius:8px;padding:10px;line-height:1.6;margin-top:10px">
@@ -1219,7 +1236,7 @@ function calcRSI(closes,period=14){
   return rsi;
 }
 function calcEMA(arr,period){const k=2/(period+1),result=[arr[0]];for(let i=1;i<arr.length;i++) result.push(arr[i]*k+result[i-1]*(1-k));return result;}
-function calcMACD(closes){const fast=calcEMA(closes,12),slow=calcEMA(closes,26),macd=fast.map((v,i)=>v-slow[i]),signal=calcEMA(macd,9),hist=macd.map((v,i)=>v-signal[i]);return{macd,signal,hist};}
+function calcMACD(closes){const fast=calcEMA(closes,12),slow=calcEMA(closes,26),macd=fast.map((v,i)=>v-slow[i]);return{macd,signal:calcEMA(macd,9)};}
 function calcBB(closes,period=20,mult=2){
   const mid=[],upper=[],lower=[];
   for(let i=0;i<closes.length;i++){
@@ -1457,6 +1474,14 @@ async function fetchPortfolioPrice(market, idx) {
     else if (score >= 50) health = { cls: 'health-hold', label: '🔵 繼續持有', tip: '結構尚可' };
     else health = { cls: 'health-watch', label: '🟡 注意觀察', tip: '訊號混合' };
     pos.health = health;
+    pos.tech = {
+      score: score,
+      rsi: parseFloat((rsi || 0).toFixed(1)),
+      macdHist: parseFloat((macdHist || 0).toFixed(4)),
+      ma20: ma20 ? parseFloat(ma20.toFixed(dp)) : null,
+      ma60: ma60 ? parseFloat(ma60.toFixed(dp)) : null,
+      bbPct: parseFloat((bbPct * 100).toFixed(1))
+    };
 
     savePortfolio();
     renderPortfolio();
@@ -1478,55 +1503,134 @@ function renderPortfolio() {
   renderPortfolioSummary();
 }
 
+const PORT_USD_TWD_DEFAULT = 32;
+function getPortfolioFx() {
+  var v = Number(localStorage.getItem('sr_usd_twd'));
+  return Number.isFinite(v) && v > 0 ? v : PORT_USD_TWD_DEFAULT;
+}
+function getPortfolioSuggestion(pos, pnlPct, hasPrice) {
+  if (!hasPrice || pnlPct == null) {
+    return { action: '等待報價更新', reason: '尚無即時價格，完成更新後再判斷。', color: 'var(--text3)', scoreText: 'N/A' };
+  }
+  var tech = pos.tech || {};
+  var score = Number.isFinite(tech.score) ? tech.score : Math.max(20, Math.min(85, Math.round(50 + pnlPct * 1.3)));
+  var rsi = Number.isFinite(tech.rsi) ? tech.rsi : null;
+  var macdHist = Number.isFinite(tech.macdHist) ? tech.macdHist : null;
+  var stop = parseFloat(pos.sellStop);
+  var target = parseFloat(pos.sellTarget);
+  var nearStop = Number.isFinite(stop) && pos.price <= stop * 1.02;
+  var nearTarget = Number.isFinite(target) && pos.price >= target * 0.98;
+
+  if (nearStop || pnlPct <= -10 || score < 35) {
+    return {
+      action: '建議減碼 / 停損',
+      reason: '跌近停損或分數偏弱，優先控制風險。',
+      color: 'var(--ember)',
+      scoreText: String(score)
+    };
+  }
+  if ((rsi != null && rsi >= 72 && macdHist != null && macdHist < 0) || nearTarget || pnlPct >= 25) {
+    return {
+      action: '建議分批獲利',
+      reason: '接近壓力區或技術面過熱，先收回部分利潤。',
+      color: 'var(--gold)',
+      scoreText: String(score)
+    };
+  }
+  if (
+    score >= 75 &&
+    !nearStop &&
+    !nearTarget &&
+    (rsi == null || (rsi >= 42 && rsi <= 62)) &&
+    (macdHist == null || macdHist > 0) &&
+    pnlPct > -4 && pnlPct < 20
+  ) {
+    return {
+      action: '建議加碼',
+      reason: '分數高且動能轉強，尚未過熱、也未貼近停利區，可考慮分批加碼。',
+      color: 'var(--mint)',
+      scoreText: String(score)
+    };
+  }
+  if (score >= 65 && (rsi == null || rsi < 65) && pnlPct > -6) {
+    return {
+      action: '建議續抱',
+      reason: '趨勢與風險結構仍可，持有觀察即可。',
+      color: 'var(--mint)',
+      scoreText: String(score)
+    };
+  }
+  return {
+    action: '建議觀察',
+    reason: '訊號偏中性，等待突破或回檔確認。',
+    color: 'var(--sky)',
+    scoreText: String(score)
+  };
+}
+
 function renderPortfolioTable(market) {
-  const tbody = document.getElementById(market + '-port-tbody');
-  const positions = portfolio[market];
+  var box = document.getElementById(market + '-port-cards');
+  if (!box) return;
+  var positions = portfolio[market] || [];
+  var cur = market === 'us' ? '$' : '';
+  var fx = market === 'us' ? getPortfolioFx() : 1;
+  var dp = market === 'tw' ? 1 : 2;
   if (!positions.length) {
-    tbody.innerHTML = '<tr><td colspan="11" class="loading-row">尚無' + (market==='us'?'美股':'台股') + '持倉，點擊「＋ 新增」加入</td></tr>';
+    box.innerHTML = '<div class="empty-state" style="padding:18px;border:1px dashed var(--line);border-radius:12px;background:#fff;color:var(--text3);font-size:12px;text-align:center">尚無' + (market==='us'?'美股':'台股') + '持倉，點擊「＋ 新增」加入</div>';
     return;
   }
-  const dp = market === 'tw' ? 1 : 2;
-  tbody.innerHTML = positions.map((p, i) => {
-    const hasPrice = p.price != null;
-    const invested = p.cost * p.qty;
-    const value = hasPrice ? p.price * p.qty : null;
-    const pnl = hasPrice ? value - invested : null;
-    const pnlPct = hasPrice ? (pnl / invested) : null;
-    const pnlColor = pnl > 0 ? '#059669' : pnl < 0 ? '#dc2626' : 'var(--text)';
-    const health = p.health || { cls: 'health-watch', label: '⏳ 待更新', tip: '' };
-    return '<tr>' +
-      '<td class="port-mono" style="font-weight:700">' + p.displaySym + '</td>' +
-      '<td style="font-size:12px;color:var(--text2)">' + (p.name||'-') + '</td>' +
-      '<td style="font-size:12px">' + (p.broker||'-') + '</td>' +
-      '<td class="port-mono">' + (market==='us'?'$':'') + p.cost.toFixed(dp) + '</td>' +
-      '<td class="port-mono">' + p.qty + '</td>' +
-      '<td class="port-mono">' + (hasPrice ? (market==='us'?'$':'') + p.price.toFixed(dp) : '⏳') + '</td>' +
-      '<td class="port-mono" style="color:' + pnlColor + '">' + (pnl!=null ? (pnl>=0?'+':'') + (market==='us'?'$':'') + pnl.toFixed(dp) : '-') + '</td>' +
-      '<td class="port-mono" style="color:' + pnlColor + ';font-weight:700">' + (pnlPct!=null ? (pnlPct>=0?'+':'') + (pnlPct*100).toFixed(2)+'%' : '-') + '</td>' +
-      '<td style="font-size:12px">' + (p.sellTarget ? '<span style="color:#059669;font-family:\'JetBrains Mono\',monospace">▲ '+(market==='us'?'$':'')+p.sellTarget+'</span><br><span style="color:#dc2626;font-size:11px">止損 '+(market==='us'?'$':'')+p.sellStop+'</span>' : '-') + '</td>' +
-      '<td><span class="health-badge ' + health.cls + '" title="' + health.tip + '">' + health.label + '</span></td>' +
-      '<td><button onclick="removePosition(\''+market+'\','+i+')" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px">🗑</button></td>' +
-    '</tr>';
+  box.innerHTML = positions.map(function(p, i){
+    var has = p.price != null;
+    var invested = p.cost * p.qty;
+    var value = has ? p.price * p.qty : null;
+    var pnl = has ? (value - invested) : null;
+    var pct = (has && invested > 0) ? (pnl / invested * 100) : null;
+    var investedTwd = invested * fx;
+    var valueTwd = has ? value * fx : null;
+    var pnlTwd = has ? pnl * fx : null;
+    var suggestion = getPortfolioSuggestion(p, pct, has);
+    var color = pnl > 0 ? '#059669' : pnl < 0 ? '#dc2626' : 'var(--text)';
+    return '<div class="card" style="padding:14px 16px;margin-bottom:10px">'+
+      '<div style="display:flex;justify-content:space-between;gap:12px">'+
+        '<div><div style="font-family:monospace;font-size:16px;font-weight:700">'+(p.displaySym||p.sym||'-')+'</div><div style="font-size:12px;color:var(--text2)">'+(p.name||'-')+'</div><div style="font-size:11px;color:var(--text3)">'+((p.broker||'-')+' ｜ 股數 '+p.qty)+'</div></div>'+
+        '<div style="text-align:right"><div style="font-size:11px;color:var(--text3)">成本 / 現價</div><div style="font-family:monospace;font-size:13px">'+cur+p.cost.toFixed(dp)+' / '+(has?cur+p.price.toFixed(dp):'-')+'</div></div>'+
+      '</div>'+
+      '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px">'+
+        '<div style="background:var(--ink);border-radius:10px;padding:8px"><div style="font-size:10px;color:var(--text3)">投入金額（台幣）</div><div style="font-family:monospace;font-size:12px">'+fmtMoney(investedTwd)+'</div></div>'+
+        '<div style="background:var(--ink);border-radius:10px;padding:8px"><div style="font-size:10px;color:var(--text3)">目前市值（台幣）</div><div style="font-family:monospace;font-size:12px">'+(has?fmtMoney(valueTwd):'-')+'</div></div>'+
+        '<div style="background:var(--ink);border-radius:10px;padding:8px"><div style="font-size:10px;color:var(--text3)">損益（台幣）</div><div style="font-family:monospace;font-size:12px;color:'+color+'">'+(pnlTwd!=null?(pnlTwd>=0?'+':'')+fmtMoney(pnlTwd):'-')+'</div></div>'+
+        '<div style="background:var(--ink);border-radius:10px;padding:8px"><div style="font-size:10px;color:var(--text3)">建議（分數）</div><div style="font-size:12px;color:'+suggestion.color+'">'+suggestion.action+'（'+suggestion.scoreText+'）</div></div>'+
+      '</div>'+
+      '<div style="margin-top:8px;background:var(--ink);border-radius:10px;padding:8px">'+
+        '<div style="font-size:10px;color:var(--text3);margin-bottom:4px">判斷理由</div>'+
+        '<div style="font-size:12px;color:var(--text2)">'+suggestion.reason+'</div>'+
+        '<div style="margin-top:6px;font-size:11px;color:var(--text3)">停利 '+(p.sellTarget?((market==='us'?'$':'')+p.sellTarget):'-')+' ｜ 停損 '+(p.sellStop?((market==='us'?'$':'')+p.sellStop):'-')+(p.tech ? (' ｜ RSI '+p.tech.rsi+' ｜ MACD '+p.tech.macdHist) : '')+'</div>'+
+      '</div>'+
+      '<div style="display:flex;justify-content:flex-end;margin-top:10px"><button onclick="removePosition(\''+market+'\','+i+')" style="background:none;border:none;cursor:pointer;color:var(--ember);font-size:12px">刪除</button></div>'+
+    '</div>';
   }).join('');
 }
 
 function renderPortfolioSummary() {
-  const usPos = portfolio.us.filter(p => p.price != null);
-  const twPos = portfolio.tw.filter(p => p.price != null);
   const usInvested = portfolio.us.reduce((s, p) => s + p.cost * p.qty, 0);
-  const usValue = usPos.reduce((s, p) => s + p.price * p.qty, 0);
   const twInvested = portfolio.tw.reduce((s, p) => s + p.cost * p.qty, 0);
-  const twValue = twPos.reduce((s, p) => s + p.price * p.qty, 0);
-  const usdTwd = 32;
+  // 若價格尚未更新，先以成本價估算，避免總損益被低估
+  const usValue = portfolio.us.reduce((s, p) => s + ((p.price != null ? p.price : p.cost) * p.qty), 0);
+  const twValue = portfolio.tw.reduce((s, p) => s + ((p.price != null ? p.price : p.cost) * p.qty), 0);
+  const usMissing = portfolio.us.filter(p => p.price == null).length;
+  const twMissing = portfolio.tw.filter(p => p.price == null).length;
+  const usdTwd = getPortfolioFx();
   const totalInvTWD = twInvested + usInvested * usdTwd;
   const totalValTWD = twValue + usValue * usdTwd;
   const totalPnl = totalValTWD - totalInvTWD;
   const pnlColor = totalPnl >= 0 ? '#059669' : '#dc2626';
+  const missingTxt = (usMissing || twMissing) ? ('未更新：美股 '+usMissing+' 檔 / 台股 '+twMissing+' 檔（暫以成本估算）') : '報價已完整更新';
 
   document.getElementById('port-summary').innerHTML =
+    '<div class="port-sum-card" style="grid-column:1/-1"><div class="port-sum-label">估算說明</div><div class="port-sum-sub">美股換算匯率：1 USD = '+usdTwd+' TWD；'+missingTxt+'</div></div>' +
     '<div class="port-sum-card"><div class="port-sum-label">總市值(TWD)</div><div class="port-sum-val">' + (totalValTWD/10000).toFixed(1) + '<span style="font-size:13px">萬</span></div><div class="port-sum-sub">投入 ' + (totalInvTWD/10000).toFixed(1) + ' 萬</div></div>' +
     '<div class="port-sum-card"><div class="port-sum-label">總損益(TWD)</div><div class="port-sum-val" style="color:' + pnlColor + '">' + (totalPnl>=0?'+':'') + (totalPnl/10000).toFixed(1) + '<span style="font-size:13px">萬</span></div><div class="port-sum-sub">' + (totalInvTWD?(totalPnl/totalInvTWD*100).toFixed(2):'0') + '%</div></div>' +
-    '<div class="port-sum-card"><div class="port-sum-label">美股市值</div><div class="port-sum-val">$' + usValue.toFixed(0) + '</div><div class="port-sum-sub">' + portfolio.us.length + ' 支</div></div>' +
+    '<div class="port-sum-card"><div class="port-sum-label">美股市值(台幣換算)</div><div class="port-sum-val">' + fmtMoney(usValue*usdTwd) + '</div><div class="port-sum-sub">' + portfolio.us.length + ' 支 · 匯率 '+usdTwd+'</div></div>' +
     '<div class="port-sum-card"><div class="port-sum-label">台股市值</div><div class="port-sum-val">' + (twValue/10000).toFixed(1) + '<span style="font-size:13px">萬</span></div><div class="port-sum-sub">' + portfolio.tw.length + ' 支</div></div>';
 }
 
@@ -1587,26 +1691,28 @@ async function fetchAndCalcROI() {
 }
 
 function calcROI() {
-  var amountRaw = document.getElementById("roi-amount").value;
-  var amount  = amountRaw === "" ? 0 : (parseFloat(amountRaw) || 0);
-  var rate    = parseFloat(document.getElementById("roi-rate").value)    || 12;
-  var monthly = parseFloat(document.getElementById("roi-monthly").value) || 0;
-  var years   = parseInt(document.getElementById("roi-years").value)     || 10;
-  if (amount <= 0 && monthly <= 0) { toast("⚠️ 請輸入投入金額或每月定期定額"); return; }
+  var amountRaw = parseFloat(document.getElementById('roi-amount').value);
+  var amount  = Number.isFinite(amountRaw) ? amountRaw : 0;
+  var rate    = parseFloat(document.getElementById('roi-rate').value)    || 12;
+  var monthly = parseFloat(document.getElementById('roi-monthly').value) || 0;
+  var years   = parseInt(document.getElementById('roi-years').value)     || 10;
   var r = rate / 100;
+
   var rows = [], cumVal = amount;
   for (var y = 1; y <= years; y++) {
     for (var m = 0; m < 12; m++) cumVal = cumVal * (1 + r/12) + monthly;
     var invested = amount + monthly * 12 * y;
-    rows.push({ y: y, val: cumVal, inv: invested, gain: cumVal - invested, pct: invested > 0 ? (cumVal/invested - 1)*100 : 0 });
+    var pct = invested > 0 ? (cumVal/invested - 1)*100 : 0;
+    rows.push({ y: y, val: cumVal, inv: invested, gain: cumVal - invested, pct: pct });
   }
+
   var last = rows[rows.length-1];
-  var statsEl = document.getElementById("roi-stats");
+  var statsEl = document.getElementById('roi-stats');
   statsEl.innerHTML =
-    '<div class="sim-stat-box"><div class="sim-stat-lbl">第'+years+'年市值</div><div class="sim-stat-val" style="color:var(--sky)">' + fmtMoney(last.val) + '</div><div class="sim-stat-sub">總投入 '+fmtMoney(last.inv)+'</div></div>' +
-    '<div class="sim-stat-box"><div class="sim-stat-lbl">總獲利</div><div class="sim-stat-val" style="color:'+(last.gain>=0?"var(--mint)":"var(--ember)")+'">' + (last.gain>=0?"+":"") + fmtMoney(last.gain) + '</div><div class="sim-stat-sub">'+(last.inv>0?(last.gain/last.inv*100).toFixed(1)+"% 總報酬":"—")+'</div></div>' +
-    (amount > 0 ? '<div class="sim-stat-box"><div class="sim-stat-lbl">本金倍數</div><div class="sim-stat-val" style="color:var(--sky)">'+(last.val/amount).toFixed(1)+'x</div><div class="sim-stat-sub">年化 '+rate.toFixed(1)+'%</div></div>' : "") +
-    (monthly > 0 ? '<div class="sim-stat-box"><div class="sim-stat-lbl">每月定額</div><div class="sim-stat-val" style="color:var(--gold)">'+fmtMoney(monthly)+'</div><div class="sim-stat-sub">共投入 '+fmtMoney(monthly*12*years)+'</div></div>' : "");
+    '<div class="sim-stat-box"><div class="sim-stat-lbl">第'+years+'年市值</div><div class="sim-stat-val" style="color:var(--sky)">' + fmtMoney(last.val) + '</div><div class="sim-stat-sub">本金 '+fmtMoney(last.inv)+'</div></div>' +
+    '<div class="sim-stat-box"><div class="sim-stat-lbl">總獲利</div><div class="sim-stat-val" style="color:'+(last.gain>=0?'var(--mint)':'var(--ember)')+'">' + (last.gain>=0?'+':'') + fmtMoney(last.gain) + '</div><div class="sim-stat-sub">'+(last.inv>0?(last.gain/last.inv*100).toFixed(1)+'%':'—')+' 總報酬</div></div>' +
+    '<div class="sim-stat-box"><div class="sim-stat-lbl">本金倍數</div><div class="sim-stat-val" style="color:var(--sky)">' + (amount>0?(last.val/amount).toFixed(1)+'x':'—') + '</div><div class="sim-stat-sub">年化 '+rate.toFixed(1)+'%</div></div>' +
+    (monthly > 0 ? '<div class="sim-stat-box"><div class="sim-stat-lbl">總投入</div><div class="sim-stat-val" style="color:var(--gold)">' + fmtMoney(last.inv) + '</div><div class="sim-stat-sub">每月 '+fmtMoney(monthly)+'</div></div>' : '');
 
   document.getElementById('roi-result').style.display = 'block';
 
@@ -1656,7 +1762,7 @@ function calcROI() {
         '<td class="tbl-td" style="color:var(--sky);font-weight:600;font-family:monospace">'+fmtMoney(r.val)+'</td>' +
         '<td class="tbl-td" style="font-family:monospace">'+fmtMoney(r.inv)+'</td>' +
         '<td class="tbl-td"><div style="display:flex;align-items:center;gap:5px"><div style="width:'+bw+'px;height:5px;border-radius:2px;background:var(--mint);flex-shrink:0"></div><span style="font-family:monospace">'+fmtMoney(r.gain)+'</span></div></td>' +
-        '<td class="tbl-td" style="color:var(--mint);font-weight:700;font-family:monospace">+'+r.pct.toFixed(1)+'%</td></tr>';
+        '<td class="tbl-td" style="color:'+(r.pct>=0?'var(--mint)':'var(--ember)')+';font-weight:700;font-family:monospace">'+(r.pct>=0?'+':'')+r.pct.toFixed(1)+'%</td></tr>';
     }).join('') + '</tbody>';
 }
 
@@ -1801,7 +1907,7 @@ async function runBT() {
   await sleep(200);
   document.getElementById('bt-progress').style.display = 'none';
   btn.disabled = false;
-  document.getElementById('bt-btn-txt').textContent = '重新回測';
+  document.getElementById('bt-btn-txt').textContent = '重新DCA回測';
 }
 
 // ===== OPTIMIZER =====
@@ -2066,74 +2172,38 @@ async function importExcel(event) {
       return -1;
     }
 
-    // Also try positional detection if header row has no matching text
-    // (e.g. first col is broker, second is sym code, etc.)
-    function buildMapFromHeader(row) {
-      var map = {
-        sym:    findIdx(row, COL_SYNONYMS.sym),
-        cost:   findIdx(row, COL_SYNONYMS.cost),
-        qty:    findIdx(row, COL_SYNONYMS.qty),
-        broker: findIdx(row, COL_SYNONYMS.broker),
-        name:   findIdx(row, COL_SYNONYMS.name),
-        mkt:    findIdx(row, COL_SYNONYMS.mkt),
-      };
-      return map;
-    }
-
     var imported = { tw: 0, us: 0, skip: 0 };
-    var currentMap = null;
+    var currentMap = null; // current column index mapping
 
     raw.forEach(function(row) {
-      var nonEmpty = row.filter(function(c){ return c !== null && c !== undefined && String(c).trim() !== ''; });
-      if (!nonEmpty.length) { currentMap = null; return; }
+      // Check if this row looks like a header row
+      var nonEmpty = row.filter(function(c){ return String(c).trim() !== ''; });
+      if (!nonEmpty.length) { currentMap = null; return; } // blank row resets context
 
-      // Detect header row: contains text matching known column names
       var symIdx = findIdx(row, COL_SYNONYMS.sym);
-      var costIdx = findIdx(row, COL_SYNONYMS.cost);
-      if (symIdx >= 0 && costIdx >= 0) {
-        currentMap = buildMapFromHeader(row);
-        return;
-      }
-
-      // If no header yet, try to auto-detect from first data-like row
-      // by checking if column 1 looks like a stock code (string with letters or 4+ digit number)
-      if (!currentMap) {
-        // Try to guess: look for a row where one cell is a broker name and another is a stock-like code
-        var guessedSym = -1, guessedCost = -1, guessedQty = -1, guessedBroker = -1, guessedName = -1;
-        row.forEach(function(cell, idx) {
-          var s = String(cell || '').trim();
-          if (!s || s === 'null') return;
-          if (/^[\d]{4,6}[A-Za-z]?$/.test(s) || /^[A-Z]{1,5}$/.test(s)) { if (guessedSym < 0) guessedSym = idx; }
-          if (['元大','國泰','兆豐','富邦','永豐','凱基','玉山'].includes(s)) { if (guessedBroker < 0) guessedBroker = idx; }
-        });
-        if (guessedSym < 0) { imported.skip++; return; }
-        // Cost and qty: numbers after sym
-        row.forEach(function(cell, idx) {
-          if (idx === guessedSym || idx === guessedBroker) return;
-          var n = parseFloat(cell);
-          if (!isNaN(n) && n > 0) {
-            if (guessedCost < 0) { guessedCost = idx; }
-            else if (guessedQty < 0) { guessedQty = idx; }
-          } else if (typeof cell === 'string' && cell.trim() && guessedName < 0 && idx > guessedSym) {
-            guessedName = idx;
-          }
-        });
-        if (guessedSym >= 0 && guessedCost >= 0 && guessedQty >= 0) {
-          currentMap = { sym: guessedSym, cost: guessedCost, qty: guessedQty, broker: guessedBroker, name: guessedName, mkt: -1 };
-        } else { imported.skip++; return; }
+      if (symIdx >= 0) {
+        // This is a header row — build new column map
+        currentMap = {
+          sym:    symIdx,
+          cost:   findIdx(row, COL_SYNONYMS.cost),
+          qty:    findIdx(row, COL_SYNONYMS.qty),
+          broker: findIdx(row, COL_SYNONYMS.broker),
+          name:   findIdx(row, COL_SYNONYMS.name),
+          mkt:    findIdx(row, COL_SYNONYMS.mkt),
+        };
+        return; // skip header row itself
       }
 
       if (!currentMap || currentMap.sym < 0 || currentMap.cost < 0 || currentMap.qty < 0) return;
 
-      var sym    = String(row[currentMap.sym] ?? '').trim().toUpperCase().replace(/\s/g,'');
-      var cost   = parseFloat(row[currentMap.cost] ?? 0);
-      var qty    = parseFloat(row[currentMap.qty]  ?? 0);
-      var broker = currentMap.broker >= 0 ? String(row[currentMap.broker] ?? '').trim() : '';
-      var rawName = currentMap.name >= 0 ? row[currentMap.name] : null;
-      var name   = (rawName !== null && rawName !== undefined && String(rawName).trim() !== 'null') ? String(rawName).trim() : '';
-      var mktHint= currentMap.mkt >= 0 ? String(row[currentMap.mkt] ?? '').toLowerCase() : '';
+      var sym    = String(row[currentMap.sym]    || '').trim().toUpperCase().replace(/\s/g,'');
+      var cost   = parseFloat(row[currentMap.cost]   || 0);
+      var qty    = parseFloat(row[currentMap.qty]    || 0);
+      var broker = currentMap.broker >= 0 ? String(row[currentMap.broker] || '').trim() : '';
+      var name   = currentMap.name   >= 0 ? String(row[currentMap.name]   || '').trim() : '';
+      var mktHint= currentMap.mkt    >= 0 ? String(row[currentMap.mkt]    || '').toLowerCase() : '';
 
-      if (!sym || sym === 'NULL' || isNaN(cost) || cost <= 0 || isNaN(qty) || qty <= 0) { imported.skip++; return; }
+      if (!sym || isNaN(cost) || cost <= 0 || isNaN(qty) || qty <= 0) { imported.skip++; return; }
 
       // Market detection
       var isTW = mktHint.includes('tw') || mktHint.includes('台') ? true
@@ -2182,6 +2252,219 @@ async function importExcel(event) {
     console.error(e);
     toast('❌ 解析失敗：' + e.message);
   }
+}
+
+function _num(id, fallback) {
+  var el = document.getElementById(id);
+  if (!el) return fallback;
+  var raw = String(el.value == null ? '' : el.value).trim();
+  if (raw === '') return fallback;
+  var n = Number(raw);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function _buildMonthlyPicks(closes, timestamps, dayTarget) {
+  var monthMap = {};
+  for (var i = 0; i < closes.length; i++) {
+    if (closes[i] == null || !timestamps[i]) continue;
+    var d = new Date(timestamps[i] * 1000);
+    var key = d.getFullYear() + '-' + (d.getMonth() + 1);
+    if (!monthMap[key]) monthMap[key] = [];
+    monthMap[key].push({ day: d.getDate(), price: closes[i], ts: timestamps[i] });
+  }
+  var keys = Object.keys(monthMap).sort(function(a, b) {
+    var aa = a.split('-').map(Number), bb = b.split('-').map(Number);
+    return aa[0] === bb[0] ? aa[1] - bb[1] : aa[0] - bb[0];
+  });
+  var out = [];
+  for (var k = 0; k < keys.length; k++) {
+    var arr = monthMap[keys[k]].sort(function(a, b) { return a.day - b.day; });
+    var pick = arr.find(function(x) { return x.day >= dayTarget; }) || arr[arr.length - 1];
+    out.push(pick);
+  }
+  return out;
+}
+
+function _simulateDCA(closes, timestamps, amount, dayTarget, freqMonths) {
+  if (!(amount > 0)) return null;
+  var picks = _buildMonthlyPicks(closes, timestamps, dayTarget);
+  if (!picks.length) return null;
+  var shares = 0, invested = 0, equity = [], buys = 0;
+  for (var i = 0; i < picks.length; i++) {
+    if (i % freqMonths !== 0) continue;
+    var p = picks[i].price;
+    if (!(p > 0)) continue;
+    shares += amount / p;
+    invested += amount;
+    buys++;
+    equity.push(shares * p);
+  }
+  if (!buys || invested <= 0) return null;
+  var lastClose = null;
+  for (var j = closes.length - 1; j >= 0; j--) {
+    if (closes[j] != null) { lastClose = closes[j]; break; }
+  }
+  if (!(lastClose > 0)) return null;
+  var finalValue = shares * lastClose;
+  var gain = finalValue - invested;
+  var totalRet = gain / invested;
+  var peak = -Infinity, maxDD = 0;
+  for (var e = 0; e < equity.length; e++) {
+    peak = Math.max(peak, equity[e]);
+    if (peak > 0) maxDD = Math.min(maxDD, (equity[e] - peak) / peak);
+  }
+  var years = Math.max(0.25, (picks[picks.length - 1].ts - picks[0].ts) / (365.25 * 24 * 3600));
+  var ann = Math.pow(finalValue / invested, 1 / years) - 1;
+  return {
+    dayTarget: dayTarget,
+    freqMonths: freqMonths,
+    buys: buys,
+    invested: invested,
+    finalValue: finalValue,
+    gain: gain,
+    totalRetPct: totalRet * 100,
+    annualizedPct: ann * 100,
+    maxDDPct: maxDD * 100
+  };
+}
+
+window.__oldRunBT = window.__oldRunBT || runBT;
+
+async function runBT() {
+  var sym = (document.getElementById('bt-sym').value || '').trim();
+  if (!sym) { toast('⚠️ 請輸入股票代號'); return; }
+  var strategy = 'dca';
+  var btStrategyEl = document.getElementById('bt-strategy');
+  if (btStrategyEl) btStrategyEl.value = 'dca';
+  var period = document.getElementById('bt-period').value;
+  var amount = _num('bt-amount', 100000);
+
+  var btn = document.getElementById('bt-btn');
+  btn.disabled = true;
+  document.getElementById('bt-btn-txt').textContent = '回測中...';
+  document.getElementById('bt-progress').style.display = 'block';
+  document.getElementById('bt-pbar').style.width = '20%';
+  document.getElementById('bt-result').style.display = 'none';
+
+  try {
+    var fullSym = autoSymbol(sym);
+    var data = await fetchYahoo(fullSym, period, '1d');
+    var result = data && data.chart && data.chart.result && data.chart.result[0];
+    if (!result) throw new Error('無法取得歷史資料');
+    var closes = result.indicators.quote[0].close || [];
+    var timestamps = result.timestamp || [];
+    var valid = closes.map(function(v, i){ return {v:v, i:i}; }).filter(function(x){ return x.v != null; });
+    var cl = valid.map(function(x){ return x.v; });
+    if (cl.length < 30) throw new Error('歷史資料不足');
+
+    var dca = _simulateDCA(closes, timestamps, amount, 10, 1);
+    if (!dca) throw new Error('DCA 無有效結果');
+    var verdict = '可觀察';
+    var verdictColor = 'var(--sky)';
+    var verdictReason = '整體表現中性，建議小額定期投入並持續觀察。';
+    if (dca.annualizedPct >= 12 && dca.maxDDPct > -25 && dca.totalRetPct >= 30) {
+      verdict = '適合定期投資';
+      verdictColor = 'var(--mint)';
+      verdictReason = '年化報酬與總報酬表現良好，且回撤控制在可接受範圍。';
+    } else if (dca.annualizedPct < 6 || dca.maxDDPct <= -35) {
+      verdict = '暫不適合定期投資';
+      verdictColor = 'var(--ember)';
+      verdictReason = '回測顯示報酬偏弱或回撤過深，風險報酬比不佳。';
+    }
+    document.getElementById('bt-stats').innerHTML =
+      '<div class="sim-stat-box"><div class="sim-stat-lbl">每月投入次數</div><div class="sim-stat-val" style="color:var(--sky)">'+dca.buys+'</div><div class="sim-stat-sub">每月 '+fmtMoney(amount)+'</div></div>'+
+      '<div class="sim-stat-box"><div class="sim-stat-lbl">總投入</div><div class="sim-stat-val">'+fmtMoney(dca.invested)+'</div><div class="sim-stat-sub">DCA 回測模型</div></div>'+
+      '<div class="sim-stat-box"><div class="sim-stat-lbl">期末資產</div><div class="sim-stat-val" style="color:'+(dca.gain>=0?'var(--mint)':'var(--ember)')+'">'+fmtMoney(dca.finalValue)+'</div><div class="sim-stat-sub">'+(dca.gain>=0?'+':'')+fmtMoney(dca.gain)+' ('+dca.totalRetPct.toFixed(1)+'%)</div></div>'+
+      '<div class="sim-stat-box"><div class="sim-stat-lbl">年化 / MDD</div><div class="sim-stat-val">'+dca.annualizedPct.toFixed(1)+'%</div><div class="sim-stat-sub">最大回撤 '+dca.maxDDPct.toFixed(1)+'%</div></div>';
+    document.getElementById('bt-analysis').innerHTML =
+      '<div style="font-weight:700;color:'+verdictColor+';margin-bottom:4px">是否適合定期投資：'+verdict+'</div>'+
+      '<div>'+verdictReason+'</div>'+
+      '<div style="margin-top:6px;color:var(--text3)">重點數據：總報酬 '+dca.totalRetPct.toFixed(1)+'% ｜ 年化 '+dca.annualizedPct.toFixed(1)+'% ｜ 最大回撤 '+dca.maxDDPct.toFixed(1)+'%</div>';
+    document.getElementById('bt-trades').innerHTML = '<div style="text-align:center;padding:12px;color:var(--text3);font-size:12px">此模式為「每月定期定額」，不顯示單筆進出明細。</div>';
+
+    document.getElementById('bt-result').style.display = 'block';
+  } catch (e) {
+    var a = document.getElementById('bt-analysis');
+    if (a) a.innerHTML = '<div style="color:var(--ember)">尚無法產生分析：'+e.message+'</div>';
+    toast('❌ 回測失敗：' + e.message);
+  }
+
+  document.getElementById('bt-pbar').style.width = '100%';
+  await sleep(180);
+  document.getElementById('bt-progress').style.display = 'none';
+  btn.disabled = false;
+  document.getElementById('bt-btn-txt').textContent = '重新回測';
+}
+
+async function runOptimize() {
+  var sym = (document.getElementById('bt-sym').value || '').trim();
+  if (!sym) { toast('⚠️ 請先輸入股票代號'); return; }
+  document.getElementById('bt-strategy').value = 'dca';
+  var period = document.getElementById('bt-period').value;
+  var amount = _num('bt-amount', 100000);
+  if (!(amount > 0)) { toast('⚠️ 每月投入金額需大於 0'); return; }
+
+  var optBtn = document.getElementById('opt-btn');
+  optBtn.disabled = true;
+  document.getElementById('opt-btn-txt').textContent = 'DCA 最佳化中...';
+  document.getElementById('bt-progress').style.display = 'block';
+  document.getElementById('opt-result').style.display = 'none';
+  document.getElementById('bt-pbar').style.width = '10%';
+
+  try {
+    var data = await fetchYahoo(autoSymbol(sym), period, '1d');
+    var result = data && data.chart && data.chart.result && data.chart.result[0];
+    if (!result) throw new Error('無法取得歷史資料');
+    var closes = result.indicators.quote[0].close, timestamps = result.timestamp || [];
+    if (!closes || closes.length < 120) throw new Error('歷史資料不足（至少約 120 交易日）');
+
+    var dayOpts = [1, 5, 10, 15, 20, 25];
+    var freqOpts = [1, 2, 3];
+    var rows = [];
+    var total = dayOpts.length * freqOpts.length;
+    var done = 0;
+    for (var d = 0; d < dayOpts.length; d++) {
+      for (var f = 0; f < freqOpts.length; f++) {
+        var r = _simulateDCA(closes, timestamps, amount, dayOpts[d], freqOpts[f]);
+        if (r) rows.push(r);
+        done++;
+        document.getElementById('bt-pbar').style.width = (10 + (done / total) * 80).toFixed(0) + '%';
+        await sleep(0);
+      }
+    }
+    if (!rows.length) throw new Error('找不到可用參數組合');
+
+    rows.sort(function(a, b){
+      if (b.totalRetPct !== a.totalRetPct) return b.totalRetPct - a.totalRetPct;
+      return b.annualizedPct - a.annualizedPct;
+    });
+    var bestRet = rows[0];
+    var bestRisk = rows.slice().sort(function(a, b){
+      var as = a.annualizedPct + a.maxDDPct * 0.35;
+      var bs = b.annualizedPct + b.maxDDPct * 0.35;
+      return bs - as;
+    })[0];
+
+    document.getElementById('opt-best-cards').innerHTML =
+      '<div class="opt-best-card winner"><div class="opt-best-label">最高總報酬</div><div class="opt-best-strategy">每月第 '+bestRet.dayTarget+' 日 / 每 '+bestRet.freqMonths+' 個月投入</div><div class="opt-best-val" style="color:var(--mint)">'+(bestRet.totalRetPct>=0?'+':'')+bestRet.totalRetPct.toFixed(1)+'%</div><div style="font-size:11px;color:var(--text3)">年化 '+bestRet.annualizedPct.toFixed(1)+'% | MDD '+bestRet.maxDDPct.toFixed(1)+'%</div></div>'+
+      '<div class="opt-best-card"><div class="opt-best-label">最佳風險調整</div><div class="opt-best-strategy">每月第 '+bestRisk.dayTarget+' 日 / 每 '+bestRisk.freqMonths+' 個月投入</div><div class="opt-best-val" style="color:'+(bestRisk.totalRetPct>=0?'var(--mint)':'var(--ember)')+'">'+(bestRisk.totalRetPct>=0?'+':'')+bestRisk.totalRetPct.toFixed(1)+'%</div><div style="font-size:11px;color:var(--text3)">年化 '+bestRisk.annualizedPct.toFixed(1)+'% | MDD '+bestRisk.maxDDPct.toFixed(1)+'%</div></div>';
+
+    document.getElementById('opt-table').innerHTML = rows.slice(0, 18).map(function(r, idx){
+      var cls = idx === 0 ? 'top1' : idx === 1 ? 'top2' : '';
+      return '<div class="opt-row '+cls+'"><div style="line-height:1.4"><span style="font-size:11px;font-weight:700;color:var(--text)">每月第 '+r.dayTarget+' 日 / 每 '+r.freqMonths+' 個月</span><span style="font-size:9px;color:var(--text3);margin-left:6px">'+r.buys+' 次投入</span></div><div style="font-family:monospace;font-size:12px;font-weight:700;color:'+(r.totalRetPct>=0?'var(--mint)':'var(--ember)')+';white-space:nowrap">'+(r.totalRetPct>=0?'+':'')+r.totalRetPct.toFixed(1)+'%</div><div style="font-family:monospace;font-size:11px;color:var(--text2);white-space:nowrap">年化 '+r.annualizedPct.toFixed(1)+'%</div><div style="font-size:10px;color:'+(r.maxDDPct>-20?'var(--text3)':'var(--ember)')+';white-space:nowrap">MDD '+r.maxDDPct.toFixed(1)+'%</div></div>';
+    }).join('');
+
+    document.getElementById('opt-result').style.display = 'block';
+    toast('✅ DCA 最佳化完成');
+  } catch(e) {
+    toast('❌ DCA 最佳化失敗：' + e.message);
+  }
+
+  document.getElementById('bt-pbar').style.width = '100%';
+  await sleep(180);
+  document.getElementById('bt-progress').style.display = 'none';
+  optBtn.disabled = false;
+  document.getElementById('opt-btn-txt').textContent = 'DCA 一鍵最佳化';
 }
 
 </script>
