@@ -1188,11 +1188,28 @@ function addPosition(market) {
   if (!sym || !cost || !qty) { toast('⚠️ 請填入代號、成本和股數'); return; }
   const fullSym = market === 'tw' ? autoSymbol(sym) : sym;
   const displaySym = fullSym.replace('.TW','').replace('.TWO','');
+
+  // Check if same symbol + same broker already exists → merge with weighted avg cost
+  const existing = portfolio[market].find(p => p.sym === fullSym && p.broker === broker);
+  if (existing) {
+    const totalQty = existing.qty + qty;
+    const weightedCost = (existing.cost * existing.qty + cost * qty) / totalQty;
+    existing.qty = parseFloat(totalQty.toFixed(4));
+    existing.cost = parseFloat(weightedCost.toFixed(4));
+    const idx = portfolio[market].indexOf(existing);
+    savePortfolio();
+    symEl.value = ''; costEl.value = ''; qtyEl.value = '';
+    renderPortfolio();
+    toast('🔀 已合併 ' + displaySym + '｜新均價 ' + weightedCost.toFixed(2) + '，共 ' + totalQty + ' 股');
+    fetchPortfolioPrice(market, idx);
+    return;
+  }
+
   portfolio[market].push({ sym: fullSym, displaySym, cost, qty, broker, name: '', price: null, lastUpdate: null });
   savePortfolio();
   symEl.value = ''; costEl.value = ''; qtyEl.value = '';
   renderPortfolio();
-  toast('✅ 已新增 ' + sym + '，正在抓取現價...');
+  toast('✅ 已新增 ' + displaySym + '，正在抓取現價...');
   fetchPortfolioPrice(market, portfolio[market].length - 1);
 }
 
