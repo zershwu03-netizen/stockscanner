@@ -424,15 +424,7 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
       <datalist id="broker-list"><option value="國泰"><option value="元大"><option value="兆豐"></datalist>
       <button class="scan-btn" style="padding:8px 16px;font-size:13px" onclick="addPosition('us')">＋ 新增</button>
     </div>
-    <div style="overflow-x:auto">
-      <table class="port-table">
-        <thead><tr>
-          <th>代號</th><th>名稱</th><th>券商</th><th>成本</th><th>股數</th>
-          <th>現價</th><th>損益</th><th>損益%</th><th>建議賣出</th><th>健檢</th><th></th>
-        </tr></thead>
-        <tbody id="us-port-tbody"><tr><td colspan="11" class="loading-row">尚無美股持倉，點擊「＋ 新增」加入</td></tr></tbody>
-      </table>
-    </div>
+    <div id="us-port-cards"></div>
   </div>
 
   <!-- TW Stocks -->
@@ -448,15 +440,7 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
       <input class="port-input num" id="tw-broker-input" placeholder="券商" style="width:80px" list="broker-list">
       <button class="scan-btn" style="padding:8px 16px;font-size:13px" onclick="addPosition('tw')">＋ 新增</button>
     </div>
-    <div style="overflow-x:auto">
-      <table class="port-table">
-        <thead><tr>
-          <th>代號</th><th>名稱</th><th>券商</th><th>成本</th><th>股數</th>
-          <th>現價</th><th>損益</th><th>損益%</th><th>建議賣出</th><th>健檢</th><th></th>
-        </tr></thead>
-        <tbody id="tw-port-tbody"><tr><td colspan="11" class="loading-row">尚無台股持倉，點擊「＋ 新增」加入</td></tr></tbody>
-      </table>
-    </div>
+    <div id="tw-port-cards"></div>
   </div>
 </div>
 
