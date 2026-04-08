@@ -269,6 +269,23 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 .mkt-tw{background:rgba(37,99,235,0.1);color:#1e40af}
 .mkt-us{background:rgba(5,150,105,0.1);color:#065f46}
 .cache-badge{font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(217,119,6,0.1);color:#92400e;border:1px solid rgba(217,119,6,0.2);margin-left:4px;vertical-align:middle}
+/* Portfolio card layout */
+.port-cards-wrap{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.pos-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;position:relative}
+.pos-card.pos-gain{border-left:3px solid #059669}
+.pos-card.pos-loss{border-left:3px solid #dc2626}
+.pos-card.pos-flat{border-left:3px solid var(--line2)}
+.pos-top{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+.pos-sym{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;letter-spacing:-0.3px}
+.pos-name{font-size:11px;color:var(--text3);margin-top:1px}
+.pos-pnl-main{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;text-align:right}
+.pos-pnl-sub{font-size:11px;color:var(--text3);text-align:right;margin-top:1px}
+.pos-row{display:flex;flex-direction:column;gap:1px}
+.pos-row-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px}
+.pos-row-val{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text)}
+.pos-bottom{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;margin-top:4px;padding-top:8px;border-top:1px solid var(--line)}
+.pos-del-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:0;line-height:1}
+
 </style>
 </head>
 <body>
@@ -292,11 +309,7 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 
 <div class="wrap scan-page" id="scan-page">
   <div class="controls section-pad">
-    <div class="market-tabs">
-      <button class="mkt-btn active" onclick="setMarket('all',this)">全部</button>
-      <button class="mkt-btn" onclick="setMarket('tw',this)">🇹🇼 台股</button>
-      <button class="mkt-btn" onclick="setMarket('us',this)">🇺🇸 美股</button>
-    </div>
+
     <div class="presets-section">
       <div class="presets-label" style="display:flex;align-items:center;justify-content:space-between">
         <span>預設清單</span>
@@ -315,13 +328,12 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
     <div class="custom-section">
       <div class="custom-label">自訂代號（逗號分隔，台股直接輸入代號即可）</div>
       <div class="custom-input-row">
-        <div style="position:relative;flex:1;max-width:500px;min-width:200px">
-          <input class="custom-input" id="custom-syms" placeholder="例如：NVDA, TSLA, 2330, 0050" style="width:100%;padding-right:32px">
+        <div style="position:relative;flex:1;">
+          <input class="custom-input" id="custom-syms" placeholder="例如：NVDA, TSLA, 2330, 0050" style="width:100%;padding-right:32px;max-width:100%">
           <button id="clear-syms-btn" onclick="clearCustomInput()" style="display:none;position:absolute;right:4px;top:50%;transform:translateY(-50%);background:var(--line2);border:none;cursor:pointer;color:var(--text2);font-size:14px;line-height:1;padding:4px 8px;border-radius:6px;min-width:28px;min-height:28px;align-items:center;justify-content:center">✕</button>
         </div>
-        <button class="scan-btn" id="scan-btn" onclick="startScan()">
+        <button class="scan-btn" id="scan-btn" onclick="startScan()" style="padding:9px 14px;flex-shrink:0">
           <span id="scan-btn-icon">🔍</span>
-          <span id="scan-btn-text">開始掃描</span>
         </button>
       </div>
     </div>
@@ -346,24 +358,7 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
         <button class="sort-btn" onclick="sortCards('rr',this)">風報比</button>
       </div>
     </div>
-    <div class="filter-bar">
-      <label>RSI</label>
-      <div class="filter-range-group">
-        <input type="number" id="f-rsi-min" value="0" min="0" max="100" oninput="applyFilter()">
-        <span class="filter-sep">~</span>
-        <input type="number" id="f-rsi-max" value="100" min="0" max="100" oninput="applyFilter()">
-      </div>
-      <label style="margin-left:6px">評分≥</label>
-      <input type="number" id="f-score-min" value="0" min="0" max="100" style="width:52px" oninput="applyFilter()">
-      <label style="margin-left:6px">市場</label>
-      <select class="filter-select" id="f-market" onchange="applyFilter()">
-        <option value="all">全部</option>
-        <option value="tw">台股</option>
-        <option value="us">美股</option>
-      </select>
-      <button class="fav-only-btn" id="fav-only-btn" onclick="toggleFavOnly()">⭐ 只看收藏</button>
-      <span class="filter-count" id="filter-count"></span>
-    </div>
+
     <div class="cards-grid" id="cards-grid"></div>
   </div>
 
@@ -398,15 +393,7 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
       <datalist id="broker-list"><option value="國泰"><option value="元大"><option value="兆豐"></datalist>
       <button class="scan-btn" style="padding:8px 16px;font-size:13px" onclick="addPosition('us')">＋ 新增</button>
     </div>
-    <div style="overflow-x:auto">
-      <table class="port-table">
-        <thead><tr>
-          <th>代號</th><th>名稱</th><th>券商</th><th>成本</th><th>股數</th>
-          <th>現價</th><th>損益</th><th>損益%</th><th>建議賣出</th><th>健檢</th><th></th>
-        </tr></thead>
-        <tbody id="us-port-tbody"><tr><td colspan="11" class="loading-row">尚無美股持倉，點擊「＋ 新增」加入</td></tr></tbody>
-      </table>
-    </div>
+    <div id="us-port-cards"></div>
   </div>
 
   <!-- TW Stocks -->
@@ -422,15 +409,7 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
       <input class="port-input num" id="tw-broker-input" placeholder="券商" style="width:80px" list="broker-list">
       <button class="scan-btn" style="padding:8px 16px;font-size:13px" onclick="addPosition('tw')">＋ 新增</button>
     </div>
-    <div style="overflow-x:auto">
-      <table class="port-table">
-        <thead><tr>
-          <th>代號</th><th>名稱</th><th>券商</th><th>成本</th><th>股數</th>
-          <th>現價</th><th>損益</th><th>損益%</th><th>建議賣出</th><th>健檢</th><th></th>
-        </tr></thead>
-        <tbody id="tw-port-tbody"><tr><td colspan="11" class="loading-row">尚無台股持倉，點擊「＋ 新增」加入</td></tr></tbody>
-      </table>
-    </div>
+    <div id="tw-port-cards"></div>
   </div>
 </div>
 
@@ -1305,35 +1284,52 @@ function renderPortfolio() {
 }
 
 function renderPortfolioTable(market) {
-  const tbody = document.getElementById(market + '-port-tbody');
-  const positions = portfolio[market];
+  var wrap = document.getElementById(market + '-port-cards');
+  if (!wrap) return;
+  var positions = portfolio[market];
   if (!positions.length) {
-    tbody.innerHTML = '<tr><td colspan="11" class="loading-row">尚無' + (market==='us'?'美股':'台股') + '持倉，點擊「＋ 新增」加入</td></tr>';
+    wrap.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px">尚無'+(market==='us'?'美股':'台股')+'持倉，點擊「＋ 新增」加入</div>';
     return;
   }
-  const dp = market === 'tw' ? 1 : 2;
-  tbody.innerHTML = positions.map((p, i) => {
-    const hasPrice = p.price != null;
-    const invested = p.cost * p.qty;
-    const value = hasPrice ? p.price * p.qty : null;
-    const pnl = hasPrice ? value - invested : null;
-    const pnlPct = hasPrice ? (pnl / invested) : null;
-    const pnlColor = pnl > 0 ? '#059669' : pnl < 0 ? '#dc2626' : 'var(--text)';
-    const health = p.health || { cls: 'health-watch', label: '⏳ 待更新', tip: '' };
-    return '<tr>' +
-      '<td class="port-mono" style="font-weight:700">' + p.displaySym + '</td>' +
-      '<td style="font-size:12px;color:var(--text2)">' + (p.name||'-') + '</td>' +
-      '<td style="font-size:12px">' + (p.broker||'-') + '</td>' +
-      '<td class="port-mono">' + (market==='us'?'$':'') + p.cost.toFixed(dp) + '</td>' +
-      '<td class="port-mono">' + p.qty + '</td>' +
-      '<td class="port-mono">' + (hasPrice ? (market==='us'?'$':'') + p.price.toFixed(dp) : '⏳') + '</td>' +
-      '<td class="port-mono" style="color:' + pnlColor + '">' + (pnl!=null ? (pnl>=0?'+':'') + (market==='us'?'$':'') + pnl.toFixed(dp) : '-') + '</td>' +
-      '<td class="port-mono" style="color:' + pnlColor + ';font-weight:700">' + (pnlPct!=null ? (pnlPct>=0?'+':'') + (pnlPct*100).toFixed(2)+'%' : '-') + '</td>' +
-      '<td style="font-size:12px">' + (p.sellTarget ? '<span style="color:#059669;font-family:\'JetBrains Mono\',monospace">▲ '+(market==='us'?'$':'')+p.sellTarget+'</span><br><span style="color:#dc2626;font-size:11px">止損 '+(market==='us'?'$':'')+p.sellStop+'</span>' : '-') + '</td>' +
-      '<td><span class="health-badge ' + health.cls + '" title="' + health.tip + '">' + health.label + '</span></td>' +
-      '<td><button onclick="removePosition(\''+market+'\','+i+')" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px">🗑</button></td>' +
-    '</tr>';
-  }).join('');
+  var dp = market === 'tw' ? 1 : 2;
+  var cur = market === 'us' ? '$' : '';
+  wrap.innerHTML = '<div class="port-cards-wrap">' + positions.map(function(p, i) {
+    var hasPrice = p.price != null;
+    var invested = p.cost * p.qty;
+    var value = hasPrice ? p.price * p.qty : null;
+    var pnl = hasPrice ? value - invested : null;
+    var pnlPct = hasPrice ? (pnl / invested) * 100 : null;
+    var pnlColor = pnl > 0 ? '#059669' : pnl < 0 ? '#dc2626' : 'var(--text2)';
+    var cardCls = pnl > 0 ? 'pos-gain' : pnl < 0 ? 'pos-loss' : 'pos-flat';
+    var health = p.health || { cls: 'health-watch', label: '⏳ 待更新', tip: '' };
+    var pnlStr = pnl != null ? (pnl>=0?'+':'') + cur + pnl.toFixed(dp) : '⏳';
+    var pnlPctStr = pnlPct != null ? (pnlPct>=0?'+':'') + pnlPct.toFixed(2) + '%' : '';
+    var sellStr = p.sellTarget
+      ? '<span style="color:#059669;font-size:11px;font-family:monospace">▲'+cur+p.sellTarget+'</span> <span style="color:#dc2626;font-size:11px">止損'+cur+p.sellStop+'</span>'
+      : '<span style="color:var(--text3);font-size:11px">建議賣出待更新</span>';
+    return '<div class="pos-card ' + cardCls + '">' +
+      '<div class="pos-top">' +
+        '<div><div class="pos-sym">' + p.displaySym +
+          (p.broker ? ' <span style="font-size:10px;font-weight:400;color:var(--text3)">'+p.broker+'</span>' : '') +
+        '</div><div class="pos-name">' + (p.name||'') + '</div></div>' +
+        '<div style="text-align:right">' +
+          '<div class="pos-pnl-main" style="color:'+pnlColor+'">' + pnlStr + '</div>' +
+          '<div style="font-size:11px;color:'+pnlColor+';font-weight:600;font-family:monospace">' + pnlPctStr + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="pos-row"><div class="pos-row-label">成本</div><div class="pos-row-val">'+cur+p.cost.toFixed(dp)+'</div></div>' +
+      '<div class="pos-row"><div class="pos-row-label">現價</div><div class="pos-row-val" style="color:'+pnlColor+'">'+(hasPrice?cur+p.price.toFixed(dp):'⏳')+'</div></div>' +
+      '<div class="pos-row"><div class="pos-row-label">股數/張</div><div class="pos-row-val">'+p.qty+'</div></div>' +
+      '<div class="pos-row"><div class="pos-row-label">市值</div><div class="pos-row-val">'+(value!=null?cur+value.toFixed(0):'-')+'</div></div>' +
+      '<div class="pos-bottom">' +
+        '<div>' + sellStr + '</div>' +
+        '<div style="display:flex;align-items:center;gap:8px">' +
+          '<span class="health-badge ' + health.cls + '">' + health.label + '</span>' +
+          '<button style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:0" data-mkt="'+market+'" data-idx="'+i+'" onclick="this.closest(\'[data-mkt]\') || removePosition(this.dataset.mkt, +this.dataset.idx)">🗑</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('') + '</div>';
 }
 
 function renderPortfolioSummary() {
