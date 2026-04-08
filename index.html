@@ -317,7 +317,7 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
       <div class="custom-input-row">
         <div style="position:relative;flex:1;max-width:500px;min-width:200px">
           <input class="custom-input" id="custom-syms" placeholder="例如：NVDA, TSLA, 2330, 0050" style="width:100%;padding-right:32px">
-          <button id="clear-syms-btn" onclick="clearCustomInput()" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;line-height:1;padding:2px">✕</button>
+          <button id="clear-syms-btn" onclick="clearCustomInput()" style="display:none;position:absolute;right:4px;top:50%;transform:translateY(-50%);background:var(--line2);border:none;cursor:pointer;color:var(--text2);font-size:14px;line-height:1;padding:4px 8px;border-radius:6px;min-width:28px;min-height:28px;align-items:center;justify-content:center">✕</button>
         </div>
         <button class="scan-btn" id="scan-btn" onclick="startScan()">
           <span id="scan-btn-icon">🔍</span>
@@ -1073,14 +1073,23 @@ function toast(msg){const el=document.getElementById('toast');el.textContent=msg
 
 // ===== INIT =====
 renderPresets();
-renderFavSection();
-// Setup custom input X button
-document.getElementById('custom-syms').addEventListener('input', function() {
-  document.getElementById('clear-syms-btn').style.display = this.value ? 'block' : 'none';
-});
+// Setup custom input X button - use multiple events for mobile compatibility
+function setupClearBtn() {
+  const input = document.getElementById('custom-syms');
+  const btn = document.getElementById('clear-syms-btn');
+  function updateClearBtn() {
+    btn.style.display = input.value ? 'flex' : 'none';
+  }
+  input.addEventListener('input', updateClearBtn);
+  input.addEventListener('change', updateClearBtn);
+  input.addEventListener('keyup', updateClearBtn);
+  input.addEventListener('paste', function() { setTimeout(updateClearBtn, 50); });
+}
+setupClearBtn();
 function clearCustomInput() {
   document.getElementById('custom-syms').value = '';
   document.getElementById('clear-syms-btn').style.display = 'none';
+  document.getElementById('custom-syms').focus();
 }
 
 // ===== NAV =====
@@ -1173,6 +1182,9 @@ function batchAddFavs() {
 
 // ===== PORTFOLIO =====
 let portfolio = JSON.parse(localStorage.getItem('sr_portfolio') || '{"us":[],"tw":[]}');
+
+// Call renderFavSection here - after the function is defined
+renderFavSection();
 
 function savePortfolio() { localStorage.setItem('sr_portfolio', JSON.stringify(portfolio)); }
 
