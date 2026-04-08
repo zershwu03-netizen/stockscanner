@@ -66,6 +66,7 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 .scan-btn{padding:9px 22px;border-radius:8px;border:none;cursor:pointer;background:linear-gradient(135deg,var(--sky),#1d4ed8);color:white;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;transition:all 0.2s;box-shadow:0 4px 20px rgba(37,99,235,0.25)}
 .scan-btn:hover{transform:translateY(-1px)}
 .scan-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.scan-btn.secondary{background:#fff;color:var(--sky);border:1px solid var(--sky);box-shadow:none}
 .progress-wrap{margin:16px 0;display:none}
 .progress-bar-bg{height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin-bottom:7px}
 .progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--sky),var(--mint));border-radius:2px;transition:width 0.4s;width:0%}
@@ -87,8 +88,9 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 .filter-range-group{display:flex;align-items:center;gap:5px}
 .filter-range-group input[type=number]{width:58px;padding:4px 7px;border:1px solid var(--line2);border-radius:6px;font-size:12px;font-family:monospace;color:var(--text);background:#fff;outline:none}
 .filter-sep{font-size:11px;color:var(--text3)}
-.fav-only-btn{padding:4px 10px;border:1px solid var(--line2);border-radius:6px;font-size:12px;color:var(--text3);background:#fff;cursor:pointer;transition:all 0.15s}
-.fav-only-btn.active{background:rgba(220,38,38,0.08);border-color:var(--ember);color:var(--ember)}
+.fav-only-btn{padding:4px 10px;border:1px solid var(--line2);border-radius:6px;font-size:12px;color:var(--text3);background:#fff;cursor:pointer;transition:all 0.15s;font-weight:600}
+.fav-only-btn:hover{border-color:var(--sky);color:var(--sky)}
+.fav-only-btn.active{background:rgba(37,99,235,0.08);border-color:var(--sky);color:var(--sky)}
 .filter-count{font-size:11px;color:var(--text3);margin-left:auto;white-space:nowrap}
 
 /* Cards */
@@ -226,12 +228,13 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 .port-section{background:#fff;border:1px solid var(--line);border-radius:16px;margin-bottom:16px;overflow:hidden}
 .port-section-head{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
 .port-section-head h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:700}
-.port-add-form{padding:14px 16px;border-bottom:1px solid var(--line);background:var(--ink2);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.port-add-form{padding:14px 16px;border-bottom:1px solid var(--line);background:var(--ink2);display:grid;grid-template-columns:1.3fr 1fr 1fr .8fr auto;gap:8px;align-items:center}
 .port-input{padding:8px 12px;border:1px solid var(--line2);border-radius:8px;font-family:monospace;font-size:13px;color:var(--text);background:#fff;outline:none;transition:border-color 0.2s}
 .port-input:focus{border-color:var(--sky)}
 .port-input::placeholder{color:var(--text3)}
-.port-input.sym{width:100px}
-.port-input.num{width:100px}
+.port-input.sym{width:100%}
+.port-input.num{width:100%}
+.port-add-btn{padding:8px 16px;font-size:13px;justify-content:center}
 .port-table{width:100%;border-collapse:collapse;font-size:13px}
 .port-table th{padding:10px 14px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;background:var(--ink2);border-bottom:1px solid var(--line)}
 .port-table td{padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
@@ -293,6 +296,8 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 .opt-row{display:grid;grid-template-columns:1fr auto auto auto;gap:6px;align-items:center;padding:6px 8px;border-radius:7px;font-size:11px;background:#fff}
 .opt-row.top1{background:rgba(5,150,105,0.07);border:1px solid rgba(5,150,105,0.2)}
 .opt-row.top2{background:rgba(37,99,235,0.05);border:1px solid rgba(37,99,235,0.15)}
+.to-top-btn{position:fixed;right:16px;bottom:18px;z-index:9998;border:none;border-radius:999px;padding:10px 12px;font-size:13px;font-weight:700;font-family:'Syne',sans-serif;background:linear-gradient(135deg,var(--sky),#1d4ed8);color:#fff;box-shadow:0 8px 24px rgba(37,99,235,.28);cursor:pointer;display:none}
+.to-top-btn.show{display:block}
 
 @media (max-width: 900px){
   .wrap{padding:0 12px}
@@ -300,7 +305,7 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
   .key-bar{width:100%;overflow-x:auto;flex-wrap:nowrap}
   .custom-input-row{flex-direction:column}
   .custom-input{min-width:0;max-width:none}
-  .port-add-form{display:grid;grid-template-columns:1fr 1fr}
+  .port-add-form{grid-template-columns:1fr 1fr}
 }
 @media (max-width: 720px){
   #sim-roi > div:first-child{grid-template-columns:1fr !important}
@@ -308,10 +313,12 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
   #sim-bt > div:nth-of-type(3){grid-template-columns:1fr !important}
   .bt-trade-row{grid-template-columns:1fr}
   .opt-row{grid-template-columns:1fr}
+  .port-add-form{grid-template-columns:1fr}
+  .port-add-btn{width:100%}
 }
 @media (max-width: 480px){
-  .port-add-form{grid-template-columns:1fr}
   .brand-name{font-size:16px}
+  .to-top-btn{right:12px;bottom:14px}
 }
 
 </style>
@@ -339,11 +346,6 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 
 <div class="wrap scan-page" id="scan-page">
   <div class="controls section-pad">
-    <div class="market-tabs">
-      <button class="mkt-btn active" onclick="setMarket('all',this)">全部</button>
-      <button class="mkt-btn" onclick="setMarket('tw',this)">🇹🇼 台股</button>
-      <button class="mkt-btn" onclick="setMarket('us',this)">🇺🇸 美股</button>
-    </div>
     <div class="presets-section">
       <div class="presets-label" style="display:flex;align-items:center;justify-content:space-between">
         <span>預設清單</span>
@@ -370,6 +372,7 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
           <span id="scan-btn-icon">🔍</span>
           <span id="scan-btn-text">開始掃描</span>
         </button>
+        <button class="scan-btn secondary" id="scan-cancel-btn" onclick="cancelScan()" style="display:none">取消掃描</button>
       </div>
     </div>
     <div class="progress-wrap" id="progress-wrap">
@@ -394,20 +397,8 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
       </div>
     </div>
     <div class="filter-bar">
-      <label>RSI</label>
-      <div class="filter-range-group">
-        <input type="number" id="f-rsi-min" value="0" min="0" max="100" oninput="applyFilter()">
-        <span class="filter-sep">~</span>
-        <input type="number" id="f-rsi-max" value="100" min="0" max="100" oninput="applyFilter()">
-      </div>
-      <label style="margin-left:6px">評分≥</label>
-      <input type="number" id="f-score-min" value="0" min="0" max="100" style="width:52px" oninput="applyFilter()">
-      <label style="margin-left:6px">市場</label>
-      <select class="filter-select" id="f-market" onchange="applyFilter()">
-        <option value="all">全部</option>
-        <option value="tw">台股</option>
-        <option value="us">美股</option>
-      </select>
+      <button class="fav-only-btn" id="f-buy-only-btn" onclick="toggleBuyOnly()">🟢 只顯示 建議買入</button>
+      <button class="fav-only-btn" id="f-consider-only-btn" onclick="toggleConsiderOnly()">🔵 只顯示 可考慮買入</button>
       <button class="fav-only-btn" id="fav-only-btn" onclick="toggleFavOnly()">⭐ 只看收藏</button>
       <span class="filter-count" id="filter-count"></span>
     </div>
@@ -452,9 +443,9 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
       <input class="port-input sym" id="us-sym" placeholder="代號 NVDA">
       <input class="port-input num" id="us-cost" placeholder="成本 $176.4" type="number" step="0.01">
       <input class="port-input num" id="us-qty" placeholder="股數 10" type="number" step="0.01">
-      <input class="port-input num" id="us-broker" placeholder="券商" style="width:80px" list="broker-list">
+      <input class="port-input num" id="us-broker" placeholder="券商" list="broker-list">
       <datalist id="broker-list"><option value="國泰"><option value="元大"><option value="兆豐"></datalist>
-      <button class="scan-btn" style="padding:8px 16px;font-size:13px" onclick="addPosition('us')">＋ 新增</button>
+      <button class="scan-btn port-add-btn" onclick="addPosition('us')">＋ 新增</button>
     </div>
     <div id="us-port-cards"></div>
   </div>
@@ -469,8 +460,8 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
       <input class="port-input sym" id="tw-sym" placeholder="代號 2330">
       <input class="port-input num" id="tw-cost" placeholder="成本 1000" type="number" step="0.1">
       <input class="port-input num" id="tw-qty" placeholder="股數 1000" type="number">
-      <input class="port-input num" id="tw-broker-input" placeholder="券商" style="width:80px" list="broker-list">
-      <button class="scan-btn" style="padding:8px 16px;font-size:13px" onclick="addPosition('tw')">＋ 新增</button>
+      <input class="port-input num" id="tw-broker-input" placeholder="券商" list="broker-list">
+      <button class="scan-btn port-add-btn" onclick="addPosition('tw')">＋ 新增</button>
     </div>
     <div id="tw-port-cards"></div>
   </div>
@@ -620,28 +611,35 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 </div>
 
 <div class="toast" id="toast"></div>
+<button class="to-top-btn" id="to-top-btn" onclick="scrollToTopFast()">⬆ 回到頂部</button>
 
 <script>
 // ===== PRESETS =====
 const PRESETS={
   tw:[
-    {id:'tw-50',label:'台股龍頭50',syms:['2330.TW','2317.TW','2454.TW','2382.TW','2308.TW','2881.TW','2882.TW','1301.TW','1303.TW','2886.TW']},
-    {id:'tw-etf',label:'台股 ETF',syms:['0050.TW','0056.TW','00878.TW','00757.TW','00662.TW']},
+    {id:'tw-core-0050',label:'台股核心(0050前五)',syms:['2330.TW','2308.TW','2317.TW','2454.TW','3711.TW']},
+    {id:'tw-50',label:'台股龍頭',syms:['2330.TW','2317.TW','2454.TW','2382.TW','2308.TW','2881.TW','2882.TW','1301.TW','1303.TW','2886.TW']},
+    {id:'tw-etf',label:'台股 ETF',syms:['0050.TW','0056.TW','00878.TW','00919.TW','00713.TW','00757.TW','00662.TW']},
+    {id:'tw-dividend',label:'高股息',syms:['0056.TW','00878.TW','00919.TW','00713.TW','00929.TW']},
     {id:'tw-semi',label:'半導體',syms:['2330.TW','2303.TW','2454.TW','3711.TW','2379.TW','2408.TW']},
     {id:'tw-finance',label:'金融股',syms:['2881.TW','2882.TW','2884.TW','2886.TW','2891.TW','5880.TW']},
     {id:'tw-green',label:'綠能',syms:['6869.TW','9958.TW','6806.TW','3576.TW','3691.TW']},
   ],
   us:[
+    {id:'us-core',label:'美股核心科技',syms:['NVDA','MSFT','AAPL','GOOGL','META','AMZN','TSLA','AVGO']},
     {id:'us-mag7',label:'Magnificent 7',syms:['NVDA','MSFT','AAPL','GOOGL','META','AMZN','TSLA']},
     {id:'us-ai',label:'AI 概念',syms:['NVDA','AMD','AVGO','ARM','SMCI','PLTR','CRM']},
     {id:'us-etf',label:'美股 ETF',syms:['QQQ','VOO','VT','QQQM','XLI','XLE']},
     {id:'us-semi',label:'半導體',syms:['NVDA','AMD','INTC','AVGO','LRCX','AMAT','TSM']},
+    {id:'us-nq-rot',label:'Nasdaq 輪動',syms:['ALNY','FER','INSM','MPWR','STX','WDC']},
     {id:'us-fin',label:'金融科技',syms:['PYPL','HOOD','V','MA','SQ','COIN']},
   ]
 };
 let currentMarket='all',allResults=[],displayedResults=[];
 let favourites=JSON.parse(localStorage.getItem('sr_favs')||'[]');
 let favOnlyMode=false;
+let buyOnlyMode=false;
+let considerOnlyMode=false;
 let scanHistory=JSON.parse(localStorage.getItem('sr_history')||'{}');
 const CACHE_TTL=30*60*1000;
 function cacheGet(symbol){
@@ -687,40 +685,92 @@ function getSelectedSymbols(){
   return[...new Set([...fromPresets,...fromCustom])];
 }
 function applyFilter(){
-  const rsiMin=+document.getElementById('f-rsi-min').value||0,rsiMax=+document.getElementById('f-rsi-max').value||100;
-  const scoreMin=+document.getElementById('f-score-min').value||0,mkt=document.getElementById('f-market').value;
   displayedResults=allResults.filter(r=>{
-    if(r.rsi<rsiMin||r.rsi>rsiMax)return false;if(r.score<scoreMin)return false;
-    if(mkt==='tw'&&!r.isTW)return false;if(mkt==='us'&&r.isTW)return false;
-    if(favOnlyMode&&!favourites.includes(r.symbol))return false;return true;
+    const action=(calcDecision(r).action||'');
+    if(buyOnlyMode && !action.includes('建議買入')) return false;
+    if(considerOnlyMode && !action.includes('可考慮買入')) return false;
+    if(favOnlyMode&&!favourites.includes(r.symbol)) return false;
+    return true;
   });
   document.getElementById('filter-count').textContent='顯示 '+displayedResults.length+' / '+allResults.length+' 支';renderCards();
 }
 function toggleFavOnly(){favOnlyMode=!favOnlyMode;document.getElementById('fav-only-btn').classList.toggle('active',favOnlyMode);applyFilter();}
+function toggleBuyOnly(){
+  buyOnlyMode=!buyOnlyMode;
+  if(buyOnlyMode) considerOnlyMode=false;
+  document.getElementById('f-buy-only-btn').classList.toggle('active',buyOnlyMode);
+  document.getElementById('f-consider-only-btn').classList.toggle('active',considerOnlyMode);
+  applyFilter();
+}
+function toggleConsiderOnly(){
+  considerOnlyMode=!considerOnlyMode;
+  if(considerOnlyMode) buyOnlyMode=false;
+  document.getElementById('f-consider-only-btn').classList.toggle('active',considerOnlyMode);
+  document.getElementById('f-buy-only-btn').classList.toggle('active',buyOnlyMode);
+  applyFilter();
+}
+let scanCancelRequested=false;
+let scanRunning=false;
+let scanAbortCtrl=null;
+function cancelScan(){
+  if(!scanRunning) return;
+  scanCancelRequested=true;
+  if(scanAbortCtrl) scanAbortCtrl.abort();
+  setProgress(0,'正在取消...');
+  toast('⏹ 已送出取消，正在停止掃描...');
+}
 async function startScan(){
+  if(scanRunning) return;
   const syms=getSelectedSymbols();if(!syms.length){toast('⚠️ 請勾選清單或輸入代號');return;}
+  scanRunning=true;
+  scanCancelRequested=false;
+  scanAbortCtrl=new AbortController();
   const btn=document.getElementById('scan-btn');btn.disabled=true;
+  const cancelBtn=document.getElementById('scan-cancel-btn'); if(cancelBtn) cancelBtn.style.display='inline-flex';
   document.getElementById('scan-btn-icon').innerHTML='<div class="spinner"></div>';
   document.getElementById('scan-btn-text').textContent='掃描中...';
   document.getElementById('progress-wrap').style.display='block';
   document.getElementById('results-section').style.display='none';
   document.getElementById('empty-state').style.display='none';
   allResults=[];
-  for(let i=0;i<syms.length;i++){
-    setProgress((i/syms.length)*100,'分析 '+syms[i]+'... ('+(i+1)+'/'+syms.length+')');
-    try{const result=await analyzeSymbol(syms[i]);if(result)allResults.push(result);}
-    catch(e){console.warn('Failed:',syms[i],e.message);toast('⚠️ '+syms[i]+' 失敗：'+e.message.split('\n')[0]);}
-    await sleep(200);
+  try{
+    for(let i=0;i<syms.length;i++){
+      if(scanCancelRequested){
+        setProgress((i/syms.length)*100,'已取消掃描');
+        break;
+      }
+      setProgress((i/syms.length)*100,'分析 '+syms[i]+'... ('+(i+1)+'/'+syms.length+')');
+      try{
+        const result=await analyzeSymbol(syms[i], scanAbortCtrl.signal);
+        if(result)allResults.push(result);
+      }catch(e){
+        if(e && (e.name==='AbortError' || String(e.message||'').includes('aborted'))){
+          scanCancelRequested=true;
+          break;
+        }
+        console.warn('Failed:',syms[i],e.message);
+        toast('⚠️ '+syms[i]+' 失敗：'+String(e.message||'').split('\n')[0]);
+      }
+      await sleep(200);
+    }
+    setProgress(100,scanCancelRequested?'已取消':'完成！');await sleep(200);
+    document.getElementById('progress-wrap').style.display='none';
+    document.getElementById('results-section').style.display='block';
+    document.getElementById('results-meta').textContent=(scanCancelRequested?'已中止，仍完成 ':'共分析 ')+allResults.length+' 支 · '+new Date().toLocaleTimeString('zh-TW');
+    const now=Date.now();
+    allResults.forEach(r=>{const prev=scanHistory[r.symbol];scanHistory[r.symbol]={score:r.score,time:now,prev:prev?prev.score:null};});
+    localStorage.setItem('sr_history',JSON.stringify(scanHistory));
+    sortCards('score',document.querySelector('.sort-btn'));applyFilter();loadAllAI();
+    if(scanCancelRequested) toast('⏹ 掃描已取消，保留目前已完成結果');
+  }finally{
+    btn.disabled=false;
+    document.getElementById('scan-btn-icon').textContent='🔍';
+    document.getElementById('scan-btn-text').textContent='重新掃描';
+    if(cancelBtn) cancelBtn.style.display='none';
+    scanRunning=false;
+    scanCancelRequested=false;
+    scanAbortCtrl=null;
   }
-  setProgress(100,'完成！');await sleep(200);
-  document.getElementById('progress-wrap').style.display='none';
-  document.getElementById('results-section').style.display='block';
-  document.getElementById('results-meta').textContent='共分析 '+allResults.length+' 支 · '+new Date().toLocaleTimeString('zh-TW');
-  const now=Date.now();
-  allResults.forEach(r=>{const prev=scanHistory[r.symbol];scanHistory[r.symbol]={score:r.score,time:now,prev:prev?prev.score:null};});
-  localStorage.setItem('sr_history',JSON.stringify(scanHistory));
-  sortCards('score',document.querySelector('.sort-btn'));applyFilter();loadAllAI();
-  btn.disabled=false;document.getElementById('scan-btn-icon').textContent='🔍';document.getElementById('scan-btn-text').textContent='重新掃描';
 }
 function setProgress(pct,text){document.getElementById('progress-fill').style.width=pct+'%';document.getElementById('progress-text').textContent=text;}
 
@@ -768,11 +818,28 @@ const PROXIES=[
 ];
 async function fetchWithTimeout(url,ms,options={}){
   const ctrl=new AbortController();
+  const { signal: externalSignal, ...rest } = options || {};
+  let onExternalAbort=null;
+  if(externalSignal){
+    if(externalSignal.aborted) ctrl.abort();
+    else{
+      onExternalAbort=()=>ctrl.abort();
+      externalSignal.addEventListener('abort', onExternalAbort, { once:true });
+    }
+  }
   const id=setTimeout(()=>ctrl.abort(),ms);
-  try{const r=await fetch(url,{signal:ctrl.signal,...options});clearTimeout(id);return r;}
-  catch(e){clearTimeout(id);throw e;}
+  try{
+    const r=await fetch(url,{...rest, signal:ctrl.signal});
+    clearTimeout(id);
+    return r;
+  }catch(e){
+    clearTimeout(id);
+    throw e;
+  }finally{
+    if(externalSignal&&onExternalAbort) externalSignal.removeEventListener('abort', onExternalAbort);
+  }
 }
-async function fetchYahoo(symbol,range='6mo',interval='1d'){
+async function fetchYahoo(symbol,range='6mo',interval='1d',signal){
   const targets=[
     'https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(symbol)+'?interval='+interval+'&range='+range+'&includePrePost=false&events=div%2Csplit',
     'https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(symbol)+'?interval='+interval+'&range='+range+'&includePrePost=false&events=div%2Csplit',
@@ -782,7 +849,7 @@ async function fetchYahoo(symbol,range='6mo',interval='1d'){
     for(const makeProxy of PROXIES){
       const proxyUrl=makeProxy(targetUrl);
       try{
-        const resp=await fetchWithTimeout(proxyUrl,12000);
+        const resp=await fetchWithTimeout(proxyUrl,12000,{signal:signal});
         if(!resp.ok){errors.push('HTTP '+resp.status);continue;}
         const text=await resp.text();
         if(!text||!text.trim()){errors.push('empty');continue;}
@@ -797,7 +864,7 @@ async function fetchYahoo(symbol,range='6mo',interval='1d'){
 }
 
 // ===== ANALYSIS =====
-async function analyzeSymbol(symbol){
+async function analyzeSymbol(symbol, signal){
   // Check cache first
   const cached=cacheGet(symbol);
   if(cached){
@@ -809,7 +876,7 @@ async function analyzeSymbol(symbol){
   }
 
   const isTW=symbol.endsWith('.TW')||symbol.endsWith('.TWO');
-  const data=await fetchYahoo(symbol,'6mo','1d');
+  const data=await fetchYahoo(symbol,'6mo','1d',signal);
   const result=data?.chart?.result?.[0];
   if(!result) return null;
 
@@ -1296,6 +1363,17 @@ function switchNav(page) {
   simPage.style.display = page === 'sim' ? 'block' : 'none';
   if (page === 'portfolio') renderPortfolio();
 }
+function toggleToTopBtn(){
+  var btn = document.getElementById('to-top-btn');
+  if(!btn) return;
+  var y = window.scrollY || document.documentElement.scrollTop || 0;
+  btn.classList.toggle('show', y > 260);
+}
+function scrollToTopFast(){
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+window.addEventListener('scroll', toggleToTopBtn, { passive: true });
+setTimeout(toggleToTopBtn, 0);
 
 // ===== DECISION BANNER =====
 function buildDecisionBanner(r) {
