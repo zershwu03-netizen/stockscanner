@@ -432,9 +432,17 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 
   <!-- Summary -->
   <div class="port-summary" id="port-summary" style="background:#fff;border:1px solid var(--line);border-radius:16px;margin-bottom:16px"></div>
+  <div id="portfolio-quick-nav" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px">
+    <button onclick="jumpPortfolioSection('us')" style="font-size:12px;padding:6px 10px;border:1px solid var(--line2);border-radius:8px;background:#fff;color:var(--text2);cursor:pointer">US</button>
+    <button onclick="jumpPortfolioSection('tw')" style="font-size:12px;padding:6px 10px;border:1px solid var(--line2);border-radius:8px;background:#fff;color:var(--text2);cursor:pointer">TW</button>
+    <button onclick="jumpPortfolioSection('sell')" style="font-size:12px;padding:6px 10px;border:1px solid var(--line2);border-radius:8px;background:#fff;color:var(--text2);cursor:pointer">Sell Records</button>
+    <input id="portfolio-search" placeholder="Find: NVDA / 2330" oninput="setPortfolioSearch(this.value)" onkeydown="if(event.key==='Enter'){jumpToStockInPortfolio();}" style="flex:1;min-width:180px;padding:7px 10px;border:1px solid var(--line2);border-radius:8px;font-family:monospace">
+    <button onclick="jumpToStockInPortfolio()" style="font-size:12px;padding:6px 10px;border:1px solid var(--sky);border-radius:8px;background:rgba(37,99,235,0.08);color:var(--sky);cursor:pointer">Go</button>
+    <button onclick="clearPortfolioSearch()" style="font-size:12px;padding:6px 10px;border:1px solid var(--line2);border-radius:8px;background:#fff;color:var(--text3);cursor:pointer">Clear</button>
+  </div>
 
   <!-- US Stocks -->
-  <div class="port-section">
+  <div class="port-section" id="us-portfolio-section">
     <div class="port-section-head">
       <h3>🇺🇸 美股持倉</h3>
       <button onclick="refreshPortfolio('us')" style="font-size:11px;padding:4px 10px;border:1px solid var(--line2);border-radius:6px;background:#fff;color:var(--text2);cursor:pointer;font-family:inherit">🔄 更新報價</button>
@@ -451,7 +459,7 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
   </div>
 
   <!-- TW Stocks -->
-  <div class="port-section">
+  <div class="port-section" id="tw-portfolio-section">
     <div class="port-section-head">
       <h3>🇹🇼 台股持倉</h3>
       <button onclick="refreshPortfolio('tw')" style="font-size:11px;padding:4px 10px;border:1px solid var(--line2);border-radius:6px;background:#fff;color:var(--text2);cursor:pointer;font-family:inherit">🔄 更新報價</button>
@@ -464,6 +472,15 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
       <button class="scan-btn port-add-btn" onclick="addPosition('tw')">＋ 新增</button>
     </div>
     <div id="tw-port-cards"></div>
+  </div>
+
+  <div class="port-section" id="sell-records-section">
+    <div class="port-section-head">
+      <h3>Sell Records (Realized P/L)</h3>
+      <button onclick="clearSellRecords()" style="font-size:11px;padding:4px 10px;border:1px solid var(--line2);border-radius:6px;background:#fff;color:var(--text2);cursor:pointer;font-family:inherit">Clear</button>
+    </div>
+    <div id="sell-records-summary" style="padding:10px 16px;border-bottom:1px solid var(--line);font-size:12px;color:var(--text2)"></div>
+    <div id="sell-records-list" style="padding:8px 12px"></div>
   </div>
 </div>
 
@@ -1451,6 +1468,7 @@ function batchAddFavs() {
 
 // ===== PORTFOLIO =====
 let portfolio = JSON.parse(localStorage.getItem('sr_portfolio') || '{"us":[],"tw":[]}');
+let realizedTrades = JSON.parse(localStorage.getItem('sr_realized_trades') || '[]');
 
 // Call renderFavSection here - after the function is defined
 renderFavSection();
@@ -1498,6 +1516,33 @@ function removePosition(market, idx) {
   portfolio[market].splice(idx, 1);
   savePortfolio();
   renderPortfolio();
+}
+
+function editPositionQty(market, idx) {
+  const pos = portfolio[market]?.[idx];
+  if (!pos) return;
+
+  const input = prompt('請輸入新的股數（賣出後剩餘股數）', String(pos.qty ?? ''));
+  if (input == null) return;
+
+  const qty = parseFloat(String(input).trim());
+  if (!Number.isFinite(qty) || qty < 0) {
+    toast('⚠️ 股數格式錯誤，請輸入 0 或正數');
+    return;
+  }
+
+  if (qty === 0) {
+    portfolio[market].splice(idx, 1);
+    savePortfolio();
+    renderPortfolio();
+    toast('✅ 股數為 0，已移除此持倉');
+    return;
+  }
+
+  pos.qty = parseFloat(qty.toFixed(4));
+  savePortfolio();
+  renderPortfolio();
+  toast('✅ 已更新股數：' + pos.qty);
 }
 
 async function fetchPortfolioPrice(market, idx) {
@@ -1579,6 +1624,7 @@ function renderPortfolio() {
   renderPortfolioTable('us');
   renderPortfolioTable('tw');
   renderPortfolioSummary();
+  renderSellRecords();
 }
 
 const PORT_USD_TWD_DEFAULT = 32;
@@ -1712,6 +1758,68 @@ function renderPortfolioSummary() {
     '<div class="port-sum-card"><div class="port-sum-label">台股市值</div><div class="port-sum-val">' + (twValue/10000).toFixed(1) + '<span style="font-size:13px">萬</span></div><div class="port-sum-sub">' + portfolio.tw.length + ' 支</div></div>';
 }
 
+
+// Override: clean UTF-8 portfolio card renderer + editable quantity action
+function renderPortfolioTable(market) {
+  var box = document.getElementById(market + '-port-cards');
+  if (!box) return;
+  var positions = portfolio[market] || [];
+  var cur = market === 'us' ? '$' : '';
+  var fx = market === 'us' ? getPortfolioFx() : 1;
+  var dp = market === 'tw' ? 1 : 2;
+
+  if (!positions.length) {
+    box.innerHTML = '<div class="empty-state" style="padding:18px;border:1px dashed var(--line);border-radius:12px;background:#fff;color:var(--text3);font-size:12px;text-align:center">目前沒有' + (market === 'us' ? '美股' : '台股') + '持倉，請先新增股票。</div>';
+    return;
+  }
+
+  box.innerHTML = positions.map(function(p, i) {
+    var has = p.price != null;
+    var invested = p.cost * p.qty;
+    var value = has ? p.price * p.qty : null;
+    var pnl = has ? (value - invested) : null;
+    var pct = (has && invested > 0) ? (pnl / invested * 100) : null;
+    var investedTwd = invested * fx;
+    var valueTwd = has ? value * fx : null;
+    var pnlTwd = has ? pnl * fx : null;
+    var suggestion = getPortfolioSuggestion(p, pct, has);
+    var color = pnl > 0 ? '#059669' : pnl < 0 ? '#dc2626' : 'var(--text)';
+    var targetText = p.sellTarget ? ((market === 'us' ? '$' : '') + p.sellTarget) : '-';
+    var stopText = p.sellStop ? ((market === 'us' ? '$' : '') + p.sellStop) : '-';
+    var techText = p.tech ? (' | RSI ' + p.tech.rsi + ' | MACD ' + p.tech.macdHist) : '';
+
+    return (
+      '<div class="card" style="padding:14px 16px;margin-bottom:10px">' +
+        '<div style="display:flex;justify-content:space-between;gap:12px">' +
+          '<div>' +
+            '<div style="font-family:monospace;font-size:16px;font-weight:700">' + (p.displaySym || p.sym || '-') + '</div>' +
+            '<div style="font-size:12px;color:var(--text2)">' + (p.name || '-') + '</div>' +
+            '<div style="font-size:11px;color:var(--text3)">' + ((p.broker || '-') + ' | 股數 ' + p.qty) + '</div>' +
+          '</div>' +
+          '<div style="text-align:right">' +
+            '<div style="font-size:11px;color:var(--text3)">成本 / 現價</div>' +
+            '<div style="font-family:monospace;font-size:13px">' + cur + p.cost.toFixed(dp) + ' / ' + (has ? cur + p.price.toFixed(dp) : '-') + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px">' +
+          '<div style="background:var(--ink);border-radius:10px;padding:8px"><div style="font-size:10px;color:var(--text3)">投入成本（台幣）</div><div style="font-family:monospace;font-size:12px">' + fmtMoney(investedTwd) + '</div></div>' +
+          '<div style="background:var(--ink);border-radius:10px;padding:8px"><div style="font-size:10px;color:var(--text3)">目前市值（台幣）</div><div style="font-family:monospace;font-size:12px">' + (has ? fmtMoney(valueTwd) : '-') + '</div></div>' +
+          '<div style="background:var(--ink);border-radius:10px;padding:8px"><div style="font-size:10px;color:var(--text3)">損益（台幣）</div><div style="font-family:monospace;font-size:12px;color:' + color + '">' + (pnlTwd != null ? (pnlTwd >= 0 ? '+' : '') + fmtMoney(pnlTwd) : '-') + '</div></div>' +
+          '<div style="background:var(--ink);border-radius:10px;padding:8px"><div style="font-size:10px;color:var(--text3)">持倉建議</div><div style="font-size:12px;color:' + suggestion.color + '">' + suggestion.action + '（' + suggestion.scoreText + '）</div></div>' +
+        '</div>' +
+        '<div style="margin-top:8px;background:var(--ink);border-radius:10px;padding:8px">' +
+          '<div style="font-size:10px;color:var(--text3);margin-bottom:4px">建議分析</div>' +
+          '<div style="font-size:12px;color:var(--text2)">' + suggestion.reason + '</div>' +
+          '<div style="margin-top:6px;font-size:11px;color:var(--text3)">目標價 ' + targetText + ' | 停損價 ' + stopText + techText + '</div>' +
+        '</div>' +
+        '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:10px">' +
+          '<button onclick="editPositionQty(\'' + market + '\',' + i + ')" style="background:none;border:none;cursor:pointer;color:var(--sky);font-size:12px">編輯股數</button>' +
+          '<button onclick="removePosition(\'' + market + '\',' + i + ')" style="background:none;border:none;cursor:pointer;color:var(--ember);font-size:12px">刪除</button>' +
+        '</div>' +
+      '</div>'
+    );
+  }).join('');
+}
 
 // ===== SIMULATOR =====
 function switchSimTab(tab) {
@@ -2400,6 +2508,8 @@ function _simulateDCA(closes, timestamps, amount, dayTarget, freqMonths) {
     invested: invested,
     finalValue: finalValue,
     gain: gain,
+    years: years,
+    monthlyAmount: amount,
     totalRetPct: totalRet * 100,
     annualizedPct: ann * 100,
     maxDDPct: maxDD * 100
@@ -2543,6 +2653,360 @@ async function runOptimize() {
   document.getElementById('bt-progress').style.display = 'none';
   optBtn.disabled = false;
   document.getElementById('opt-btn-txt').textContent = 'DCA 一鍵最佳化';
+}
+
+function buildDcaAutoConclusion(dca) {
+  var score = 50;
+  var reasons = [];
+  var actions = [];
+
+  if (dca.annualizedPct >= 12) { score += 22; reasons.push('年化報酬高（>=12%）'); }
+  else if (dca.annualizedPct >= 8) { score += 12; reasons.push('年化報酬中上（8%~12%）'); }
+  else if (dca.annualizedPct >= 5) { score += 2; reasons.push('年化報酬普通（5%~8%）'); }
+  else { score -= 20; reasons.push('年化報酬偏低（<5%）'); }
+
+  if (dca.totalRetPct >= 40) { score += 18; reasons.push('累積總報酬佳（>=40%）'); }
+  else if (dca.totalRetPct >= 20) { score += 8; reasons.push('累積總報酬尚可（20%~40%）'); }
+  else if (dca.totalRetPct < 0) { score -= 22; reasons.push('累積總報酬為負'); }
+  else { reasons.push('累積總報酬偏保守（0%~20%）'); }
+
+  if (dca.maxDDPct > -20) { score += 15; reasons.push('最大回撤控制良好（>-20%）'); }
+  else if (dca.maxDDPct > -30) { score += 6; reasons.push('最大回撤可接受（-30%~-20%）'); }
+  else if (dca.maxDDPct <= -40) { score -= 18; reasons.push('最大回撤過深（<=-40%）'); }
+  else { score -= 8; reasons.push('最大回撤偏深（-40%~-30%）'); }
+
+  if (dca.years >= 3) score += 5;
+  if (dca.buys < 10) score -= 5;
+  score = Math.max(0, Math.min(100, Math.round(score)));
+
+  var verdict = '普通，可小部位測試';
+  var color = 'var(--sky)';
+  if (score >= 75) { verdict = '適合定期定額'; color = 'var(--mint)'; }
+  else if (score < 45) { verdict = '暫不建議定期定額'; color = 'var(--ember)'; }
+
+  if (score >= 75) {
+    actions.push('可持續每月投入，維持固定扣款紀律');
+    actions.push('遇到回撤可分批加碼，不建議一次重壓');
+    actions.push('每季檢查一次基本面是否改變');
+  } else if (score >= 45) {
+    actions.push('先用較小金額試跑 3~6 個月');
+    actions.push('保留現金，回撤加大時再提高投入');
+    actions.push('與同產業標的比較後再決定是否加碼');
+  } else {
+    actions.push('先不要重倉，優先觀察趨勢是否改善');
+    actions.push('若要進場，建議降低每月投入金額');
+    actions.push('改看風險更低、回撤更小的標的');
+  }
+
+  return { score: score, verdict: verdict, color: color, reasons: reasons, actions: actions };
+}
+
+async function runBT() {
+  var sym = (document.getElementById('bt-sym').value || '').trim();
+  if (!sym) { toast('請先輸入股票代號'); return; }
+  var amount = _num('bt-amount', 100000);
+  if (!(amount > 0)) { toast('每月投入金額需大於 0'); return; }
+  var period = document.getElementById('bt-period').value;
+
+  var btn = document.getElementById('bt-btn');
+  btn.disabled = true;
+  document.getElementById('bt-btn-txt').textContent = '回測中...';
+  document.getElementById('bt-progress').style.display = 'block';
+  document.getElementById('bt-pbar').style.width = '18%';
+  document.getElementById('bt-result').style.display = 'none';
+
+  try {
+    var fullSym = autoSymbol(sym);
+    var data = await fetchYahoo(fullSym, period, '1d');
+    var result = data && data.chart && data.chart.result && data.chart.result[0];
+    if (!result) throw new Error('無法取得歷史資料');
+    var closes = (result.indicators && result.indicators.quote && result.indicators.quote[0] && result.indicators.quote[0].close) || [];
+    var timestamps = result.timestamp || [];
+    var validLen = closes.filter(function(v){ return v != null; }).length;
+    if (validLen < 30) throw new Error('歷史資料不足，請拉長回測期間');
+
+    document.getElementById('bt-pbar').style.width = '58%';
+    var dca = _simulateDCA(closes, timestamps, amount, 10, 1);
+    if (!dca) throw new Error('DCA 回測失敗，請更換期間或標的');
+
+    var conclusion = buildDcaAutoConclusion(dca);
+    var gainColor = dca.gain >= 0 ? 'var(--mint)' : 'var(--ember)';
+
+    document.getElementById('bt-stats').innerHTML =
+      '<div class="sim-stat-box"><div class="sim-stat-lbl">每月投入</div><div class="sim-stat-val" style="color:var(--sky)">' + fmtMoney(amount) + '</div><div class="sim-stat-sub">共投入 ' + dca.buys + ' 次</div></div>' +
+      '<div class="sim-stat-box"><div class="sim-stat-lbl">總投入</div><div class="sim-stat-val">' + fmtMoney(dca.invested) + '</div><div class="sim-stat-sub">期間 ' + dca.years.toFixed(1) + ' 年</div></div>' +
+      '<div class="sim-stat-box"><div class="sim-stat-lbl">期末資產</div><div class="sim-stat-val" style="color:' + gainColor + '">' + fmtMoney(dca.finalValue) + '</div><div class="sim-stat-sub">' + (dca.gain >= 0 ? '+' : '') + fmtMoney(dca.gain) + ' / ' + dca.totalRetPct.toFixed(1) + '%</div></div>' +
+      '<div class="sim-stat-box"><div class="sim-stat-lbl">年化 / MDD</div><div class="sim-stat-val">' + dca.annualizedPct.toFixed(1) + '%</div><div class="sim-stat-sub">最大回撤 ' + dca.maxDDPct.toFixed(1) + '%</div></div>';
+
+    document.getElementById('bt-analysis').innerHTML =
+      '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:8px">' +
+        '<div style="font-weight:800;color:' + conclusion.color + ';font-size:14px">自動結論：' + conclusion.verdict + '</div>' +
+        '<div style="font-family:monospace;font-size:12px;padding:3px 8px;border-radius:999px;background:rgba(37,99,235,0.08);color:var(--sky)">評分 ' + conclusion.score + '/100</div>' +
+      '</div>' +
+      '<div style="font-size:12px;color:var(--text2);margin-bottom:6px">判斷依據：' + conclusion.reasons.join('、') + '</div>' +
+      '<div style="font-size:12px;color:var(--text2)">操作建議：1. ' + conclusion.actions[0] + ' 2. ' + conclusion.actions[1] + ' 3. ' + conclusion.actions[2] + '</div>' +
+      '<div style="margin-top:8px;color:var(--text3);font-size:11px">重點數據：總報酬 ' + dca.totalRetPct.toFixed(1) + '% ｜ 年化 ' + dca.annualizedPct.toFixed(1) + '% ｜ 最大回撤 ' + dca.maxDDPct.toFixed(1) + '%</div>';
+
+    document.getElementById('bt-trades').innerHTML =
+      '<div style="text-align:center;padding:12px;color:var(--text3);font-size:12px">DCA 為固定每月投入模型，主要看長期資產曲線與風險承受度，不顯示逐筆進出交易。</div>';
+
+    document.getElementById('bt-pbar').style.width = '100%';
+    document.getElementById('bt-result').style.display = 'block';
+  } catch (e) {
+    var a = document.getElementById('bt-analysis');
+    if (a) a.innerHTML = '<div style="color:var(--ember)">回測失敗：' + e.message + '</div>';
+    toast('❌ 回測失敗：' + e.message);
+  }
+
+  await sleep(180);
+  document.getElementById('bt-progress').style.display = 'none';
+  btn.disabled = false;
+  document.getElementById('bt-btn-txt').textContent = '重新回測';
+}
+
+// Final override: portfolio + sell records.
+const SELL_FEE_RATE = 0.001425;
+const SELL_TAX_RATE_TW = 0.003;
+var portfolioSearchQuery = '';
+
+function saveRealizedTrades() {
+  localStorage.setItem('sr_realized_trades', JSON.stringify(realizedTrades || []));
+}
+
+function setPortfolioSearch(v) {
+  portfolioSearchQuery = String(v || '').trim().toLowerCase();
+  renderPortfolio();
+}
+
+function clearPortfolioSearch() {
+  portfolioSearchQuery = '';
+  var el = document.getElementById('portfolio-search');
+  if (el) el.value = '';
+  renderPortfolio();
+}
+
+function jumpPortfolioSection(which) {
+  switchNav('portfolio');
+  var targetId = which === 'us' ? 'us-portfolio-section' : (which === 'tw' ? 'tw-portfolio-section' : 'sell-records-section');
+  setTimeout(function() {
+    var el = document.getElementById(targetId);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 60);
+}
+
+function jumpToStockInPortfolio() {
+  switchNav('portfolio');
+  var input = document.getElementById('portfolio-search');
+  var q = String((input && input.value) || '').trim().toLowerCase();
+  if (!q) {
+    toast('Please input a symbol first');
+    return;
+  }
+  portfolioSearchQuery = q;
+  renderPortfolio();
+  var found = null;
+  ['us', 'tw'].some(function(market) {
+    var list = portfolio[market] || [];
+    for (var i = 0; i < list.length; i++) {
+      var p = list[i] || {};
+      var hay = [p.displaySym, p.sym, p.name, p.broker].join(' ').toLowerCase();
+      if (hay.indexOf(q) !== -1) {
+        found = { market: market, idx: i };
+        return true;
+      }
+    }
+    return false;
+  });
+  if (!found) {
+    toast('No matched stock in portfolio');
+    return;
+  }
+  setTimeout(function() {
+    var id = 'port-card-' + found.market + '-' + found.idx;
+    var el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 80);
+}
+
+function getRealizedSummary() {
+  var total = (realizedTrades || []).reduce(function(sum, t) { return sum + (Number(t.netTwd) || 0); }, 0);
+  return { totalTwd: total, count: (realizedTrades || []).length };
+}
+
+function editPositionQty(market, idx) {
+  var pos = portfolio[market] && portfolio[market][idx];
+  if (!pos) return;
+  var oldQty = Number(pos.qty) || 0;
+  var input = prompt('\u8acb\u8f38\u5165\u65b0\u7684\u80a1\u6578\uff08\u8ce3\u51fa\u5f8c\u5269\u9918\u80a1\u6578\uff09', String(oldQty));
+  if (input == null) return;
+  var qty = parseFloat(String(input).trim());
+  if (!Number.isFinite(qty) || qty < 0) {
+    toast('\u26a0\ufe0f \u80a1\u6578\u683c\u5f0f\u932f\u8aa4\uff0c\u8acb\u8f38\u5165 0 \u6216\u6b63\u6578');
+    return;
+  }
+
+  if (qty < oldQty) {
+    var soldQty = parseFloat((oldQty - qty).toFixed(4));
+    var defaultSell = pos.price != null ? Number(pos.price) : Number(pos.cost);
+    var priceInput = prompt('\u8acb\u8f38\u5165\u6b64\u6b21\u8ce3\u51fa\u5747\u50f9', String(defaultSell || ''));
+    if (priceInput == null) return;
+    var sellPrice = parseFloat(String(priceInput).trim());
+    if (!Number.isFinite(sellPrice) || sellPrice <= 0) {
+      toast('\u26a0\ufe0f \u8ce3\u51fa\u50f9\u683c\u683c\u5f0f\u932f\u8aa4');
+      return;
+    }
+
+    var sellAmount = soldQty * sellPrice;
+    var costAmount = soldQty * (Number(pos.cost) || 0);
+    var fee = sellAmount * SELL_FEE_RATE;
+    var tax = market === 'tw' ? sellAmount * SELL_TAX_RATE_TW : 0;
+    var gross = sellAmount - costAmount;
+    var net = gross - fee - tax;
+    var fx = market === 'us' ? getPortfolioFx() : 1;
+    var netTwd = net * fx;
+
+    realizedTrades.unshift({
+      ts: new Date().toISOString(),
+      market: market,
+      sym: pos.displaySym || pos.sym || '-',
+      broker: pos.broker || '-',
+      soldQty: soldQty,
+      cost: Number(pos.cost) || 0,
+      sellPrice: sellPrice,
+      gross: gross,
+      fee: fee,
+      tax: tax,
+      net: net,
+      fx: fx,
+      netTwd: netTwd
+    });
+    if (realizedTrades.length > 500) realizedTrades = realizedTrades.slice(0, 500);
+    saveRealizedTrades();
+  }
+
+  if (qty === 0) {
+    portfolio[market].splice(idx, 1);
+    savePortfolio();
+    renderPortfolio();
+    toast('\u2705 \u80a1\u6578\u70ba 0\uff0c\u5df2\u79fb\u9664\u6b64\u6301\u5009');
+    return;
+  }
+
+  pos.qty = parseFloat(qty.toFixed(4));
+  savePortfolio();
+  renderPortfolio();
+  toast('\u2705 \u5df2\u66f4\u65b0\u80a1\u6578\uff1a' + pos.qty);
+}
+
+function clearSellRecords() {
+  if (!confirm('\u78ba\u5b9a\u8981\u6e05\u9664\u6240\u6709\u8ce3\u51fa\u7d00\u9304\u55ce\uff1f')) return;
+  realizedTrades = [];
+  saveRealizedTrades();
+  renderPortfolio();
+  toast('\u2705 \u5df2\u6e05\u9664\u8ce3\u51fa\u7d00\u9304');
+}
+
+function renderSellRecords() {
+  var sumEl = document.getElementById('sell-records-summary');
+  var listEl = document.getElementById('sell-records-list');
+  if (!sumEl || !listEl) return;
+  var summary = getRealizedSummary();
+  var c = summary.totalTwd >= 0 ? '#059669' : '#dc2626';
+  sumEl.innerHTML = '\u5df2\u5be6\u73fe\u6de8\u640d\u76ca\u7e3d\u548c\uff08TWD\uff09\uff1a <span style="font-weight:800;color:' + c + ';">' + (summary.totalTwd >= 0 ? '+' : '') + fmtMoney(summary.totalTwd) + '</span>　|　\u8ce3\u51fa\u7b46\u6578\uff1a' + summary.count;
+  if (!realizedTrades || !realizedTrades.length) {
+    listEl.innerHTML = '<div style="padding:10px;color:var(--text3);font-size:12px">\u76ee\u524d\u6c92\u6709\u8ce3\u51fa\u7d00\u9304</div>';
+    return;
+  }
+  listEl.innerHTML = realizedTrades.slice(0, 80).map(function(t) {
+    var dt = new Date(t.ts);
+    var d = isNaN(dt.getTime()) ? '-' : dt.toLocaleString('zh-TW');
+    var sign = (Number(t.netTwd) || 0) >= 0 ? '+' : '';
+    var cc = (Number(t.netTwd) || 0) >= 0 ? '#059669' : '#dc2626';
+    var mkt = t.market === 'us' ? 'US' : 'TW';
+    return '<div style="display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px 8px;border-bottom:1px dashed var(--line)">' +
+      '<div style="font-size:12px;color:var(--text2)"><div style="font-weight:700;color:var(--text)">' + t.sym + ' <span style="font-size:10px;color:var(--text3)">(' + mkt + ')</span></div><div>\u8ce3\u51fa ' + t.soldQty + ' \u80a1 | \u5747\u50f9 ' + (mkt === 'US' ? '$' : '') + Number(t.sellPrice).toFixed(mkt === 'US' ? 2 : 1) + ' | \u6210\u672c ' + (mkt === 'US' ? '$' : '') + Number(t.cost).toFixed(mkt === 'US' ? 2 : 1) + '</div><div style="font-size:11px;color:var(--text3)">' + d + ' | \u624b\u7e8c\u8cbb ' + fmtMoney(Number(t.fee || 0) * (t.market === 'us' ? t.fx : 1)) + (t.market === 'tw' ? ' | \u7a05 ' + fmtMoney(Number(t.tax || 0)) : '') + '</div></div>' +
+      '<div style="font-family:monospace;font-size:13px;font-weight:700;color:' + cc + ';align-self:center;">' + sign + fmtMoney(Number(t.netTwd) || 0) + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function renderPortfolioSummary() {
+  var usInvested = portfolio.us.reduce(function(s, p) { return s + p.cost * p.qty; }, 0);
+  var twInvested = portfolio.tw.reduce(function(s, p) { return s + p.cost * p.qty; }, 0);
+  var usValue = portfolio.us.reduce(function(s, p) { return s + ((p.price != null ? p.price : p.cost) * p.qty); }, 0);
+  var twValue = portfolio.tw.reduce(function(s, p) { return s + ((p.price != null ? p.price : p.cost) * p.qty); }, 0);
+  var usdTwd = getPortfolioFx();
+  var totalInvTWD = twInvested + usInvested * usdTwd;
+  var totalValTWD = twValue + usValue * usdTwd;
+  var totalPnl = totalValTWD - totalInvTWD;
+  var pnlColor = totalPnl >= 0 ? '#059669' : '#dc2626';
+  var realized = getRealizedSummary();
+  var realizedColor = realized.totalTwd >= 0 ? '#059669' : '#dc2626';
+  document.getElementById('port-summary').innerHTML =
+    '<div class="port-sum-card" style="grid-column:1/-1"><div class="port-sum-label">\u63db\u532f\u8aaa\u660e</div><div class="port-sum-sub">\u7f8e\u80a1\u4f7f\u7528 1 USD = ' + usdTwd + ' TWD \u4f30\u7b97</div></div>' +
+    '<div class="port-sum-card"><div class="port-sum-label">\u7e3d\u5e02\u503c(TWD)</div><div class="port-sum-val">' + (totalValTWD / 10000).toFixed(1) + '<span style="font-size:13px">\u842c</span></div><div class="port-sum-sub">\u7e3d\u6295\u5165 ' + (totalInvTWD / 10000).toFixed(1) + ' \u842c</div></div>' +
+    '<div class="port-sum-card"><div class="port-sum-label">\u672a\u5be6\u73fe\u640d\u76ca(TWD)</div><div class="port-sum-val" style="color:' + pnlColor + '">' + (totalPnl >= 0 ? '+' : '') + (totalPnl / 10000).toFixed(1) + '<span style="font-size:13px">\u842c</span></div><div class="port-sum-sub">' + (totalInvTWD ? (totalPnl / totalInvTWD * 100).toFixed(2) : '0') + '%</div></div>' +
+    '<div class="port-sum-card"><div class="port-sum-label">\u5df2\u5be6\u73fe\u6de8\u640d\u76ca(TWD)</div><div class="port-sum-val" style="color:' + realizedColor + '">' + (realized.totalTwd >= 0 ? '+' : '') + fmtMoney(realized.totalTwd) + '</div><div class="port-sum-sub">\u8ce3\u51fa ' + realized.count + ' \u7b46</div></div>' +
+    '<div class="port-sum-card"><div class="port-sum-label">\u7f8e\u80a1\u5e02\u503c(\u53f0\u5e63)</div><div class="port-sum-val">' + fmtMoney(usValue * usdTwd) + '</div><div class="port-sum-sub">' + portfolio.us.length + ' \u6a94</div></div>' +
+    '<div class="port-sum-card"><div class="port-sum-label">\u53f0\u80a1\u5e02\u503c</div><div class="port-sum-val">' + (twValue / 10000).toFixed(1) + '<span style="font-size:13px">\u842c</span></div><div class="port-sum-sub">' + portfolio.tw.length + ' \u6a94</div></div>';
+}
+
+function renderPortfolioTable(market) {
+  var box = document.getElementById(market + '-port-cards');
+  if (!box) return;
+  var positions = portfolio[market] || [];
+  var cur = market === 'us' ? '$' : '';
+  var fx = market === 'us' ? getPortfolioFx() : 1;
+  var dp = market === 'tw' ? 1 : 2;
+  if (!positions.length) {
+    box.innerHTML = '<div class="empty-state" style="padding:18px;border:1px dashed var(--line);border-radius:12px;background:#fff;color:var(--text3);font-size:12px;text-align:center">\u76ee\u524d\u6c92\u6709' + (market === 'us' ? '\u7f8e\u80a1' : '\u53f0\u80a1') + '\u6301\u5009\uff0c\u8acb\u5148\u65b0\u589e\u80a1\u7968\u3002</div>';
+    return;
+  }
+
+  var entries = positions.map(function(p, i) { return { p: p, idx: i }; });
+  if (portfolioSearchQuery) {
+    entries = entries.filter(function(e) {
+      var p = e.p || {};
+      var hay = [p.displaySym, p.sym, p.name, p.broker].join(' ').toLowerCase();
+      return hay.indexOf(portfolioSearchQuery) !== -1;
+    });
+  }
+  if (!entries.length) {
+    box.innerHTML = '<div class="empty-state" style="padding:14px;border:1px dashed var(--line);border-radius:10px;background:#fff;color:var(--text3);font-size:12px;text-align:center">No matched stock</div>';
+    return;
+  }
+
+  box.innerHTML = entries.map(function(e) {
+    var p = e.p;
+    var i = e.idx;
+    var has = p.price != null;
+    var invested = p.cost * p.qty;
+    var value = has ? p.price * p.qty : null;
+    var pnl = has ? (value - invested) : null;
+    var pct = (has && invested > 0) ? (pnl / invested * 100) : null;
+    var investedTwd = invested * fx;
+    var valueTwd = has ? value * fx : null;
+    var pnlTwd = has ? pnl * fx : null;
+    var suggestion = getPortfolioSuggestion(p, pct, has);
+    var color = pnl > 0 ? '#059669' : pnl < 0 ? '#dc2626' : 'var(--text)';
+    var targetText = p.sellTarget ? ((market === 'us' ? '$' : '') + p.sellTarget) : '-';
+    var stopText = p.sellStop ? ((market === 'us' ? '$' : '') + p.sellStop) : '-';
+    var techText = p.tech ? (' | RSI ' + p.tech.rsi + ' | MACD ' + p.tech.macdHist) : '';
+    return '<div id="port-card-' + market + '-' + i + '" class="card" style="padding:14px 16px;margin-bottom:10px">' +
+      '<div style="display:flex;justify-content:space-between;gap:12px">' +
+        '<div><div style="font-family:monospace;font-size:16px;font-weight:700">' + (p.displaySym || p.sym || '-') + '</div><div style="font-size:12px;color:var(--text2)">' + (p.name || '-') + '</div><div style="font-size:11px;color:var(--text3)">' + ((p.broker || '-') + ' | \u80a1\u6578 ' + p.qty) + '</div></div>' +
+        '<div style="text-align:right"><div style="font-size:11px;color:var(--text3)">\u6210\u672c / \u73fe\u50f9</div><div style="font-family:monospace;font-size:13px">' + cur + p.cost.toFixed(dp) + ' / ' + (has ? cur + p.price.toFixed(dp) : '-') + '</div></div>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px">' +
+        '<div style="background:var(--ink);border-radius:10px;padding:8px"><div style="font-size:10px;color:var(--text3)">\u6295\u5165\u6210\u672c\uff08\u53f0\u5e63\uff09</div><div style="font-family:monospace;font-size:12px">' + fmtMoney(investedTwd) + '</div></div>' +
+        '<div style="background:var(--ink);border-radius:10px;padding:8px"><div style="font-size:10px;color:var(--text3)">\u76ee\u524d\u5e02\u503c\uff08\u53f0\u5e63\uff09</div><div style="font-family:monospace;font-size:12px">' + (has ? fmtMoney(valueTwd) : '-') + '</div></div>' +
+        '<div style="background:var(--ink);border-radius:10px;padding:8px"><div style="font-size:10px;color:var(--text3)">\u640d\u76ca\uff08\u53f0\u5e63\uff09</div><div style="font-family:monospace;font-size:12px;color:' + color + '">' + (pnlTwd != null ? (pnlTwd >= 0 ? '+' : '') + fmtMoney(pnlTwd) : '-') + '</div></div>' +
+        '<div style="background:var(--ink);border-radius:10px;padding:8px"><div style="font-size:10px;color:var(--text3)">\u6301\u5009\u5efa\u8b70</div><div style="font-size:12px;color:' + suggestion.color + '">' + suggestion.action + ' (' + suggestion.scoreText + ')</div></div>' +
+      '</div>' +
+      '<div style="margin-top:8px;background:var(--ink);border-radius:10px;padding:8px"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">\u5efa\u8b70\u5206\u6790</div><div style="font-size:12px;color:var(--text2)">' + suggestion.reason + '</div><div style="margin-top:6px;font-size:11px;color:var(--text3)">\u76ee\u6a19\u50f9 ' + targetText + ' | \u505c\u640d\u50f9 ' + stopText + techText + '</div></div>' +
+      '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:10px"><button onclick="editPositionQty(\'' + market + '\',' + i + ')" style="background:none;border:none;cursor:pointer;color:var(--sky);font-size:12px">\u7de8\u8f2f\u80a1\u6578</button><button onclick="removePosition(\'' + market + '\',' + i + ')" style="background:none;border:none;cursor:pointer;color:var(--ember);font-size:12px">\u522a\u9664</button></div>' +
+    '</div>';
+  }).join('');
 }
 
 </script>
