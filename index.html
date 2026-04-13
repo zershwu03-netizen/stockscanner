@@ -3,6 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="StockRadar">
+<link id="apple-touch-icon" rel="apple-touch-icon" sizes="180x180">
+<script>
+(function(){
+  try{
+    const c=document.createElement('canvas');c.width=180;c.height=180;
+    const ctx=c.getContext('2d');
+    ctx.fillStyle='#2563eb';
+    ctx.beginPath();ctx.roundRect(0,0,180,180,36);ctx.fill();
+    ctx.font='100px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('📈',90,95);
+    const link=document.getElementById('apple-touch-icon');
+    if(link) link.href=c.toDataURL('image/png');
+  }catch(e){}
+})();
+</script>
 <title>StockRadar v4</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
