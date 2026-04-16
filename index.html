@@ -41,16 +41,20 @@ body::after{content:'';position:fixed;inset:0;background-image:radial-gradient(r
 .wrap{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:0 20px}
 
 /* Header */
-header{padding:16px 20px;border-bottom:1px solid var(--line);background:rgba(255,255,255,0.92);backdrop-filter:blur(20px);position:sticky;top:0;z-index:200;box-shadow:0 1px 12px rgba(0,0,0,0.06)}
-header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:nowrap;overflow:hidden}
+header{padding:12px 20px 0;border-bottom:1px solid var(--line);background:rgba(255,255,255,0.92);backdrop-filter:blur(20px);position:sticky;top:0;z-index:200;box-shadow:0 1px 12px rgba(0,0,0,0.06)}
+header .inner{max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:0}
+.header-top{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px}
 .brand{display:flex;align-items:center;gap:12px}
 .brand-mark{width:38px;height:38px;background:linear-gradient(135deg,var(--sky),var(--mint));border-radius:10px;display:grid;place-items:center;font-size:18px;flex-shrink:0}
 .brand-name{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;letter-spacing:-0.5px}
 .brand-name span{color:var(--sky)}
 .brand-sub{font-size:11px;color:var(--text3);margin-top:1px}
-.key-bar{display:flex;align-items:center;gap:6px;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
-.key-bar::-webkit-scrollbar{display:none}
-.key-bar label{font-size:11px;color:var(--text3);white-space:nowrap}
+.nav-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding-bottom:10px;max-width:1280px;margin:0 auto;width:100%}
+.nav-tab-btn{padding:9px 6px;border-radius:8px;border:1px solid var(--line2);background:#fff;color:var(--text2);cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;font-weight:600;transition:all 0.2s;white-space:nowrap;text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.2}
+.nav-tab-btn .nav-icon{font-size:16px}
+.nav-tab-btn .nav-label{font-size:11px}
+.nav-tab-btn:hover{border-color:var(--sky);color:var(--sky)}
+.key-bar{display:none}
 .key-input{padding:7px 12px;background:#fff;border:1px solid var(--line2);border-radius:8px;color:var(--text);font-family:monospace;font-size:12px;width:200px;outline:none;transition:border-color 0.2s}
 .key-input:focus{border-color:var(--sky);box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
 .key-input::placeholder{color:var(--text3)}
@@ -236,7 +240,7 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 .safety-star{width:14px;height:14px;border-radius:3px}
 .safety-tag{font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;white-space:nowrap}
 .safety-desc{font-size:10px;color:var(--text3);flex:1;text-align:right}
-.nav-tab-btn{padding:7px 14px;border-radius:8px;border:1px solid var(--line2);background:#fff;color:var(--text2);cursor:pointer;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;transition:all 0.2s;white-space:nowrap}
+.nav-tab-btn{padding:7px 16px;border-radius:8px;border:1px solid var(--line2);background:#fff;color:var(--text2);cursor:pointer;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;transition:all 0.2s}
 .nav-tab-btn:hover{border-color:var(--sky);color:var(--sky)}
 
 /* Portfolio page */
@@ -321,8 +325,7 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 
 @media (max-width: 900px){
   .wrap{padding:0 12px}
-  header{padding:10px 12px}
-  .brand-sub{display:none}
+  header{padding:10px 12px 0}
   .custom-input-row{flex-direction:column}
   .custom-input{min-width:0;max-width:none}
   .port-add-form{grid-template-columns:1fr 1fr}
@@ -349,18 +352,28 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 
 <header>
   <div class="inner">
-    <div class="brand">
-      <div class="brand-mark">🔭</div>
-      <div>
-        <div class="brand-name">Stock<span>Radar</span></div>
-        <div class="brand-sub">AI 選股技術分析儀 v4 · 台股 + 美股</div>
+    <div class="header-top">
+      <div class="brand">
+        <div class="brand-mark">🔭</div>
+        <div>
+          <div class="brand-name">Stock<span>Radar</span></div>
+          <div class="brand-sub">AI 選股技術分析儀 v4 · 台股 + 美股</div>
+        </div>
       </div>
     </div>
-    <div class="key-bar">
-      <button class="nav-tab-btn" id="nav-scan" onclick="switchNav('scan')" style="background:var(--sky);color:white;border-color:var(--sky)">🔍 選股掃描</button>
-      <button class="nav-tab-btn" id="nav-portfolio" onclick="switchNav('portfolio')">💼 我的持倉</button>
-      <button class="nav-tab-btn" id="nav-sim" onclick="switchNav('sim')">💹 投資模擬</button>
-      <button class="nav-tab-btn" id="nav-compare" onclick="switchNav('compare')">⚖️ 個股比較</button>
+    <div class="nav-tabs">
+      <button class="nav-tab-btn" id="nav-scan" onclick="switchNav('scan')" style="background:var(--sky);color:white;border-color:var(--sky)">
+        <span class="nav-icon">🔍</span><span class="nav-label">選股掃描</span>
+      </button>
+      <button class="nav-tab-btn" id="nav-portfolio" onclick="switchNav('portfolio')">
+        <span class="nav-icon">💼</span><span class="nav-label">我的持倉</span>
+      </button>
+      <button class="nav-tab-btn" id="nav-sim" onclick="switchNav('sim')">
+        <span class="nav-icon">💹</span><span class="nav-label">投資模擬</span>
+      </button>
+      <button class="nav-tab-btn" id="nav-compare" onclick="switchNav('compare')">
+        <span class="nav-icon">⚖️</span><span class="nav-label">個股比較</span>
+      </button>
     </div>
   </div>
 </header>
@@ -418,8 +431,8 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
       </div>
     </div>
     <div class="filter-bar">
-      <button class="fav-only-btn" id="f-buy-only-btn" onclick="toggleBuyOnly()">🟢 建議買入</button>
-      <button class="fav-only-btn" id="f-consider-only-btn" onclick="toggleConsiderOnly()">🔵 可考慮買入</button>
+      <button class="fav-only-btn" id="f-buy-only-btn" onclick="toggleBuyOnly()">🟢 只顯示 建議買入</button>
+      <button class="fav-only-btn" id="f-consider-only-btn" onclick="toggleConsiderOnly()">🔵 只顯示 可考慮買入</button>
       <button class="fav-only-btn" id="fav-only-btn" onclick="toggleFavOnly()">⭐ 只看收藏</button>
       <span class="filter-count" id="filter-count"></span>
     </div>
@@ -1387,22 +1400,25 @@ function switchNav(page) {
   const scanPage = document.querySelector('.scan-page');
   const portPage = document.getElementById('portfolio-page');
   const simPage  = document.getElementById('sim-page');
-  var navIds = ['nav-scan','nav-portfolio','nav-sim'];
+  const cmpPage  = document.getElementById('compare-page');
+  var navIds = ['nav-scan','nav-portfolio','nav-sim','nav-compare'];
   navIds.forEach(function(id) {
     var el = document.getElementById(id);
     if (!el) return;
     var active = (id === 'nav-'+page);
-    el.style.background   = active ? 'var(--sky)' : '#fff';
-    el.style.color        = active ? 'white' : 'var(--text2)';
-    el.style.borderColor  = active ? 'var(--sky)' : 'var(--line2)';
+    el.style.background  = active ? 'var(--sky)' : '#fff';
+    el.style.color       = active ? 'white' : 'var(--text2)';
+    el.style.borderColor = active ? 'var(--sky)' : 'var(--line2)';
   });
   scanPage.classList.toggle('hidden', page !== 'scan');
   portPage.classList.toggle('active', page === 'portfolio');
   simPage.style.display = page === 'sim' ? 'block' : 'none';
+  if (cmpPage) cmpPage.classList.toggle('active', page === 'compare');
   if (page === 'portfolio') {
     renderPortfolio();
     autoRefreshPortfolio();
   }
+  if (page === 'compare') refreshCmpSymList();
 }
 
 // 方案C：進入持倉頁時，只更新超過30分鐘的報價 + 匯率
