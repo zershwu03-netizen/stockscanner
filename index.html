@@ -42,13 +42,14 @@ body::after{content:'';position:fixed;inset:0;background-image:radial-gradient(r
 
 /* Header */
 header{padding:16px 20px;border-bottom:1px solid var(--line);background:rgba(255,255,255,0.92);backdrop-filter:blur(20px);position:sticky;top:0;z-index:200;box-shadow:0 1px 12px rgba(0,0,0,0.06)}
-header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:nowrap;overflow:hidden}
 .brand{display:flex;align-items:center;gap:12px}
 .brand-mark{width:38px;height:38px;background:linear-gradient(135deg,var(--sky),var(--mint));border-radius:10px;display:grid;place-items:center;font-size:18px;flex-shrink:0}
 .brand-name{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;letter-spacing:-0.5px}
 .brand-name span{color:var(--sky)}
 .brand-sub{font-size:11px;color:var(--text3);margin-top:1px}
-.key-bar{display:flex;align-items:center;gap:8px}
+.key-bar{display:flex;align-items:center;gap:6px;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
+.key-bar::-webkit-scrollbar{display:none}
 .key-bar label{font-size:11px;color:var(--text3);white-space:nowrap}
 .key-input{padding:7px 12px;background:#fff;border:1px solid var(--line2);border-radius:8px;color:var(--text);font-family:monospace;font-size:12px;width:200px;outline:none;transition:border-color 0.2s}
 .key-input:focus{border-color:var(--sky);box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
@@ -235,7 +236,7 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 .safety-star{width:14px;height:14px;border-radius:3px}
 .safety-tag{font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;white-space:nowrap}
 .safety-desc{font-size:10px;color:var(--text3);flex:1;text-align:right}
-.nav-tab-btn{padding:7px 16px;border-radius:8px;border:1px solid var(--line2);background:#fff;color:var(--text2);cursor:pointer;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;transition:all 0.2s}
+.nav-tab-btn{padding:7px 14px;border-radius:8px;border:1px solid var(--line2);background:#fff;color:var(--text2);cursor:pointer;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;transition:all 0.2s;white-space:nowrap}
 .nav-tab-btn:hover{border-color:var(--sky);color:var(--sky)}
 
 /* Portfolio page */
@@ -316,67 +317,12 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 .opt-row.top1{background:rgba(5,150,105,0.07);border:1px solid rgba(5,150,105,0.2)}
 .opt-row.top2{background:rgba(37,99,235,0.05);border:1px solid rgba(37,99,235,0.15)}
 .to-top-btn{position:fixed;right:16px;bottom:18px;z-index:9998;border:none;border-radius:999px;padding:10px 12px;font-size:13px;font-weight:700;font-family:'Syne',sans-serif;background:linear-gradient(135deg,var(--sky),#1d4ed8);color:#fff;box-shadow:0 8px 24px rgba(37,99,235,.28);cursor:pointer;display:none}
-/* 個股比較 */
-.cmp-page{display:none;padding-bottom:48px}
-.cmp-page.active{display:block}
-.cmp-input-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
-.cmp-sym-group{display:flex;flex-direction:column;gap:4px;flex:1;min-width:100px}
-.cmp-sym-label{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
-.cmp-sym-input{padding:9px 12px;border:1.5px solid var(--line2);border-radius:8px;font-size:14px;font-family:monospace;font-weight:700;color:var(--text);background:#fff;outline:none;transition:border-color 0.2s;width:100%}
-.cmp-sym-input:focus{border-color:var(--sky)}
-.cmp-sym-input.s1:focus{border-color:#2563eb}
-.cmp-sym-input.s2:focus{border-color:#059669}
-.cmp-sym-input.s3:focus{border-color:#d97706}
-.cmp-run-btn{padding:11px 22px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--sky),#1d4ed8);color:#fff;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all 0.2s;box-shadow:0 4px 16px rgba(37,99,235,0.25)}
-.cmp-run-btn:disabled{opacity:0.5;cursor:not-allowed}
-.cmp-grid{display:grid;gap:12px}
-.cmp-grid.cols-2{grid-template-columns:repeat(2,1fr)}
-.cmp-grid.cols-3{grid-template-columns:repeat(3,1fr)}
-@media(max-width:680px){.cmp-grid.cols-2,.cmp-grid.cols-3{grid-template-columns:1fr}}
-.cmp-card{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;transition:box-shadow 0.2s}
-.cmp-card:hover{box-shadow:var(--glow)}
-.cmp-card-head{padding:14px 16px 10px;display:flex;align-items:flex-start;justify-content:space-between;border-bottom:1px solid var(--line)}
-.cmp-sym{font-family:'Syne',sans-serif;font-size:18px;font-weight:800}
-.cmp-name{font-size:11px;color:var(--text2);margin-top:2px}
-.cmp-price{font-family:monospace;font-size:20px;font-weight:700;text-align:right}
-.cmp-chg{font-size:12px;text-align:right;margin-top:2px;font-family:monospace}
-.cmp-section{padding:12px 16px;border-bottom:1px solid var(--line)}
-.cmp-section-title{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;font-weight:600;margin-bottom:10px}
-.cmp-indicators{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.cmp-ind{text-align:center;background:var(--ink);border-radius:8px;padding:8px 4px}
-.cmp-ind-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:3px}
-.cmp-ind-val{font-family:monospace;font-size:13px;font-weight:700}
-.cmp-ind-sig{font-size:10px;margin-top:2px}
-.cmp-decision{padding:12px 16px;display:flex;align-items:center;gap:10px}
-.cmp-decision-icon{font-size:24px;flex-shrink:0}
-.cmp-decision-action{font-size:15px;font-weight:800;font-family:'Syne',sans-serif}
-.cmp-decision-reason{font-size:11px;color:var(--text2);margin-top:2px;line-height:1.5}
-.cmp-buy-zones{padding:10px 16px 14px}
-.cmp-zone-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
-.cmp-zone-tag{font-size:10px;font-weight:700;padding:3px 7px;border-radius:4px;white-space:nowrap}
-.cmp-zone-short{background:rgba(245,200,66,0.12);color:#b45309;border:1px solid rgba(245,200,66,0.3)}
-.cmp-zone-swing{background:rgba(5,150,105,0.1);color:#065f46;border:1px solid rgba(5,150,105,0.25)}
-.cmp-zone-stop{background:rgba(220,38,38,0.07);color:#991b1b;border:1px solid rgba(220,38,38,0.2)}
-.cmp-zone-val{font-family:monospace;font-size:12px;font-weight:700}
-.cmp-score-bar{padding:10px 16px 12px;border-top:1px solid var(--line)}
-.cmp-score-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.cmp-score-label{font-size:11px;color:var(--text3);width:60px;flex-shrink:0}
-.cmp-score-track{flex:1;height:8px;background:var(--line);border-radius:4px;overflow:hidden}
-.cmp-score-fill{height:100%;border-radius:4px;transition:width 0.6s ease}
-.cmp-score-num{font-family:monospace;font-size:12px;font-weight:700;width:28px;text-align:right;flex-shrink:0}
-.cmp-loading{text-align:center;padding:40px;color:var(--text3);font-size:13px}
-.cmp-winner-badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(5,150,105,0.1);color:#065f46;border:1px solid rgba(5,150,105,0.2);font-weight:700;margin-left:6px;vertical-align:middle}
-.cmp-summary-table{width:100%;border-collapse:collapse;margin-top:12px}
-.cmp-summary-table th{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;padding:6px 10px;text-align:left;background:var(--ink);border-bottom:1px solid var(--line)}
-.cmp-summary-table td{font-size:12px;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
-.cmp-summary-table tr:last-child td{border-bottom:none}
-.cmp-summary-table tr:hover td{background:var(--ink2)}
 .to-top-btn.show{display:block}
 
 @media (max-width: 900px){
   .wrap{padding:0 12px}
   header{padding:10px 12px}
-  .key-bar{width:100%;overflow-x:auto;flex-wrap:nowrap}
+  .brand-sub{display:none}
   .custom-input-row{flex-direction:column}
   .custom-input{min-width:0;max-width:none}
   .port-add-form{grid-template-columns:1fr 1fr}
@@ -472,8 +418,8 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
       </div>
     </div>
     <div class="filter-bar">
-      <button class="fav-only-btn" id="f-buy-only-btn" onclick="toggleBuyOnly()">🟢 只顯示 建議買入</button>
-      <button class="fav-only-btn" id="f-consider-only-btn" onclick="toggleConsiderOnly()">🔵 只顯示 可考慮買入</button>
+      <button class="fav-only-btn" id="f-buy-only-btn" onclick="toggleBuyOnly()">🟢 建議買入</button>
+      <button class="fav-only-btn" id="f-consider-only-btn" onclick="toggleConsiderOnly()">🔵 可考慮買入</button>
       <button class="fav-only-btn" id="fav-only-btn" onclick="toggleFavOnly()">⭐ 只看收藏</button>
       <span class="filter-count" id="filter-count"></span>
     </div>
@@ -557,45 +503,6 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
     <div id="sell-records-summary" style="padding:10px 16px;border-bottom:1px solid var(--line);font-size:12px;color:var(--text2)"></div>
     <div id="sell-records-list" style="padding:8px 12px"></div>
   </div>
-</div>
-
-<!-- Compare Page -->
-<div class="wrap cmp-page" id="compare-page">
-  <div style="padding:20px 0 8px">
-    <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px">⚖️ 個股比較</div>
-    <div style="font-size:13px;color:var(--text3)">最多比較 3 支股票的技術指標與買入建議</div>
-  </div>
-  <div class="cmp-input-row">
-    <div class="cmp-sym-group">
-      <div class="cmp-sym-label" style="color:#2563eb">股票 1</div>
-      <input class="cmp-sym-input s1" id="cmp-sym1" placeholder="NVDA" list="cmp-sym-list">
-    </div>
-    <div class="cmp-sym-group">
-      <div class="cmp-sym-label" style="color:#059669">股票 2</div>
-      <input class="cmp-sym-input s2" id="cmp-sym2" placeholder="TSLA" list="cmp-sym-list">
-    </div>
-    <div class="cmp-sym-group">
-      <div class="cmp-sym-label" style="color:#d97706">股票 3（選填）</div>
-      <input class="cmp-sym-input s3" id="cmp-sym3" placeholder="2330" list="cmp-sym-list">
-    </div>
-    <datalist id="cmp-sym-list"></datalist>
-    <button class="cmp-run-btn" id="cmp-btn" onclick="runCompare()">
-      <span id="cmp-btn-txt">開始比較</span>
-    </button>
-  </div>
-  <div id="cmp-progress" style="display:none;margin-bottom:14px">
-    <div style="height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin-bottom:6px">
-      <div id="cmp-pbar" style="height:100%;background:linear-gradient(90deg,var(--sky),var(--mint));border-radius:2px;transition:width 0.4s;width:0%"></div>
-    </div>
-    <div id="cmp-status" style="font-size:11px;color:var(--text3)">分析中...</div>
-  </div>
-  <!-- Summary table -->
-  <div id="cmp-summary" style="display:none;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:16px;overflow-x:auto">
-    <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:4px">📊 綜合對比</div>
-    <div id="cmp-summary-inner"></div>
-  </div>
-  <!-- Cards -->
-  <div class="cmp-grid" id="cmp-cards"></div>
 </div>
 
 <!-- Simulator Page -->
@@ -1480,8 +1387,7 @@ function switchNav(page) {
   const scanPage = document.querySelector('.scan-page');
   const portPage = document.getElementById('portfolio-page');
   const simPage  = document.getElementById('sim-page');
-  const cmpPage  = document.getElementById('compare-page');
-  var navIds = ['nav-scan','nav-portfolio','nav-sim','nav-compare'];
+  var navIds = ['nav-scan','nav-portfolio','nav-sim'];
   navIds.forEach(function(id) {
     var el = document.getElementById(id);
     if (!el) return;
@@ -1493,12 +1399,10 @@ function switchNav(page) {
   scanPage.classList.toggle('hidden', page !== 'scan');
   portPage.classList.toggle('active', page === 'portfolio');
   simPage.style.display = page === 'sim' ? 'block' : 'none';
-  cmpPage.classList.toggle('active', page === 'compare');
   if (page === 'portfolio') {
     renderPortfolio();
     autoRefreshPortfolio();
   }
-  if (page === 'compare') refreshCmpSymList();
 }
 
 // 方案C：進入持倉頁時，只更新超過30分鐘的報價 + 匯率
@@ -3213,190 +3117,6 @@ function renderPortfolioTable(market) {
     '</div>';
   }).join('');
 }
-
-// =====================================================
-// ===== 個股比較 =====
-// =====================================================
-var cmpResults = [];
-var CMP_COLORS = ['#2563eb', '#059669', '#d97706'];
-var CMP_LABELS = ['股票 1', '股票 2', '股票 3'];
-
-function refreshCmpSymList() {
-  var dl = document.getElementById('cmp-sym-list');
-  if (!dl) return;
-  var syms = [];
-  (portfolio.us || []).forEach(function(p) { if (p.displaySym) syms.push(p.displaySym); });
-  (portfolio.tw || []).forEach(function(p) { if (p.displaySym) syms.push(p.displaySym); });
-  dl.innerHTML = syms.map(function(s) { return '<option value="' + s + '">'; }).join('');
-}
-
-async function runCompare() {
-  var inputs = [
-    (document.getElementById('cmp-sym1').value || '').trim(),
-    (document.getElementById('cmp-sym2').value || '').trim(),
-    (document.getElementById('cmp-sym3').value || '').trim(),
-  ].map(function(s) { return s.toUpperCase(); }).filter(Boolean);
-
-  if (inputs.length < 2) { toast('⚠️ 請至少輸入 2 支股票代號'); return; }
-
-  var btn = document.getElementById('cmp-btn');
-  btn.disabled = true;
-  document.getElementById('cmp-btn-txt').textContent = '分析中...';
-  document.getElementById('cmp-progress').style.display = 'block';
-  document.getElementById('cmp-summary').style.display = 'none';
-  document.getElementById('cmp-cards').innerHTML = '';
-
-  cmpResults = [];
-  for (var i = 0; i < inputs.length; i++) {
-    var sym = autoSymbol(inputs[i]);
-    document.getElementById('cmp-pbar').style.width = ((i / inputs.length) * 80 + 10) + '%';
-    document.getElementById('cmp-status').textContent = '分析 ' + sym + '... (' + (i+1) + '/' + inputs.length + ')';
-    try {
-      var r = await analyzeSymbol(sym);
-      if (r) cmpResults.push(r);
-    } catch(e) {
-      toast('⚠️ ' + sym + ' 取得失敗');
-    }
-    await sleep(400);
-  }
-
-  document.getElementById('cmp-pbar').style.width = '100%';
-  await sleep(200);
-  document.getElementById('cmp-progress').style.display = 'none';
-
-  if (!cmpResults.length) {
-    document.getElementById('cmp-cards').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3)">無法取得資料，請檢查代號格式</div>';
-    btn.disabled = false;
-    document.getElementById('cmp-btn-txt').textContent = '重新比較';
-    return;
-  }
-
-  renderCmpCards();
-  renderCmpSummary();
-
-  btn.disabled = false;
-  document.getElementById('cmp-btn-txt').textContent = '重新比較';
-}
-
-function renderCmpCards() {
-  var grid = document.getElementById('cmp-cards');
-  var n = cmpResults.length;
-  grid.className = 'cmp-grid cols-' + (n >= 3 ? '3' : '2');
-
-  // Find winner (highest score)
-  var maxScore = Math.max.apply(null, cmpResults.map(function(r) { return r.score; }));
-
-  grid.innerHTML = cmpResults.map(function(r, idx) {
-    var color = CMP_COLORS[idx] || '#6b7280';
-    var isWinner = r.score === maxScore && n > 1;
-    var sym = r.symbol.replace('.TW','').replace('.TWO','');
-    var dp = r.dp || (r.isTW ? 1 : 2);
-    var pFmt = r.price.toFixed(dp);
-    var chgSign = r.changePct >= 0 ? '+' : '';
-    var chgColor = r.changePct >= 0 ? 'var(--mint)' : 'var(--ember)';
-
-    // RSI signal
-    var rsiSig = r.rsi < 30 ? '🟢 超賣' : r.rsi < 45 ? '🟡 偏低' : r.rsi < 55 ? '⚪ 中性' : r.rsi < 70 ? '🟡 偏高' : '🔴 超買';
-    var rsiColor = r.rsi < 45 ? 'var(--mint)' : r.rsi > 65 ? 'var(--ember)' : 'var(--text2)';
-
-    // MACD signal
-    var macdSig = r.macdHist > 0 ? '🟢 多頭' : '🔴 空頭';
-    var macdColor = r.macdHist > 0 ? 'var(--mint)' : 'var(--ember)';
-
-    // BB position
-    var bbPct = (r.bbU && r.bbL && r.bbU !== r.bbL) ? ((r.price - r.bbL) / (r.bbU - r.bbL) * 100).toFixed(0) : 50;
-    var bbSig = bbPct < 20 ? '🟢 近下軌' : bbPct > 80 ? '🔴 近上軌' : '⚪ 中性';
-    var bbColor = bbPct < 20 ? 'var(--mint)' : bbPct > 80 ? 'var(--ember)' : 'var(--text2)';
-
-    // Decision
-    var d = calcDecision(r);
-
-    // Score bar fill width
-    var scorePct = r.score;
-    var scoreColor = r.score >= 70 ? 'var(--mint)' : r.score >= 50 ? 'var(--sky)' : r.score >= 35 ? 'var(--gold)' : 'var(--ember)';
-
-    return '<div class="cmp-card" style="border-top:3px solid ' + color + '">' +
-      '<div class="cmp-card-head">' +
-        '<div>' +
-          '<div class="cmp-sym">' + sym + (isWinner ? '<span class="cmp-winner-badge">🏆 最佳</span>' : '') + '</div>' +
-          '<div class="cmp-name">' + (r.name || sym) + '</div>' +
-          '<div style="font-size:10px;color:var(--text3);margin-top:2px">' + CMP_LABELS[idx] + '</div>' +
-        '</div>' +
-        '<div>' +
-          '<div class="cmp-price" style="color:' + color + '">' + (r.isTW ? '' : '$') + pFmt + '</div>' +
-          '<div class="cmp-chg" style="color:' + chgColor + '">' + chgSign + (r.changePct * 100).toFixed(2) + '%</div>' +
-        '</div>' +
-      '</div>' +
-
-      '<div class="cmp-section">' +
-        '<div class="cmp-section-title">技術指標</div>' +
-        '<div class="cmp-indicators">' +
-          '<div class="cmp-ind"><div class="cmp-ind-label">RSI(14)</div><div class="cmp-ind-val" style="color:' + rsiColor + '">' + r.rsi.toFixed(1) + '</div><div class="cmp-ind-sig" style="color:' + rsiColor + '">' + rsiSig + '</div></div>' +
-          '<div class="cmp-ind"><div class="cmp-ind-label">MACD</div><div class="cmp-ind-val" style="color:' + macdColor + '">' + (r.macdHist >= 0 ? '+' : '') + r.macdHist.toFixed(3) + '</div><div class="cmp-ind-sig" style="color:' + macdColor + '">' + macdSig + '</div></div>' +
-          '<div class="cmp-ind"><div class="cmp-ind-label">布林位置</div><div class="cmp-ind-val" style="color:' + bbColor + '">' + bbPct + '%</div><div class="cmp-ind-sig" style="color:' + bbColor + '">' + bbSig + '</div></div>' +
-        '</div>' +
-      '</div>' +
-
-      '<div class="cmp-decision" style="border-bottom:1px solid var(--line);background:' + (r.score >= 55 ? 'rgba(5,150,105,0.03)' : r.score < 38 ? 'rgba(220,38,38,0.03)' : 'var(--ink)') + '">' +
-        '<div class="cmp-decision-icon">' + d.icon + '</div>' +
-        '<div><div class="cmp-decision-action" style="color:' + d.color + '">' + d.action + '</div>' +
-        '<div class="cmp-decision-reason">' + d.reason + '</div></div>' +
-      '</div>' +
-
-      '<div class="cmp-buy-zones">' +
-        '<div class="cmp-section-title" style="margin-bottom:8px">買入區間</div>' +
-        '<div class="cmp-zone-row"><span class="cmp-zone-tag cmp-zone-short">短線</span><span class="cmp-zone-val">' + r.buyShortLow.toFixed(dp) + ' ~ ' + r.buyShortHigh.toFixed(dp) + '</span></div>' +
-        '<div class="cmp-zone-row"><span class="cmp-zone-tag cmp-zone-swing">波段</span><span class="cmp-zone-val">' + r.buySwingLow.toFixed(dp) + ' ~ ' + r.buySwingHigh.toFixed(dp) + '</span></div>' +
-        '<div class="cmp-zone-row"><span class="cmp-zone-tag cmp-zone-stop">停損</span><span class="cmp-zone-val">' + r.stopLoss.toFixed(dp) + '</span></div>' +
-      '</div>' +
-
-      '<div class="cmp-score-bar">' +
-        '<div class="cmp-section-title" style="margin-bottom:8px">綜合評分</div>' +
-        '<div class="cmp-score-row">' +
-          '<div class="cmp-score-label" style="font-size:12px;font-weight:700;color:' + color + '">' + sym + '</div>' +
-          '<div class="cmp-score-track"><div class="cmp-score-fill" style="width:' + scorePct + '%;background:' + scoreColor + '"></div></div>' +
-          '<div class="cmp-score-num" style="color:' + scoreColor + '">' + r.score + '</div>' +
-        '</div>' +
-        '<div style="font-size:11px;color:var(--text3)">ATR: ' + r.atrVal.toFixed(dp) + ' · 風報比: ' + r.rrRatio.toFixed(1) + 'x</div>' +
-      '</div>' +
-    '</div>';
-  }).join('');
-}
-
-function renderCmpSummary() {
-  if (cmpResults.length < 2) return;
-  var maxScore = Math.max.apply(null, cmpResults.map(function(r) { return r.score; }));
-  var minRSI = Math.min.apply(null, cmpResults.map(function(r) { return r.rsi; }));
-  var maxRR = Math.max.apply(null, cmpResults.map(function(r) { return r.rrRatio; }));
-
-  var headers = ['指標', ...cmpResults.map(function(r, i) {
-    var sym = r.symbol.replace('.TW','').replace('.TWO','');
-    return '<span style="color:' + (CMP_COLORS[i]||'#666') + ';font-weight:700">' + sym + '</span>';
-  })];
-
-  var rows = [
-    { label: '現價', vals: cmpResults.map(function(r) { var dp = r.dp||(r.isTW?1:2); return (r.isTW?'':'$') + r.price.toFixed(dp); }) },
-    { label: '今日漲跌', vals: cmpResults.map(function(r) { var v=(r.changePct*100).toFixed(2); return '<span style="color:'+(r.changePct>=0?'var(--mint)':'var(--ember)')+';">'+(r.changePct>=0?'+':'')+v+'%</span>'; }) },
-    { label: '綜合評分', vals: cmpResults.map(function(r) { var c=r.score>=70?'var(--mint)':r.score>=50?'var(--sky)':r.score<38?'var(--ember)':'var(--gold)'; return '<strong style="color:'+c+'">'+r.score+'</strong>'+(r.score===maxScore?' 🏆':''); }) },
-    { label: 'RSI(14)', vals: cmpResults.map(function(r) { var c=r.rsi<40?'var(--mint)':r.rsi>65?'var(--ember)':'var(--text)'; return '<span style="color:'+c+'">'+r.rsi.toFixed(1)+'</span>'+(r.rsi===minRSI?' 最低':''); }) },
-    { label: 'MACD', vals: cmpResults.map(function(r) { return '<span style="color:'+(r.macdHist>0?'var(--mint)':'var(--ember)')+';">'+(r.macdHist>=0?'+':'')+r.macdHist.toFixed(3)+'</span>'; }) },
-    { label: '風報比', vals: cmpResults.map(function(r) { return '<span style="color:'+(r.rrRatio>=2?'var(--mint)':r.rrRatio>=1?'var(--gold)':'var(--ember)')+';">'+r.rrRatio.toFixed(1)+'x</span>'+(r.rrRatio===maxRR?' 最高':''); }) },
-    { label: '建議', vals: cmpResults.map(function(r) { var d=calcDecision(r); return '<span style="color:'+d.color+';font-weight:600">'+d.action+'</span>'; }) },
-  ];
-
-  var html = '<table class="cmp-summary-table"><thead><tr>' +
-    headers.map(function(h) { return '<th>' + h + '</th>'; }).join('') +
-    '</tr></thead><tbody>' +
-    rows.map(function(row) {
-      return '<tr><td style="font-size:11px;color:var(--text3);font-weight:600">' + row.label + '</td>' +
-        row.vals.map(function(v) { return '<td>' + v + '</td>'; }).join('') + '</tr>';
-    }).join('') +
-    '</tbody></table>';
-
-  document.getElementById('cmp-summary-inner').innerHTML = html;
-  document.getElementById('cmp-summary').style.display = 'block';
-}
-
 
 </script>
 </body>
