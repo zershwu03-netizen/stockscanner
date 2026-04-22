@@ -254,6 +254,38 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 .port-input.sym{width:100%}
 .port-input.num{width:100%}
 .port-add-btn{padding:8px 16px;font-size:13px;justify-content:center}
+/* 券商按鈕 */
+.broker-btns{display:flex;gap:6px;flex-wrap:wrap}
+.broker-btn{padding:6px 12px;border-radius:8px;border:1.5px solid var(--line2);background:#fff;color:var(--text2);cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;transition:all 0.15s;white-space:nowrap}
+.broker-btn:hover{border-color:var(--sky);color:var(--sky)}
+.broker-btn.selected{background:var(--sky);border-color:var(--sky);color:#fff}
+/* 加碼試算 Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity 0.25s}
+.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal-sheet{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:640px;max-height:85vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform 0.3s cubic-bezier(.32,.72,0,1);overflow:hidden}
+.modal-overlay.open .modal-sheet{transform:translateY(0)}
+.modal-handle{width:36px;height:4px;background:var(--line2);border-radius:2px;margin:10px auto 0}
+.modal-header{padding:12px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:800}
+.modal-close{background:none;border:none;cursor:pointer;font-size:22px;color:var(--text3);padding:0 4px;line-height:1}
+.modal-body{overflow-y:auto;flex:1;padding:16px 18px 32px}
+.modal-input-group{margin-bottom:14px}
+.modal-label{font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px}
+.modal-input{width:100%;padding:10px 12px;border:1.5px solid var(--line2);border-radius:8px;font-size:14px;font-family:'JetBrains Mono',monospace;color:var(--text);background:#fff;outline:none;transition:border-color 0.2s}
+.modal-input:focus{border-color:var(--sky)}
+.modal-result{background:var(--ink);border-radius:12px;padding:14px;margin-top:14px}
+.modal-result-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.modal-result-row:last-child{border-bottom:none}
+.modal-result-label{font-size:12px;color:var(--text3)}
+.modal-result-val{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700}
+/* 健康報告 */
+.health-report-section{margin-bottom:16px}
+.health-report-title{font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
+.health-report-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.health-report-item:last-child{border-bottom:none}
+.health-report-sym{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;width:60px;flex-shrink:0}
+.health-report-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;flex-shrink:0}
+.health-report-reason{font-size:11px;color:var(--text2);flex:1}
 .port-table{width:100%;border-collapse:collapse;font-size:13px}
 .port-table th{padding:10px 14px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;background:var(--ink2);border-bottom:1px solid var(--line)}
 .port-table td{padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
@@ -489,6 +521,7 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:4px">
       <button onclick="exportPortfolio()" style="font-size:12px;padding:7px 14px;border:1px solid var(--sky);border-radius:8px;background:rgba(37,99,235,0.06);color:var(--sky);cursor:pointer;font-weight:600;font-family:inherit">📤 備份</button>
+      <button onclick="openHealthReport()" style="font-size:12px;padding:7px 14px;border:1px solid var(--mint);border-radius:8px;background:rgba(5,150,105,0.06);color:var(--mint);cursor:pointer;font-weight:600;font-family:inherit">🏥 健康報告</button>
       <label style="font-size:12px;padding:7px 14px;border:1px solid var(--mint);border-radius:8px;background:rgba(5,150,105,0.06);color:var(--mint);cursor:pointer;font-weight:600;font-family:inherit">
         📥 還原<input type="file" accept=".json" onchange="importPortfolio(event)" style="display:none">
       </label>
@@ -519,9 +552,16 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
       <input class="port-input sym" id="us-sym" placeholder="代號 NVDA">
       <input class="port-input num" id="us-cost" placeholder="成本 $176.4" type="number" step="0.01">
       <input class="port-input num" id="us-qty" placeholder="股數 10" type="number" step="0.01">
-      <input class="port-input num" id="us-broker" placeholder="券商" list="broker-list">
-      <datalist id="broker-list"><option value="國泰"><option value="元大"><option value="兆豐"></datalist>
-      <button class="scan-btn port-add-btn" onclick="addPosition('us')">＋ 新增</button>
+      <div style="grid-column:1/-1">
+        <div style="font-size:10px;color:var(--text3);font-weight:600;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.4px">券商</div>
+        <div class="broker-btns" id="us-broker-btns">
+          <button type="button" class="broker-btn" onclick="selectBroker('us','國泰',this)">國泰</button>
+          <button type="button" class="broker-btn" onclick="selectBroker('us','元大',this)">元大</button>
+          <button type="button" class="broker-btn" onclick="selectBroker('us','兆豐',this)">兆豐</button>
+        </div>
+        <input type="hidden" id="us-broker" value="">
+      </div>
+      <button class="scan-btn port-add-btn" onclick="addPosition('us')" style="grid-column:1/-1">＋ 新增美股</button>
     </div>
     <div id="us-port-cards"></div>
   </div>
@@ -536,8 +576,16 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
       <input class="port-input sym" id="tw-sym" placeholder="代號 2330">
       <input class="port-input num" id="tw-cost" placeholder="成本 1000" type="number" step="0.1">
       <input class="port-input num" id="tw-qty" placeholder="股數 1000" type="number">
-      <input class="port-input num" id="tw-broker-input" placeholder="券商" list="broker-list">
-      <button class="scan-btn port-add-btn" onclick="addPosition('tw')">＋ 新增</button>
+      <div style="grid-column:1/-1">
+        <div style="font-size:10px;color:var(--text3);font-weight:600;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.4px">券商</div>
+        <div class="broker-btns" id="tw-broker-btns">
+          <button type="button" class="broker-btn" onclick="selectBroker('tw','國泰',this)">國泰</button>
+          <button type="button" class="broker-btn" onclick="selectBroker('tw','元大',this)">元大</button>
+          <button type="button" class="broker-btn" onclick="selectBroker('tw','兆豐',this)">兆豐</button>
+        </div>
+        <input type="hidden" id="tw-broker-input" value="">
+      </div>
+      <button class="scan-btn port-add-btn" onclick="addPosition('tw')" style="grid-column:1/-1">＋ 新增台股</button>
     </div>
     <div id="tw-port-cards"></div>
   </div>
@@ -737,6 +785,66 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- 加碼成本試算 Modal -->
+<div class="modal-overlay" id="cost-calc-modal" onclick="closeCostCalcModal(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="cost-calc-title">📊 加碼試算</div>
+      <button class="modal-close" onclick="closeCostCalcDirect()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--ink);border-radius:10px;padding:12px;margin-bottom:16px;font-size:12px;color:var(--text2)" id="cost-calc-current"></div>
+      <div class="modal-input-group">
+        <div class="modal-label">加碼股數</div>
+        <input class="modal-input" id="calc-add-qty" type="number" placeholder="例如 1000" oninput="calcAddCost()">
+      </div>
+      <div class="modal-input-group">
+        <div class="modal-label">加碼價格</div>
+        <input class="modal-input" id="calc-add-price" type="number" placeholder="例如 85.5" step="0.01" oninput="calcAddCost()">
+      </div>
+      <div class="modal-result" id="cost-calc-result" style="display:none">
+        <div class="modal-result-row">
+          <div class="modal-result-label">原持股</div>
+          <div class="modal-result-val" id="calc-orig-qty">-</div>
+        </div>
+        <div class="modal-result-row">
+          <div class="modal-result-label">加碼後總股數</div>
+          <div class="modal-result-val" id="calc-new-qty">-</div>
+        </div>
+        <div class="modal-result-row">
+          <div class="modal-result-label">原均價</div>
+          <div class="modal-result-val" id="calc-orig-cost">-</div>
+        </div>
+        <div class="modal-result-row">
+          <div class="modal-result-label">加碼後新均價</div>
+          <div class="modal-result-val" id="calc-new-cost" style="color:var(--sky)">-</div>
+        </div>
+        <div class="modal-result-row">
+          <div class="modal-result-label">加碼金額</div>
+          <div class="modal-result-val" id="calc-add-amount">-</div>
+        </div>
+        <div class="modal-result-row">
+          <div class="modal-result-label">加碼後損益（現價）</div>
+          <div class="modal-result-val" id="calc-new-pnl">-</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 持倉健康報告 Modal -->
+<div class="modal-overlay" id="health-report-modal" onclick="closeHealthReport(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">🏥 持倉健康報告</div>
+      <button class="modal-close" onclick="closeHealthReportDirect()">✕</button>
+    </div>
+    <div class="modal-body" id="health-report-body"></div>
+  </div>
+</div>
 <button class="to-top-btn" id="to-top-btn" onclick="scrollToTopFast()">⬆ 回到頂部</button>
 
 <script>
@@ -1347,6 +1455,9 @@ function buildCard(r,idx){
     '</div>' +
 
     buildDecisionBanner(r) +
+    '<div style="padding:10px 14px 12px;display:flex;justify-content:flex-end;gap:8px">' +
+      '<button onclick="addScanToCompare(\'' + r.symbol + '\')" style="font-size:11px;padding:5px 10px;border:1px solid var(--line2);border-radius:6px;background:#fff;color:var(--text3);cursor:pointer;font-family:inherit">⚖️ 加入比較</button>' +
+    '</div>' +
 
   '</div>';
 }
@@ -3204,7 +3315,12 @@ function renderPortfolioTable(market) {
         '<div style="background:var(--ink);border-radius:10px;padding:8px"><div style="font-size:10px;color:var(--text3)">\u6301\u5009\u5efa\u8b70</div><div style="font-size:12px;color:' + suggestion.color + '">' + suggestion.action + ' (' + suggestion.scoreText + ')</div></div>' +
       '</div>' +
       '<div style="margin-top:8px;background:var(--ink);border-radius:10px;padding:8px"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">\u5efa\u8b70\u5206\u6790</div><div style="font-size:12px;color:var(--text2)">' + suggestion.reason + '</div><div style="margin-top:6px;font-size:11px;color:var(--text3)">\u76ee\u6a19\u50f9 ' + targetText + ' | \u505c\u640d\u50f9 ' + stopText + techText + '</div></div>' +
-      '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:10px"><button onclick="editPositionQty(\'' + market + '\',' + i + ')" style="background:none;border:none;cursor:pointer;color:var(--sky);font-size:12px">\u7de8\u8f2f\u80a1\u6578</button><button onclick="removePosition(\'' + market + '\',' + i + ')" style="background:none;border:none;cursor:pointer;color:var(--ember);font-size:12px">\u522a\u9664</button></div>' +
+      '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;flex-wrap:wrap">' +
+        '<button onclick="openCostCalc(\'' + market + '\',' + i + ')" style="background:none;border:1px solid var(--gold);border-radius:6px;cursor:pointer;color:var(--gold);font-size:11px;padding:4px 8px">📊 加碼試算</button>' +
+        '<button onclick="addPortToCompare(\'' + market + '\',' + i + ')" style="background:none;border:1px solid var(--line2);border-radius:6px;cursor:pointer;color:var(--text3);font-size:11px;padding:4px 8px">⚖️ 比較</button>' +
+        '<button onclick="editPositionQty(\'' + market + '\',' + i + ')" style="background:none;border:none;cursor:pointer;color:var(--sky);font-size:12px">編輯</button>' +
+        '<button onclick="removePosition(\'' + market + '\',' + i + ')" style="background:none;border:none;cursor:pointer;color:var(--ember);font-size:12px">刪除</button>' +
+      '</div>' +
     '</div>';
   }).join('');
 }
@@ -3366,6 +3482,222 @@ function renderCmpSummary() {
     }).join('') +
     '</tbody></table>';
   document.getElementById('cmp-summary').style.display = 'block';
+}
+
+// =====================================================
+// ===== 券商按鈕選擇 =====
+// =====================================================
+function selectBroker(market, broker, btn) {
+  var btnsId = market + '-broker-btns';
+  var inputId = market === 'us' ? 'us-broker' : 'tw-broker-input';
+  document.querySelectorAll('#' + btnsId + ' .broker-btn').forEach(function(b) {
+    b.classList.remove('selected');
+  });
+  btn.classList.add('selected');
+  document.getElementById(inputId).value = broker;
+}
+
+// Clear broker selection after adding position
+var _origAddPosition = addPosition;
+function addPosition(market) {
+  _origAddPosition(market);
+  // Reset broker buttons
+  var btnsId = market + '-broker-btns';
+  document.querySelectorAll('#' + btnsId + ' .broker-btn').forEach(function(b) {
+    b.classList.remove('selected');
+  });
+  var inputId = market === 'us' ? 'us-broker' : 'tw-broker-input';
+  document.getElementById(inputId).value = '';
+}
+
+// =====================================================
+// ===== 加碼成本試算 =====
+// =====================================================
+var _costCalcMarket = null;
+var _costCalcIdx = null;
+
+function openCostCalc(market, idx) {
+  var pos = portfolio[market] && portfolio[market][idx];
+  if (!pos) return;
+  _costCalcMarket = market;
+  _costCalcIdx = idx;
+  var cur = market === 'us' ? '$' : '';
+  var dp = market === 'tw' ? 1 : 2;
+  var sym = pos.displaySym || pos.sym;
+  document.getElementById('cost-calc-title').textContent = '📊 ' + sym + ' 加碼試算';
+  document.getElementById('cost-calc-current').innerHTML =
+    '目前持倉：<strong>' + pos.qty + ' 股</strong> ｜ 均價：<strong>' + cur + pos.cost.toFixed(dp) + '</strong>' +
+    (pos.price ? ' ｜ 現價：<strong>' + cur + pos.price.toFixed(dp) + '</strong>' : '');
+  document.getElementById('calc-add-qty').value = '';
+  document.getElementById('calc-add-price').value = pos.price ? pos.price.toFixed(dp) : '';
+  document.getElementById('cost-calc-result').style.display = 'none';
+  document.getElementById('cost-calc-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(function() { document.getElementById('calc-add-qty').focus(); }, 300);
+  calcAddCost();
+}
+
+function calcAddCost() {
+  var market = _costCalcMarket;
+  var idx = _costCalcIdx;
+  if (market == null || idx == null) return;
+  var pos = portfolio[market] && portfolio[market][idx];
+  if (!pos) return;
+  var addQty = parseFloat(document.getElementById('calc-add-qty').value) || 0;
+  var addPrice = parseFloat(document.getElementById('calc-add-price').value) || 0;
+  if (!addQty || !addPrice) { document.getElementById('cost-calc-result').style.display = 'none'; return; }
+  var dp = market === 'tw' ? 1 : 2;
+  var cur = market === 'us' ? '$' : '';
+  var fx = market === 'us' ? getPortfolioFx() : 1;
+  var newQty = pos.qty + addQty;
+  var newCost = (pos.cost * pos.qty + addPrice * addQty) / newQty;
+  var addAmount = addQty * addPrice * fx;
+  var pnlPct = pos.price ? ((pos.price - newCost) / newCost * 100) : null;
+  var pnlTwd = pos.price ? ((pos.price - newCost) * newQty * fx) : null;
+  document.getElementById('calc-orig-qty').textContent = pos.qty + ' 股';
+  document.getElementById('calc-new-qty').textContent = newQty.toFixed(newQty % 1 === 0 ? 0 : 2) + ' 股';
+  document.getElementById('calc-orig-cost').textContent = cur + pos.cost.toFixed(dp);
+  document.getElementById('calc-new-cost').textContent = cur + newCost.toFixed(dp);
+  document.getElementById('calc-add-amount').textContent = fmtMoney(addAmount) + ' TWD';
+  if (pnlTwd != null) {
+    var pnlEl = document.getElementById('calc-new-pnl');
+    pnlEl.textContent = (pnlTwd >= 0 ? '+' : '') + fmtMoney(pnlTwd) + ' (' + (pnlPct >= 0 ? '+' : '') + pnlPct.toFixed(2) + '%)';
+    pnlEl.style.color = pnlTwd >= 0 ? 'var(--mint)' : 'var(--ember)';
+  } else {
+    document.getElementById('calc-new-pnl').textContent = '需更新報價';
+  }
+  document.getElementById('cost-calc-result').style.display = 'block';
+}
+
+function closeCostCalcModal(e) {
+  if (e && e.target !== document.getElementById('cost-calc-modal')) return;
+  closeCostCalcDirect();
+}
+function closeCostCalcDirect() {
+  document.getElementById('cost-calc-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// =====================================================
+// ===== 掃描結果加入個股比較 =====
+// =====================================================
+function addScanToCompare(symbol) {
+  var sym = symbol.replace('.TW','').replace('.TWO','');
+  var slots = ['cmp-sym1','cmp-sym2','cmp-sym3'];
+  // Check if already in a slot
+  for (var i = 0; i < slots.length; i++) {
+    var el = document.getElementById(slots[i]);
+    if (el && el.value.toUpperCase() === sym.toUpperCase()) {
+      toast('⚠️ ' + sym + ' 已在比較清單中');
+      return;
+    }
+  }
+  // Fill first empty slot
+  for (var i = 0; i < slots.length; i++) {
+    var el = document.getElementById(slots[i]);
+    if (el && !el.value.trim()) {
+      el.value = sym;
+      toast('✅ ' + sym + ' 已加入比較，共 ' + (i+1) + ' 支');
+      return;
+    }
+  }
+  toast('⚠️ 比較清單已滿（最多3支），請先到個股比較頁清除');
+}
+
+// =====================================================
+// ===== 持倉快速跳轉個股比較 =====
+// =====================================================
+function addPortToCompare(market, idx) {
+  var pos = portfolio[market] && portfolio[market][idx];
+  if (!pos) return;
+  var sym = pos.displaySym || pos.sym.replace('.TW','').replace('.TWO','');
+  addScanToCompare(sym);
+  // Visual feedback on button
+  toast(sym + ' 已加入比較清單，點「個股比較」頁面開始分析');
+}
+
+// =====================================================
+// ===== 持倉健康報告 =====
+// =====================================================
+function openHealthReport() {
+  var all = [];
+  portfolio.us.forEach(function(p, i) { all.push({ p: p, market: 'us', idx: i }); });
+  portfolio.tw.forEach(function(p, i) { all.push({ p: p, market: 'tw', idx: i }); });
+
+  if (!all.length) { toast('⚠️ 目前沒有持倉資料'); return; }
+
+  var cats = { sell: [], buy: [], hold: [], watch: [], noPrice: [] };
+  var totalInvTWD = 0, totalValTWD = 0;
+  var fx = getPortfolioFx();
+
+  all.forEach(function(item) {
+    var p = item.p;
+    var mfx = item.market === 'us' ? fx : 1;
+    var invested = p.cost * p.qty * mfx;
+    totalInvTWD += invested;
+    if (p.price != null) {
+      totalValTWD += p.price * p.qty * mfx;
+    } else {
+      totalValTWD += invested;
+    }
+    if (!p.price) { cats.noPrice.push(item); return; }
+    var pct = (p.price - p.cost) / p.cost * 100;
+    var s = getPortfolioSuggestion(p, pct, true);
+    var a = s.action;
+    if (a.includes('減碼') || a.includes('停損') || a.includes('賣出') || a.includes('獲利')) cats.sell.push({ item: item, s: s, pct: pct });
+    else if (a.includes('加碼')) cats.buy.push({ item: item, s: s, pct: pct });
+    else if (a.includes('續抱') || a.includes('持有')) cats.hold.push({ item: item, s: s, pct: pct });
+    else cats.watch.push({ item: item, s: s, pct: pct });
+  });
+
+  var totalPnl = totalValTWD - totalInvTWD;
+  var totalPct = totalInvTWD > 0 ? (totalPnl / totalInvTWD * 100) : 0;
+  var pnlColor = totalPnl >= 0 ? 'var(--mint)' : 'var(--ember)';
+
+  function makeItems(arr) {
+    if (!arr.length) return '<div style="font-size:12px;color:var(--text3);padding:6px 0">無</div>';
+    return arr.map(function(x) {
+      var p = x.item.p;
+      var sym = p.displaySym || p.sym.replace('.TW','').replace('.TWO','');
+      var pctStr = (x.pct >= 0 ? '+' : '') + x.pct.toFixed(1) + '%';
+      var pctColor = x.pct >= 0 ? 'var(--mint)' : 'var(--ember)';
+      return '<div class="health-report-item">' +
+        '<div class="health-report-sym">' + sym + '</div>' +
+        '<span class="health-report-badge" style="background:' + x.s.color + '22;color:' + x.s.color + ';border:1px solid ' + x.s.color + '44">' + x.s.action + '</span>' +
+        '<div class="health-report-reason">' + x.s.reason + '</div>' +
+        '<div style="font-family:monospace;font-size:12px;font-weight:700;color:' + pctColor + ';flex-shrink:0">' + pctStr + '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  var html =
+    // 總覽
+    '<div style="background:var(--ink);border-radius:12px;padding:14px;margin-bottom:16px;display:grid;grid-template-columns:repeat(2,1fr);gap:10px">' +
+      '<div><div style="font-size:10px;color:var(--text3)">總持倉</div><div style="font-size:18px;font-weight:800;font-family:Syne,sans-serif">' + all.length + ' 支</div></div>' +
+      '<div><div style="font-size:10px;color:var(--text3)">未實現損益</div><div style="font-size:18px;font-weight:800;color:' + pnlColor + ';font-family:Syne,sans-serif">' + (totalPnl >= 0 ? '+' : '') + (totalPnl/10000).toFixed(1) + '萬</div><div style="font-size:11px;color:' + pnlColor + '">' + (totalPct >= 0 ? '+' : '') + totalPct.toFixed(2) + '%</div></div>' +
+      '<div><div style="font-size:10px;color:var(--text3)">建議賣出</div><div style="font-size:18px;font-weight:800;color:var(--ember);font-family:Syne,sans-serif">' + cats.sell.length + ' 支</div></div>' +
+      '<div><div style="font-size:10px;color:var(--text3)">建議加碼</div><div style="font-size:18px;font-weight:800;color:var(--mint);font-family:Syne,sans-serif">' + cats.buy.length + ' 支</div></div>' +
+    '</div>' +
+
+    (cats.sell.length ? '<div class="health-report-section"><div class="health-report-title" style="color:var(--ember)">🔴 建議賣出 / 減碼（' + cats.sell.length + '）</div>' + makeItems(cats.sell) + '</div>' : '') +
+    (cats.buy.length  ? '<div class="health-report-section"><div class="health-report-title" style="color:var(--mint)">🟢 建議加碼（' + cats.buy.length + '）</div>' + makeItems(cats.buy) + '</div>' : '') +
+    (cats.hold.length ? '<div class="health-report-section"><div class="health-report-title" style="color:var(--sky)">🔵 續抱（' + cats.hold.length + '）</div>' + makeItems(cats.hold) + '</div>' : '') +
+    (cats.watch.length? '<div class="health-report-section"><div class="health-report-title" style="color:var(--gold)">🟡 觀察（' + cats.watch.length + '）</div>' + makeItems(cats.watch) + '</div>' : '') +
+    (cats.noPrice.length ? '<div style="font-size:11px;color:var(--text3);padding:8px 0">⚠️ ' + cats.noPrice.length + ' 支尚無報價，更新後再查看</div>' : '') +
+    '<div style="font-size:11px;color:var(--text3);margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">報告基於技術指標即時分析，僅供參考，非投資建議。</div>';
+
+  document.getElementById('health-report-body').innerHTML = html;
+  document.getElementById('health-report-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeHealthReport(e) {
+  if (e && e.target !== document.getElementById('health-report-modal')) return;
+  closeHealthReportDirect();
+}
+function closeHealthReportDirect() {
+  document.getElementById('health-report-modal').classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 </script>
