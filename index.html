@@ -3205,11 +3205,22 @@ function editPositionQty(market, idx) {
 }
 
 function clearSellRecords() {
-  if (!confirm('\u78ba\u5b9a\u8981\u6e05\u9664\u6240\u6709\u8ce3\u51fa\u7d00\u9304\u55ce\uff1f')) return;
+  if (!confirm('確定要清除所有賣出紀錄嗎？')) return;
   realizedTrades = [];
   saveRealizedTrades();
   renderPortfolio();
-  toast('\u2705 \u5df2\u6e05\u9664\u8ce3\u51fa\u7d00\u9304');
+  toast('✅ 已清除賣出紀錄');
+}
+
+function deleteSellRecord(idx) {
+  if (!realizedTrades || idx < 0 || idx >= realizedTrades.length) return;
+  var t = realizedTrades[idx];
+  var sym = t.sym || '';
+  realizedTrades.splice(idx, 1);
+  saveRealizedTrades();
+  renderSellRecords();
+  renderPortfolioSummary();
+  toast('✅ 已刪除 ' + sym + ' 賣出紀錄');
 }
 
 function renderSellRecords() {
@@ -3223,15 +3234,16 @@ function renderSellRecords() {
     listEl.innerHTML = '<div style="padding:10px;color:var(--text3);font-size:12px">\u76ee\u524d\u6c92\u6709\u8ce3\u51fa\u7d00\u9304</div>';
     return;
   }
-  listEl.innerHTML = realizedTrades.slice(0, 80).map(function(t) {
+  listEl.innerHTML = realizedTrades.slice(0, 80).map(function(t, i) {
     var dt = new Date(t.ts);
     var d = isNaN(dt.getTime()) ? '-' : dt.toLocaleString('zh-TW');
     var sign = (Number(t.netTwd) || 0) >= 0 ? '+' : '';
     var cc = (Number(t.netTwd) || 0) >= 0 ? '#059669' : '#dc2626';
     var mkt = t.market === 'us' ? 'US' : 'TW';
-    return '<div style="display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px 8px;border-bottom:1px dashed var(--line)">' +
+    return '<div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:10px 8px;border-bottom:1px dashed var(--line);align-items:center">' +
       '<div style="font-size:12px;color:var(--text2)"><div style="font-weight:700;color:var(--text)">' + t.sym + ' <span style="font-size:10px;color:var(--text3)">(' + mkt + ')</span></div><div>\u8ce3\u51fa ' + t.soldQty + ' \u80a1 | \u5747\u50f9 ' + (mkt === 'US' ? '$' : '') + Number(t.sellPrice).toFixed(mkt === 'US' ? 2 : 1) + ' | \u6210\u672c ' + (mkt === 'US' ? '$' : '') + Number(t.cost).toFixed(mkt === 'US' ? 2 : 1) + '</div><div style="font-size:11px;color:var(--text3)">' + d + ' | \u624b\u7e8c\u8cbb ' + fmtMoney(Number(t.fee || 0) * (t.market === 'us' ? t.fx : 1)) + (t.market === 'tw' ? ' | \u7a05 ' + fmtMoney(Number(t.tax || 0)) : '') + '</div></div>' +
-      '<div style="font-family:monospace;font-size:13px;font-weight:700;color:' + cc + ';align-self:center;">' + sign + fmtMoney(Number(t.netTwd) || 0) + '</div>' +
+      '<div style="font-family:monospace;font-size:13px;font-weight:700;color:' + cc + '">' + sign + fmtMoney(Number(t.netTwd) || 0) + '</div>' +
+      '<button onclick="deleteSellRecord(' + i + ')" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;padding:4px;line-height:1" title="\u522a\u9664\u6b64\u7b46">\u2715</button>' +
     '</div>';
   }).join('');
 }
