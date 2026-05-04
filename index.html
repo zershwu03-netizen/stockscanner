@@ -420,6 +420,15 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
   .to-top-btn{right:12px;bottom:14px}
 }
 
+/* Tag input */
+.tag-input-wrap{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:7px 10px;background:#fff;border:1px solid var(--line2);border-radius:8px;flex:1;cursor:text;transition:border-color 0.2s;min-height:40px}
+.tag-input-wrap:focus-within{border-color:var(--sky);box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
+.sym-tag{display:inline-flex;align-items:center;gap:4px;background:rgba(37,99,235,0.09);border:1px solid rgba(37,99,235,0.2);color:#1e40af;border-radius:6px;padding:2px 8px;font-family:monospace;font-size:12px;font-weight:700;white-space:nowrap}
+.sym-tag .tag-x{cursor:pointer;font-size:13px;line-height:1;color:#6b7280;margin-left:2px;border:none;background:none;padding:0;display:flex;align-items:center}
+.sym-tag .tag-x:hover{color:var(--ember)}
+.tag-real-input{border:none;outline:none;font-family:monospace;font-size:13px;color:var(--text);background:transparent;min-width:80px;flex:1;padding:1px 0}
+.tag-real-input::placeholder{color:var(--text3)}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -462,11 +471,16 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
       <div class="fav-chips" id="fav-chips"></div>
     </div>
     <div class="custom-section">
-      <div class="custom-label">自訂代號（逗號分隔，台股直接輸入代號即可）</div>
+      <div class="custom-label">輸入代號後按 Enter 或空白鍵新增，點 ✕ 移除</div>
       <div class="custom-input-row">
-        <div style="position:relative;flex:1;max-width:500px;min-width:200px">
-          <input class="custom-input" id="custom-syms" placeholder="例如：NVDA, TSLA, 2330, 0050" style="width:100%;padding-right:32px">
-          <button id="clear-syms-btn" onclick="clearCustomInput()" style="display:none;position:absolute;right:4px;top:50%;transform:translateY(-50%);background:var(--line2);border:none;cursor:pointer;color:var(--text2);font-size:14px;line-height:1;padding:4px 8px;border-radius:6px;min-width:28px;min-height:28px;align-items:center;justify-content:center">✕</button>
+        <!-- Hidden input keeps backward-compat for getSelectedSymbols() -->
+        <input type="hidden" id="custom-syms">
+        <div class="tag-input-wrap" id="tag-wrap" onclick="document.getElementById('tag-real-input').focus()">
+          <input class="tag-real-input" id="tag-real-input"
+            placeholder="NVDA, 2330, 0050..."
+            onkeydown="tagKeydown(event)"
+            oninput="tagOnInput(event)"
+            autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
         </div>
         <button class="scan-btn" id="scan-btn" onclick="startScan()">
           <span id="scan-btn-icon">🔍</span>
@@ -607,24 +621,24 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
     <div style="font-size:13px;color:var(--text3)">最多比較 3 支股票的技術指標與買入建議</div>
   </div>
   <div class="cmp-input-box">
-    <!-- 三個輸入框橫排 -->
     <div class="cmp-sym-row">
       <div class="cmp-sym-group">
         <div class="cmp-sym-label" style="color:#2563eb">股票 1</div>
-        <input class="cmp-sym-input" id="cmp-sym1" placeholder="NVDA" list="cmp-sym-list">
+        <input class="cmp-sym-input" id="cmp-sym1" placeholder="NVDA"
+          autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
       </div>
       <div class="cmp-sym-group">
         <div class="cmp-sym-label" style="color:#059669">股票 2</div>
-        <input class="cmp-sym-input" id="cmp-sym2" placeholder="TSLA" list="cmp-sym-list">
+        <input class="cmp-sym-input" id="cmp-sym2" placeholder="TSLA"
+          autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
       </div>
       <div class="cmp-sym-group">
         <div class="cmp-sym-label" style="color:#d97706">股票 3</div>
-        <input class="cmp-sym-input" id="cmp-sym3" placeholder="選填" list="cmp-sym-list">
+        <input class="cmp-sym-input" id="cmp-sym3" placeholder="選填"
+          autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
       </div>
-      <datalist id="cmp-sym-list"></datalist>
     </div>
-    <!-- 比較按鈕獨立一排 -->
-    <button class="cmp-run-btn" id="cmp-btn" onclick="runCompare()">
+    <button class="cmp-run-btn" id="cmp-btn" onclick="runCompare()" style="margin-top:12px">
       <span id="cmp-btn-txt">⚖️ 開始比較</span>
     </button>
   </div>
@@ -912,7 +926,84 @@ function autoSymbol(s) {
   return s;
 }
 
+
+// ===== TAG INPUT =====
+var _tags = [];
+
+function syncTagsToHidden() {
+  document.getElementById('custom-syms').value = _tags.join(', ');
+}
+
+function renderTags() {
+  var wrap = document.getElementById('tag-wrap');
+  var realInput = document.getElementById('tag-real-input');
+  // Remove existing tags (not the real input)
+  wrap.querySelectorAll('.sym-tag').forEach(function(el){ el.remove(); });
+  // Re-insert tags before the real input
+  _tags.forEach(function(sym, idx) {
+    var tag = document.createElement('span');
+    tag.className = 'sym-tag';
+    tag.innerHTML = sym + '<button class="tag-x" onclick="removeTag('+idx+')" tabindex="-1">✕</button>';
+    wrap.insertBefore(tag, realInput);
+  });
+  syncTagsToHidden();
+}
+
+function addTag(raw) {
+  // Split by comma/space/、 in case user pastes "NVDA, TSLA, 2330"
+  var parts = raw.split(/[,\s，、]+/).map(function(s){ return s.trim().toUpperCase(); }).filter(Boolean);
+  parts.forEach(function(sym) {
+    sym = autoSymbol(sym);
+    if (!sym) return;
+    var display = sym.replace('.TW','').replace('.TWO','');
+    if (!_tags.includes(display)) _tags.push(display);
+  });
+  renderTags();
+}
+
+function removeTag(idx) {
+  _tags.splice(idx, 1);
+  renderTags();
+  document.getElementById('tag-real-input').focus();
+}
+
+function tagKeydown(e) {
+  var input = e.target;
+  var val = input.value.trim();
+  // Enter / Space / comma → add tag
+  if (e.key === 'Enter' || e.key === ' ' || e.key === ',' || e.key === '、') {
+    e.preventDefault();
+    if (val) { addTag(val); input.value = ''; }
+  }
+  // Backspace on empty input → remove last tag
+  if (e.key === 'Backspace' && !val && _tags.length) {
+    _tags.pop();
+    renderTags();
+  }
+}
+
+function tagOnInput(e) {
+  var val = e.target.value;
+  // If user pastes something with commas or spaces, parse immediately
+  if (/[,，\s、]/.test(val)) {
+    var parts = val.split(/[,\s，、]+/).filter(Boolean);
+    // Keep last partial word in input, add rest as tags
+    var last = parts.pop();
+    if (parts.length) { addTag(parts.join(',')); e.target.value = last || ''; }
+  }
+}
+
+function clearCustomInput() {
+  _tags = [];
+  renderTags();
+  document.getElementById('tag-real-input').value = '';
+  document.getElementById('tag-real-input').focus();
+}
+
 function getSelectedSymbols(){
+  // Flush any pending typed text in tag input
+  var pending=(document.getElementById('tag-real-input')||{}).value||'';
+  if(pending.trim()){addTag(pending.trim());document.getElementById('tag-real-input').value='';}
   const checked=[...document.querySelectorAll('.preset-group input:checked')];
   const fromPresets=checked.flatMap(cb=>{const all=[...PRESETS.tw,...PRESETS.us];const found=all.find(g=>g.id===cb.value);return found?found.syms:[];});
   const fromCustom=document.getElementById('custom-syms').value.split(/[,\s，]+/).map(s=>autoSymbol(s)).filter(Boolean);
@@ -1040,7 +1131,7 @@ async function loadHotStocks(){
     hotSyms=[...new Set(hotSyms)].slice(0,12);
     toast('🔥 已載入 '+hotSyms.length+' 支今日熱門，點擊掃描開始分析');
   }
-  document.getElementById('custom-syms').value=hotSyms.join(', ');
+  _tags=hotSyms.map(function(s){return s.replace('.TW','').replace('.TWO','');});renderTags();
 }
 
 // ===== PROXY / FETCH =====
@@ -1073,7 +1164,7 @@ async function fetchWithTimeout(url,ms,options={}){
     if(externalSignal&&onExternalAbort) externalSignal.removeEventListener('abort', onExternalAbort);
   }
 }
-async function fetchYahoo(symbol,range='6mo',interval='1d',signal){
+async function fetchYahooOnce(symbol,range,interval,signal){
   const targets=[
     'https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(symbol)+'?interval='+interval+'&range='+range+'&includePrePost=false&events=div%2Csplit',
     'https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(symbol)+'?interval='+interval+'&range='+range+'&includePrePost=false&events=div%2Csplit',
@@ -1094,6 +1185,26 @@ async function fetchYahoo(symbol,range='6mo',interval='1d',signal){
       await sleep(150);
     }
   }
+  return {_errors:errors};
+}
+
+async function fetchYahoo(symbol,range='6mo',interval='1d',signal){
+  // First attempt with given symbol
+  const r1=await fetchYahooOnce(symbol,range,interval,signal);
+  if(r1?.chart?.result?.[0]) return r1;
+
+  // Auto-fallback: .TW → .TWO (上櫃股票)
+  if(symbol.endsWith('.TW')){
+    const altSym=symbol.slice(0,-3)+'.TWO';
+    const r2=await fetchYahooOnce(altSym,range,interval,signal);
+    if(r2?.chart?.result?.[0]){
+      // Tag so downstream knows the resolved symbol
+      r2.chart.result[0].meta._resolvedSymbol=altSym;
+      return r2;
+    }
+  }
+
+  const errors=(r1._errors||[]);
   throw new Error('所有代理均失敗\n'+errors.slice(0,4).join('\n'));
 }
 
@@ -1109,7 +1220,11 @@ async function analyzeSymbol(symbol, signal){
     return cached;
   }
 
-  const isTW=symbol.endsWith('.TW')||symbol.endsWith('.TWO');
+  // Detect if resolved as TWO (上櫃 auto-fallback)
+  const resolvedSym=data?.chart?.result?.[0]?.meta?._resolvedSymbol||symbol;
+  const isTW=resolvedSym.endsWith('.TW')||resolvedSym.endsWith('.TWO')||symbol.endsWith('.TW')||symbol.endsWith('.TWO');
+  // Use resolvedSym so .TWO stocks get correct display
+  if(resolvedSym!==symbol) symbol=resolvedSym;
   const data=await fetchYahoo(symbol,'6mo','1d',signal);
   const result=data?.chart?.result?.[0];
   if(!result) return null;
@@ -3343,6 +3458,69 @@ function renderPortfolioTable(market) {
 }
 
 // =====================================================
+
+// ===== 個股比較 TAG INPUT =====
+var _cmpTags = [];
+
+function renderCmpTags() {
+  var wrap = document.getElementById('cmp-tag-wrap');
+  if (!wrap) return;
+  var realInput = document.getElementById('cmp-tag-input');
+  wrap.querySelectorAll('.sym-tag').forEach(function(el){ el.remove(); });
+  _cmpTags.forEach(function(sym, idx) {
+    var colors = ['#2563eb','#059669','#d97706'];
+    var tag = document.createElement('span');
+    tag.className = 'sym-tag';
+    tag.style.background = 'rgba(' + (idx===0?'37,99,235':idx===1?'5,150,105':'217,119,6') + ',0.10)';
+    tag.style.borderColor = 'rgba(' + (idx===0?'37,99,235':idx===1?'5,150,105':'217,119,6') + ',0.25)';
+    tag.style.color = colors[idx] || '#374151';
+    tag.innerHTML = sym + '<button class="tag-x" onclick="cmpRemoveTag('+idx+')" tabindex="-1">✕</button>';
+    wrap.insertBefore(tag, realInput);
+  });
+  // Hide input if 3 tags
+  realInput.style.display = _cmpTags.length >= 3 ? 'none' : '';
+  realInput.placeholder = _cmpTags.length === 0 ? 'NVDA, TSLA, 2330...' : _cmpTags.length === 1 ? '再加一支...' : '再加一支（最多3支）';
+}
+
+function cmpAddTag(raw) {
+  var parts = raw.split(/[,\s，、]+/).map(function(s){ return s.trim().toUpperCase(); }).filter(Boolean);
+  parts.forEach(function(sym) {
+    if (_cmpTags.length >= 3) return;
+    sym = autoSymbol(sym).replace('.TW','').replace('.TWO','');
+    if (!sym) return;
+    if (!_cmpTags.includes(sym)) _cmpTags.push(sym);
+  });
+  renderCmpTags();
+}
+
+function cmpRemoveTag(idx) {
+  _cmpTags.splice(idx, 1);
+  renderCmpTags();
+  document.getElementById('cmp-tag-input').focus();
+}
+
+function cmpTagKeydown(e) {
+  var input = e.target;
+  var val = input.value.trim();
+  if (e.key === 'Enter' || e.key === ' ' || e.key === ',' || e.key === '、') {
+    e.preventDefault();
+    if (val) { cmpAddTag(val); input.value = ''; }
+  }
+  if (e.key === 'Backspace' && !val && _cmpTags.length) {
+    _cmpTags.pop();
+    renderCmpTags();
+  }
+}
+
+function cmpTagOnInput(e) {
+  var val = e.target.value;
+  if (/[,，\s、]/.test(val)) {
+    var parts = val.split(/[,\s，、]+/).filter(Boolean);
+    var last = parts.pop();
+    if (parts.length) { cmpAddTag(parts.join(',')); e.target.value = last || ''; }
+  }
+}
+
 // ===== 個股比較 =====
 // =====================================================
 var cmpResults = [];
@@ -3350,12 +3528,7 @@ var CMP_COLORS = ['#2563eb', '#059669', '#d97706'];
 var CMP_LABELS = ['股票 1', '股票 2', '股票 3'];
 
 function refreshCmpSymList() {
-  var dl = document.getElementById('cmp-sym-list');
-  if (!dl) return;
-  var syms = [];
-  (portfolio.us || []).forEach(function(p) { if (p.displaySym) syms.push(p.displaySym); });
-  (portfolio.tw || []).forEach(function(p) { if (p.displaySym) syms.push(p.displaySym); });
-  dl.innerHTML = syms.map(function(s) { return '<option value="' + s + '">'; }).join('');
+  // No-op: inputs are plain text fields now
 }
 
 async function runCompare() {
@@ -3363,8 +3536,7 @@ async function runCompare() {
     (document.getElementById('cmp-sym1').value || '').trim(),
     (document.getElementById('cmp-sym2').value || '').trim(),
     (document.getElementById('cmp-sym3').value || '').trim(),
-  ].map(function(s) { return s.toUpperCase(); }).filter(Boolean);
-
+  ].map(function(s){ return s.toUpperCase(); }).filter(Boolean);
   if (inputs.length < 2) { toast('⚠️ 請至少輸入 2 支股票代號'); return; }
 
   var btn = document.getElementById('cmp-btn');
@@ -3613,12 +3785,17 @@ function addScanToCompare(symbol) {
 // ===== 持倉快速跳轉個股比較 =====
 // =====================================================
 function addPortToCompare(market, idx) {
-  var pos = portfolio[market] && portfolio[market][idx];
-  if (!pos) return;
-  var sym = pos.displaySym || pos.sym.replace('.TW','').replace('.TWO','');
-  addScanToCompare(sym);
-  // Visual feedback on button
-  toast(sym + ' 已加入比較清單，點「個股比較」頁面開始分析');
+  var p = portfolio[market][idx];
+  if (!p) return;
+  var sym = p.displaySym || p.sym.replace('.TW','').replace('.TWO','');
+  var slots = ['cmp-sym1','cmp-sym2','cmp-sym3'];
+  for (var i = 0; i < slots.length; i++) {
+    var el = document.getElementById(slots[i]);
+    if (!el) continue;
+    if (!el.value) { el.value = sym; toast(sym + ' 已加入比較欄位 ' + (i+1) + '，切換至個股比較頁面開始分析'); return; }
+    if (el.value.toUpperCase() === sym) { toast('⚠️ ' + sym + ' 已在比較清單中'); return; }
+  }
+  toast('⚠️ 比較清單已滿（最多3支），請先清除其中一格');
 }
 
 // =====================================================
