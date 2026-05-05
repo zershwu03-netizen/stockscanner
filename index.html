@@ -1220,14 +1220,13 @@ async function analyzeSymbol(symbol, signal){
     return cached;
   }
 
-  // Detect if resolved as TWO (上櫃 auto-fallback)
-  const resolvedSym=data?.chart?.result?.[0]?.meta?._resolvedSymbol||symbol;
-  const isTW=resolvedSym.endsWith('.TW')||resolvedSym.endsWith('.TWO')||symbol.endsWith('.TW')||symbol.endsWith('.TWO');
-  // Use resolvedSym so .TWO stocks get correct display
-  if(resolvedSym!==symbol) symbol=resolvedSym;
   const data=await fetchYahoo(symbol,'6mo','1d',signal);
   const result=data?.chart?.result?.[0];
   if(!result) return null;
+  // Detect if resolved as .TWO (上櫃 auto-fallback)
+  const resolvedSym=result?.meta?._resolvedSymbol||symbol;
+  const effectiveSym=resolvedSym;
+  const isTW=effectiveSym.endsWith('.TW')||effectiveSym.endsWith('.TWO')||symbol.endsWith('.TW')||symbol.endsWith('.TWO');
 
   const meta=result.meta;
   const closes=result.indicators.quote[0].close.filter(v=>v!=null);
