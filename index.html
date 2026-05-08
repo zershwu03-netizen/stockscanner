@@ -21,6 +21,107 @@
     if(link) link.href=c.toDataURL('image/png');
   }catch(e){}
 })();
+// ===== 手動補登賣出紀錄 =====
+function showManualSellModal() {
+  // Set default date to today
+  var today = new Date().toISOString().slice(0,10);
+  document.getElementById('ms-date').value = today;
+  document.getElementById('ms-sym').value = '';
+  document.getElementById('ms-pnl').value = '';
+  document.getElementById('ms-qty').value = '';
+  document.getElementById('ms-broker').value = '';
+  document.getElementById('ms-market').value = 'tw';
+  var modal = document.getElementById('manual-sell-modal');
+  modal.style.display = 'flex';
+  setTimeout(function(){ document.getElementById('ms-sym').focus(); }, 100);
+}
+
+function hideManualSellModal() {
+  document.getElementById('manual-sell-modal').style.display = 'none';
+}
+
+function saveManualSellRecord() {
+  var sym    = (document.getElementById('ms-sym').value || '').trim().toUpperCase();
+  var market = document.getElementById('ms-market').value;
+  var pnl    = parseFloat(document.getElementById('ms-pnl').value);
+  var qty    = parseFloat(document.getElementById('ms-qty').value) || 0;
+  var broker = (document.getElementById('ms-broker').value || '').trim();
+  var date   = document.getElementById('ms-date').value || new Date().toISOString().slice(0,10);
+
+  if (!sym) { toast('⚠️ 請輸入股票代號'); return; }
+  if (isNaN(pnl)) { toast('⚠️ 請輸入損益金額（虧損填負數）'); return; }
+
+  realizedTrades.unshift({
+    ts: new Date(date).toISOString(),
+    market: market,
+    sym: sym,
+    broker: broker || '-',
+    soldQty: qty,
+    cost: 0,
+    sellPrice: 0,
+    gross: pnl,
+    fee: 0,
+    tax: 0,
+    net: pnl,
+    fx: 1,
+    netTwd: pnl,
+    manual: true  // 標記為手動補登
+  });
+  if (realizedTrades.length > 500) realizedTrades = realizedTrades.slice(0, 500);
+  saveRealizedTrades();
+  renderSellRecords();
+  renderPortfolioSummary();
+  hideManualSellModal();
+  toast((pnl >= 0 ? '✅' : '📝') + ' 已補登 ' + sym + ' ' + (pnl >= 0 ? '+' : '') + Math.round(pnl).toLocaleString() + ' 元');
+}
+
+
+
+// ===== 歷史損益調整 =====
+function showHistoryAdjModal() {
+  document.getElementById('ha-amount').value = '';
+  document.getElementById('ha-note').value = '';
+  var modal = document.getElementById('history-adj-modal');
+  modal.style.display = 'flex';
+  setTimeout(function(){ document.getElementById('ha-amount').focus(); }, 100);
+}
+
+function hideHistoryAdjModal() {
+  document.getElementById('history-adj-modal').style.display = 'none';
+}
+
+function saveHistoryAdj() {
+  var amount = parseFloat(document.getElementById('ha-amount').value);
+  var note   = (document.getElementById('ha-note').value || '').trim() || '歷史損益調整';
+  if (isNaN(amount) || amount === 0) { toast('⚠️ 請輸入金額（虧損填負數）'); return; }
+
+  realizedTrades.unshift({
+    ts: new Date().toISOString(),
+    market: 'tw',
+    sym: '歷史調整',
+    broker: note,
+    soldQty: 0,
+    cost: 0,
+    sellPrice: 0,
+    gross: amount,
+    fee: 0,
+    tax: 0,
+    net: amount,
+    fx: 1,
+    netTwd: amount,
+    manual: true,
+    isAdj: true
+  });
+  if (realizedTrades.length > 500) realizedTrades = realizedTrades.slice(0, 500);
+  saveRealizedTrades();
+  renderSellRecords();
+  renderPortfolioSummary();
+  hideHistoryAdjModal();
+  toast('📜 已納入歷史損益 ' + (amount >= 0 ? '+' : '') + Math.round(amount).toLocaleString() + ' 元');
+}
+
+
+
 </script>
 <title>StockRadar v4</title>
 <style>
@@ -606,11 +707,85 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 
   <div class="port-section" id="sell-records-section">
     <div class="port-section-head">
-      <h3>Sell Records (Realized P/L)</h3>
-      <button onclick="clearSellRecords()" style="font-size:11px;padding:4px 10px;border:1px solid var(--line2);border-radius:6px;background:#fff;color:var(--text2);cursor:pointer;font-family:inherit">Clear</button>
+      <h3>📋 賣出紀錄（已實現損益）</h3>
+      <div style="display:flex;gap:6px">
+        <button onclick="showManualSellModal()" style="font-size:11px;padding:4px 10px;border:1px solid var(--sky);border-radius:6px;background:rgba(37,99,235,0.06);color:var(--sky);cursor:pointer;font-family:inherit;font-weight:600">＋ 補登</button>
+        <button onclick="showHistoryAdjModal()" style="font-size:11px;padding:4px 10px;border:1px solid var(--gold);border-radius:6px;background:rgba(217,119,6,0.06);color:var(--gold);cursor:pointer;font-family:inherit;font-weight:600">📜 歷史調整</button>
+        <button onclick="clearSellRecords()" style="font-size:11px;padding:4px 10px;border:1px solid var(--line2);border-radius:6px;background:#fff;color:var(--text2);cursor:pointer;font-family:inherit">清除</button>
+      </div>
     </div>
     <div id="sell-records-summary" style="padding:10px 16px;border-bottom:1px solid var(--line);font-size:12px;color:var(--text2)"></div>
     <div id="sell-records-list" style="padding:8px 12px"></div>
+  </div>
+</div>
+
+<!-- History Adjustment Modal -->
+<div id="history-adj-modal" onclick="if(event.target===this)hideHistoryAdjModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:16px;padding:20px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+    <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:4px">📜 歷史損益調整</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:16px">記不清楚細節？直接輸入總虧損或總獲利金額</div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px">歷史損益金額（台幣）</div>
+      <input id="ha-amount" class="sim-input" type="number" placeholder="例如 -150000（虧損）或 80000（獲利）" style="font-size:15px;padding:12px">
+      <div style="font-size:11px;color:var(--text3);margin-top:5px">虧損填<b>負數</b>，獲利填正數</div>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px">備註（可選填）</div>
+      <input id="ha-note" class="sim-input" placeholder="例如：2022年熊市虧損" autocomplete="off">
+    </div>
+    <div style="font-size:11px;color:var(--text3);background:var(--ink);border-radius:8px;padding:10px;margin-bottom:14px;line-height:1.6">
+      💡 這筆紀錄會以「歷史調整」名義加入已實現損益統計，不影響現有持倉。
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button onclick="hideHistoryAdjModal()" style="padding:10px;border-radius:8px;border:1px solid var(--line2);background:#fff;color:var(--text2);cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px">取消</button>
+      <button onclick="saveHistoryAdj()" style="padding:10px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--gold),#b45309);color:#fff;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px">確認納入</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manual Sell Record Modal -->
+<div id="manual-sell-modal" onclick="if(event.target===this)hideManualSellModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:16px;padding:20px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+    <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:4px">＋ 手動補登賣出紀錄</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:16px">不記得買賣價格？直接輸入損益金額即可</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">股票代號</div>
+        <input id="ms-sym" class="sim-input" placeholder="NVDA / 2330" autocomplete="off" autocapitalize="characters">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">市場</div>
+        <select id="ms-market" class="sim-input">
+          <option value="tw">🇹🇼 台股</option>
+          <option value="us">🇺🇸 美股</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">損益金額（台幣）</div>
+        <input id="ms-pnl" class="sim-input" type="number" placeholder="-50000（虧損填負數）">
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">虧損填負數，獲利填正數</div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">股數（可選填）</div>
+        <input id="ms-qty" class="sim-input" type="number" placeholder="0">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">券商（可選填）</div>
+        <input id="ms-broker" class="sim-input" placeholder="國泰、元大...">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">日期</div>
+        <input id="ms-date" class="sim-input" type="date">
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--text3);background:var(--ink);border-radius:8px;padding:8px 10px;margin-bottom:14px;line-height:1.6">
+      💡 只需填代號和損益金額，其他欄位可略過。損益會直接計入已實現損益統計。
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button onclick="hideManualSellModal()" style="padding:10px;border-radius:8px;border:1px solid var(--line2);background:#fff;color:var(--text2);cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px">取消</button>
+      <button onclick="saveManualSellRecord()" style="padding:10px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--sky),#1d4ed8);color:#fff;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px">確認補登</button>
+    </div>
   </div>
 </div>
 
@@ -3360,6 +3535,7 @@ function renderSellRecords() {
     var dt = new Date(t.ts);
     var d = isNaN(dt.getTime()) ? '-' : dt.toLocaleString('zh-TW');
     var sign = (Number(t.netTwd) || 0) >= 0 ? '+' : '';
+    var manualBadge = t.manual ? ' <span style="font-size:9px;background:rgba(217,119,6,0.12);color:#92400e;border-radius:4px;padding:1px 5px;font-weight:600">補登</span>' : '';
     var cc = (Number(t.netTwd) || 0) >= 0 ? '#059669' : '#dc2626';
     var mkt = t.market === 'us' ? 'US' : 'TW';
     return '<div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:10px 8px;border-bottom:1px dashed var(--line);align-items:center">' +
@@ -3888,6 +4064,107 @@ function closeHealthReportDirect() {
   document.getElementById('health-report-modal').classList.remove('open');
   document.body.style.overflow = '';
 }
+
+// ===== 手動補登賣出紀錄 =====
+function showManualSellModal() {
+  // Set default date to today
+  var today = new Date().toISOString().slice(0,10);
+  document.getElementById('ms-date').value = today;
+  document.getElementById('ms-sym').value = '';
+  document.getElementById('ms-pnl').value = '';
+  document.getElementById('ms-qty').value = '';
+  document.getElementById('ms-broker').value = '';
+  document.getElementById('ms-market').value = 'tw';
+  var modal = document.getElementById('manual-sell-modal');
+  modal.style.display = 'flex';
+  setTimeout(function(){ document.getElementById('ms-sym').focus(); }, 100);
+}
+
+function hideManualSellModal() {
+  document.getElementById('manual-sell-modal').style.display = 'none';
+}
+
+function saveManualSellRecord() {
+  var sym    = (document.getElementById('ms-sym').value || '').trim().toUpperCase();
+  var market = document.getElementById('ms-market').value;
+  var pnl    = parseFloat(document.getElementById('ms-pnl').value);
+  var qty    = parseFloat(document.getElementById('ms-qty').value) || 0;
+  var broker = (document.getElementById('ms-broker').value || '').trim();
+  var date   = document.getElementById('ms-date').value || new Date().toISOString().slice(0,10);
+
+  if (!sym) { toast('⚠️ 請輸入股票代號'); return; }
+  if (isNaN(pnl)) { toast('⚠️ 請輸入損益金額（虧損填負數）'); return; }
+
+  realizedTrades.unshift({
+    ts: new Date(date).toISOString(),
+    market: market,
+    sym: sym,
+    broker: broker || '-',
+    soldQty: qty,
+    cost: 0,
+    sellPrice: 0,
+    gross: pnl,
+    fee: 0,
+    tax: 0,
+    net: pnl,
+    fx: 1,
+    netTwd: pnl,
+    manual: true  // 標記為手動補登
+  });
+  if (realizedTrades.length > 500) realizedTrades = realizedTrades.slice(0, 500);
+  saveRealizedTrades();
+  renderSellRecords();
+  renderPortfolioSummary();
+  hideManualSellModal();
+  toast((pnl >= 0 ? '✅' : '📝') + ' 已補登 ' + sym + ' ' + (pnl >= 0 ? '+' : '') + Math.round(pnl).toLocaleString() + ' 元');
+}
+
+
+
+// ===== 歷史損益調整 =====
+function showHistoryAdjModal() {
+  document.getElementById('ha-amount').value = '';
+  document.getElementById('ha-note').value = '';
+  var modal = document.getElementById('history-adj-modal');
+  modal.style.display = 'flex';
+  setTimeout(function(){ document.getElementById('ha-amount').focus(); }, 100);
+}
+
+function hideHistoryAdjModal() {
+  document.getElementById('history-adj-modal').style.display = 'none';
+}
+
+function saveHistoryAdj() {
+  var amount = parseFloat(document.getElementById('ha-amount').value);
+  var note   = (document.getElementById('ha-note').value || '').trim() || '歷史損益調整';
+  if (isNaN(amount) || amount === 0) { toast('⚠️ 請輸入金額（虧損填負數）'); return; }
+
+  realizedTrades.unshift({
+    ts: new Date().toISOString(),
+    market: 'tw',
+    sym: '歷史調整',
+    broker: note,
+    soldQty: 0,
+    cost: 0,
+    sellPrice: 0,
+    gross: amount,
+    fee: 0,
+    tax: 0,
+    net: amount,
+    fx: 1,
+    netTwd: amount,
+    manual: true,
+    isAdj: true
+  });
+  if (realizedTrades.length > 500) realizedTrades = realizedTrades.slice(0, 500);
+  saveRealizedTrades();
+  renderSellRecords();
+  renderPortfolioSummary();
+  hideHistoryAdjModal();
+  toast('📜 已納入歷史損益 ' + (amount >= 0 ? '+' : '') + Math.round(amount).toLocaleString() + ' 元');
+}
+
+
 
 </script>
 </body>
