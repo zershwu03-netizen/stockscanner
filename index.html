@@ -1838,14 +1838,15 @@ function toggleFavSelect(sym) {
   renderFavSection();
 }
 function batchAddFavs() {
-  const current = document.getElementById('custom-syms').value.trim();
-  const existing = current ? current.split(/[,\s，]+/).map(s=>s.trim()).filter(Boolean) : [];
-  const merged = [...new Set([...existing, ...selectedFavs])];
-  document.getElementById('custom-syms').value = merged.join(', ');
-  document.getElementById('clear-syms-btn').style.display = 'block';
+  var added = 0;
+  selectedFavs.forEach(function(sym) {
+    var display = sym.replace('.TW','').replace('.TWO','');
+    if (!_tags.includes(display)) { _tags.push(display); added++; }
+  });
+  renderTags();
   selectedFavs.clear();
   renderFavSection();
-  toast('✅ 已批次加入 ' + merged.length + ' 支，點擊掃描開始分析');
+  toast('✅ 已加入 ' + added + ' 支到搜尋欄，點掃描開始分析');
 }
 
 // ===== PORTFOLIO =====
@@ -2699,19 +2700,20 @@ async function runOptimize() {
 // ===== PORTFOLIO BACKUP / RESTORE =====
 function exportPortfolio() {
   var data = {
-    version: 1,
+    version: 2,
     exported: new Date().toISOString(),
-    portfolio: portfolio
+    portfolio: portfolio,
+    realizedTrades: realizedTrades || []
   };
   var json = JSON.stringify(data, null, 2);
   var blob = new Blob([json], {type: 'application/json'});
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
   a.href = url;
-  a.download = 'stockradar-portfolio-' + new Date().toISOString().slice(0,10) + '.json';
+  a.download = 'stockradar-backup-' + new Date().toISOString().slice(0,10) + '.json';
   a.click();
   URL.revokeObjectURL(url);
-  toast('✅ 持倉資料已備份下載');
+  toast('✅ 持倉 + 賣出紀錄已備份下載');
 }
 
 function importPortfolio(event) {
@@ -2727,8 +2729,14 @@ function importPortfolio(event) {
       var usCount = imported.us.length, twCount = imported.tw.length;
       portfolio = imported;
       savePortfolio();
+      // Restore realizedTrades if present (v2 backup)
+      if (data.realizedTrades && Array.isArray(data.realizedTrades)) {
+        realizedTrades = data.realizedTrades;
+        saveRealizedTrades();
+      }
       renderPortfolio();
-      toast('✅ 已還原 美股' + usCount + '筆 + 台股' + twCount + '筆持倉');
+      var sellCount = (data.realizedTrades || []).length;
+      toast('✅ 已還原 美股' + usCount + '筆 + 台股' + twCount + '筆持倉' + (sellCount ? '、賣出紀錄' + sellCount + '筆' : ''));
       // Refresh prices
       setTimeout(function() {
         refreshPortfolio('us');
