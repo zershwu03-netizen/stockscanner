@@ -134,10 +134,6 @@ function hideConfirmModal() {
   document.getElementById('confirm-modal').style.display = 'none';
   _confirmCallback = null;
 }
-document.getElementById('confirm-ok-btn').onclick = function() {
-  hideConfirmModal();
-  if (_confirmCallback) _confirmCallback();
-};
 
 // ===== BUY RECORDS =====
 var buyTrades = JSON.parse(localStorage.getItem('sr_buy_trades') || '[]');
@@ -1269,7 +1265,7 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
     <div id="confirm-body" style="font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.6"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <button onclick="hideConfirmModal()" style="padding:10px;border-radius:8px;border:1px solid var(--line2);background:#fff;color:var(--text2);cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px">取消</button>
-      <button id="confirm-ok-btn" style="padding:10px;border-radius:8px;border:none;background:var(--ember);color:#fff;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px">確認刪除</button>
+      <button id="confirm-ok-btn" onclick="hideConfirmModal();if(_confirmCallback)_confirmCallback();" style="padding:10px;border-radius:8px;border:none;background:var(--ember);color:#fff;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px">確認刪除</button>
     </div>
   </div>
 </div>
@@ -4758,21 +4754,7 @@ function saveHistoryAdj() {
 
 
 // ===== CONFIRM MODAL =====
-var _confirmCallback = null;
-function showConfirmModal(title, body, onOk) {
-  document.getElementById('confirm-title').textContent = title;
-  document.getElementById('confirm-body').innerHTML = body;
-  _confirmCallback = onOk;
-  document.getElementById('confirm-modal').style.display = 'flex';
-}
-function hideConfirmModal() {
-  document.getElementById('confirm-modal').style.display = 'none';
-  _confirmCallback = null;
-}
-document.getElementById('confirm-ok-btn').onclick = function() {
-  hideConfirmModal();
-  if (_confirmCallback) _confirmCallback();
-};
+
 
 // ===== BUY RECORDS =====
 var buyTrades = JSON.parse(localStorage.getItem('sr_buy_trades') || '[]');
