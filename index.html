@@ -1325,16 +1325,11 @@ function saveBuyRecord() {
 function deleteBuyRecord(idx) {
   if (idx < 0 || idx >= buyTrades.length) return;
   var t = buyTrades[idx];
-  showConfirmModal(
-    '刪除購買紀錄',
-    '確定要刪除 <b>' + t.sym + '</b> 的這筆買入紀錄嗎？',
-    function() {
-      buyTrades.splice(idx, 1);
-      saveBuyTrades();
-      renderBuyRecords();
-      toast('已刪除購買紀錄');
-    }
-  );
+  if (!window.confirm('確定要刪除 ' + t.sym + ' 的這筆買入紀錄嗎？')) return;
+  buyTrades.splice(idx, 1);
+  saveBuyTrades();
+  renderBuyRecords();
+  toast('已刪除購買紀錄');
 }
 
 function renderBuyRecords() {
@@ -1464,6 +1459,58 @@ function hideSellModal() {
   document.getElementById('sell-position-modal').style.display = 'none';
   _sellCtx = null;
 }
+function confirmSell() {
+  if (!_sellCtx) return;
+  var market = _sellCtx.market;
+  var idx    = _sellCtx.idx;
+  var p = portfolio[market]?.[idx];
+  if (!p) return;
+
+  var qty   = parseFloat(document.getElementById('sell-qty').value);
+  var price = parseFloat(document.getElementById('sell-price').value);
+  var fee   = parseFloat(document.getElementById('sell-fee').value)  || 0;
+  var tax   = parseFloat(document.getElementById('sell-tax').value)  || 0;
+  var date  = document.getElementById('sell-date').value || new Date().toISOString().slice(0,10);
+  var note  = (document.getElementById('sell-note').value || '').trim();
+
+  if (!qty || qty <= 0)    { toast('⚠️ 請輸入賣出股數'); return; }
+  if (!price || price <= 0){ toast('⚠️ 請輸入賣出價格'); return; }
+  if (qty > p.qty)         { toast('⚠️ 賣出股數不能超過持有股數（' + p.qty + '）'); return; }
+
+  var gross  = qty * price;
+  var net    = gross - fee - tax;
+  var cost   = p.cost;
+  var pnl    = net - qty * cost;
+  var fx     = market === 'us' ? getPortfolioFx() : 1;
+  var pnlTwd = pnl * fx;
+  var sym    = p.displaySym || p.sym;
+
+  // Write to sell records only
+  realizedTrades.unshift({
+    ts: new Date(date).toISOString(),
+    market: market, sym: sym, broker: p.broker || '-',
+    soldQty: qty, cost: cost, sellPrice: price,
+    gross: gross, fee: fee, tax: tax, net: net,
+    fx: fx, netTwd: pnlTwd, note: note
+  });
+  if (realizedTrades.length > 500) realizedTrades = realizedTrades.slice(0, 500);
+  saveRealizedTrades();
+
+  // Update position
+  var remain = p.qty - qty;
+  if (remain <= 0) {
+    portfolio[market].splice(idx, 1);
+  } else {
+    portfolio[market][idx].qty = remain;
+  }
+  savePortfolio();
+  hideSellModal();
+  renderPortfolio();
+  renderSellRecords();
+  toast((pnl >= 0 ? '✅ 獲利' : '📝 虧損') + ' ' + sym + ' 賣出 ' + qty +
+    ' 股，損益 ' + (pnl >= 0 ? '+' : '') + Math.round(pnlTwd).toLocaleString() + ' 台幣');
+}
+
 
 function updateSellPreview() {
   var qty   = parseFloat(document.getElementById('sell-qty').value)   || 0;
@@ -1508,81 +1555,7 @@ function updateSellPreview() {
   }
 }
 
-function confirmSell() {
-  if (!_sellCtx) return;
-  var market = _sellCtx.market;
-  var idx    = _sellCtx.idx;
-  var p = portfolio[market]?.[idx];
-  if (!p) return;
 
-  var qty   = parseFloat(document.getElementById('sell-qty').value);
-  var price = parseFloat(document.getElementById('sell-price').value);
-  var fee   = parseFloat(document.getElementById('sell-fee').value)  || 0;
-  var tax   = parseFloat(document.getElementById('sell-tax').value)  || 0;
-  var date  = document.getElementById('sell-date').value || new Date().toISOString().slice(0,10);
-  var note  = (document.getElementById('sell-note').value || '').trim();
-
-  if (!qty || qty <= 0)   { toast('⚠️ 請輸入賣出股數'); return; }
-  if (!price || price <=0){ toast('⚠️ 請輸入賣出價格'); return; }
-  if (qty > p.qty)        { toast('⚠️ 賣出股數不能超過持有股數（' + p.qty + '）'); return; }
-
-  var gross  = qty * price;
-  var net    = gross - fee - tax;
-  var cost   = p.cost;
-  var pnl    = net - qty * cost;
-  var fx     = market === 'us' ? getPortfolioFx() : 1;
-  var pnlTwd = pnl * fx;
-  var sym    = p.displaySym || p.sym;
-
-  // Write sell record
-  realizedTrades.unshift({
-    ts: new Date(date).toISOString(),
-    market: market,
-    sym: sym,
-    broker: p.broker || '-',
-    soldQty: qty,
-    cost: cost,
-    sellPrice: price,
-    gross: gross,
-    fee: fee,
-    tax: tax,
-    net: net,
-    fx: fx,
-    netTwd: pnlTwd,
-    note: note
-  });
-  if (realizedTrades.length > 500) realizedTrades = realizedTrades.slice(0,500);
-  saveRealizedTrades();
-
-  // Also write buy record (for reference — sell side)
-  buyTrades.unshift({
-    ts: new Date(date).toISOString(),
-    market: market,
-    sym: sym + '（賣出）',
-    price: price,
-    qty: -qty,
-    fee: fee + tax,
-    total: -net,
-    broker: p.broker || '-',
-    note: note || '賣出紀錄'
-  });
-  if (buyTrades.length > 500) buyTrades = buyTrades.slice(0,500);
-  saveBuyTrades();
-
-  // Update position
-  var remain = p.qty - qty;
-  if (remain <= 0) {
-    portfolio[market].splice(idx, 1);
-  } else {
-    portfolio[market][idx].qty = remain;
-  }
-  savePortfolio();
-  hideSellModal();
-  renderPortfolio();
-  renderSellRecords();
-  renderBuyRecords();
-  toast((pnl >= 0 ? '✅ 獲利' : '📝 虧損') + ' ' + sym + ' 賣出 ' + qty + ' 股，損益 ' + (pnl>=0?'+':'') + Math.round(pnlTwd).toLocaleString() + ' 台幣');
-}
 
 // ===== PRESETS =====
 const PRESETS={
@@ -2627,6 +2600,18 @@ function addPosition(market) {
     existing.cost = parseFloat(weightedCost.toFixed(4));
     const idx = portfolio[market].indexOf(existing);
     savePortfolio();
+    // Write buy record for this purchase
+    buyTrades.unshift({
+      ts: new Date().toISOString(),
+      market: market, sym: displaySym,
+      price: cost, qty: qty,
+      fee: 0, total: cost * qty,
+      broker: broker || '-',
+      note: '加碼買入'
+    });
+    if (buyTrades.length > 500) buyTrades = buyTrades.slice(0, 500);
+    saveBuyTrades();
+    renderBuyRecords();
     symEl.value = ''; costEl.value = ''; qtyEl.value = '';
     renderPortfolio();
     toast('🔀 已合併 ' + displaySym + '｜新均價 ' + weightedCost.toFixed(2) + '，共 ' + totalQty + ' 股');
@@ -2634,6 +2619,18 @@ function addPosition(market) {
   } else {
     portfolio[market].push({ sym: fullSym, displaySym, cost, qty, broker, name: '', price: null, lastUpdate: null });
     savePortfolio();
+    // Write buy record
+    buyTrades.unshift({
+      ts: new Date().toISOString(),
+      market: market, sym: displaySym,
+      price: cost, qty: qty,
+      fee: 0, total: cost * qty,
+      broker: broker || '-',
+      note: '新增持倉'
+    });
+    if (buyTrades.length > 500) buyTrades = buyTrades.slice(0, 500);
+    saveBuyTrades();
+    renderBuyRecords();
     symEl.value = ''; costEl.value = ''; qtyEl.value = '';
     renderPortfolio();
     toast('✅ 已新增 ' + displaySym + '，正在抓取現價...');
@@ -2651,16 +2648,11 @@ function removePosition(market, idx) {
   var p = portfolio[market]?.[idx];
   if (!p) return;
   var sym = p.displaySym || p.sym;
-  showConfirmModal(
-    '刪除持倉',
-    '確定要刪除 <b>' + sym + '</b> 嗎？<br><span style="font-size:12px;color:var(--text3)">此操作無法復原</span>',
-    function() {
-      portfolio[market].splice(idx, 1);
-      savePortfolio();
-      renderPortfolio();
-      toast('🗑 已刪除 ' + sym);
-    }
-  );
+  if (!window.confirm('確定要刪除 ' + sym + ' 嗎？此操作無法復原')) return;
+  portfolio[market].splice(idx, 1);
+  savePortfolio();
+  renderPortfolio();
+  toast('🗑 已刪除 ' + sym);
 }
 
 function editPositionQty(market, idx) {
@@ -4856,16 +4848,11 @@ function saveBuyRecord() {
 function deleteBuyRecord(idx) {
   if (idx < 0 || idx >= buyTrades.length) return;
   var t = buyTrades[idx];
-  showConfirmModal(
-    '刪除購買紀錄',
-    '確定要刪除 <b>' + t.sym + '</b> 的這筆買入紀錄嗎？',
-    function() {
-      buyTrades.splice(idx, 1);
-      saveBuyTrades();
-      renderBuyRecords();
-      toast('已刪除購買紀錄');
-    }
-  );
+  if (!window.confirm('確定要刪除 ' + t.sym + ' 的這筆買入紀錄嗎？')) return;
+  buyTrades.splice(idx, 1);
+  saveBuyTrades();
+  renderBuyRecords();
+  toast('已刪除購買紀錄');
 }
 
 function renderBuyRecords() {
@@ -4996,6 +4983,7 @@ function hideSellModal() {
   _sellCtx = null;
 }
 
+
 function updateSellPreview() {
   var qty   = parseFloat(document.getElementById('sell-qty').value)   || 0;
   var price = parseFloat(document.getElementById('sell-price').value) || 0;
@@ -5039,81 +5027,7 @@ function updateSellPreview() {
   }
 }
 
-function confirmSell() {
-  if (!_sellCtx) return;
-  var market = _sellCtx.market;
-  var idx    = _sellCtx.idx;
-  var p = portfolio[market]?.[idx];
-  if (!p) return;
 
-  var qty   = parseFloat(document.getElementById('sell-qty').value);
-  var price = parseFloat(document.getElementById('sell-price').value);
-  var fee   = parseFloat(document.getElementById('sell-fee').value)  || 0;
-  var tax   = parseFloat(document.getElementById('sell-tax').value)  || 0;
-  var date  = document.getElementById('sell-date').value || new Date().toISOString().slice(0,10);
-  var note  = (document.getElementById('sell-note').value || '').trim();
-
-  if (!qty || qty <= 0)   { toast('⚠️ 請輸入賣出股數'); return; }
-  if (!price || price <=0){ toast('⚠️ 請輸入賣出價格'); return; }
-  if (qty > p.qty)        { toast('⚠️ 賣出股數不能超過持有股數（' + p.qty + '）'); return; }
-
-  var gross  = qty * price;
-  var net    = gross - fee - tax;
-  var cost   = p.cost;
-  var pnl    = net - qty * cost;
-  var fx     = market === 'us' ? getPortfolioFx() : 1;
-  var pnlTwd = pnl * fx;
-  var sym    = p.displaySym || p.sym;
-
-  // Write sell record
-  realizedTrades.unshift({
-    ts: new Date(date).toISOString(),
-    market: market,
-    sym: sym,
-    broker: p.broker || '-',
-    soldQty: qty,
-    cost: cost,
-    sellPrice: price,
-    gross: gross,
-    fee: fee,
-    tax: tax,
-    net: net,
-    fx: fx,
-    netTwd: pnlTwd,
-    note: note
-  });
-  if (realizedTrades.length > 500) realizedTrades = realizedTrades.slice(0,500);
-  saveRealizedTrades();
-
-  // Also write buy record (for reference — sell side)
-  buyTrades.unshift({
-    ts: new Date(date).toISOString(),
-    market: market,
-    sym: sym + '（賣出）',
-    price: price,
-    qty: -qty,
-    fee: fee + tax,
-    total: -net,
-    broker: p.broker || '-',
-    note: note || '賣出紀錄'
-  });
-  if (buyTrades.length > 500) buyTrades = buyTrades.slice(0,500);
-  saveBuyTrades();
-
-  // Update position
-  var remain = p.qty - qty;
-  if (remain <= 0) {
-    portfolio[market].splice(idx, 1);
-  } else {
-    portfolio[market][idx].qty = remain;
-  }
-  savePortfolio();
-  hideSellModal();
-  renderPortfolio();
-  renderSellRecords();
-  renderBuyRecords();
-  toast((pnl >= 0 ? '✅ 獲利' : '📝 虧損') + ' ' + sym + ' 賣出 ' + qty + ' 股，損益 ' + (pnl>=0?'+':'') + Math.round(pnlTwd).toLocaleString() + ' 台幣');
-}
 
 </script>
 </body>
