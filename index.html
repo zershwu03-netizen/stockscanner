@@ -1004,15 +1004,15 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
       <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px">💼 我的持倉</div>
       <div style="font-size:13px;color:var(--text3)">新增持倉後自動抓取現價，顯示損益與健檢建議</div>
     </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:4px">
-      <button onclick="showFeeSettingsModal()" style="font-size:12px;padding:7px 14px;border:1px solid var(--line2);border-radius:8px;background:#fff;color:var(--text2);cursor:pointer;font-weight:600;font-family:inherit">⚙️ 手續費</button>
-      <button onclick="exportPortfolio()" style="font-size:12px;padding:7px 14px;border:1px solid var(--sky);border-radius:8px;background:rgba(37,99,235,0.06);color:var(--sky);cursor:pointer;font-weight:600;font-family:inherit">📤 備份</button>
-      <button onclick="openHealthReport()" style="font-size:12px;padding:7px 14px;border:1px solid var(--mint);border-radius:8px;background:rgba(5,150,105,0.06);color:var(--mint);cursor:pointer;font-weight:600;font-family:inherit">🏥 健康報告</button>
-      <label style="font-size:12px;padding:7px 14px;border:1px solid var(--mint);border-radius:8px;background:rgba(5,150,105,0.06);color:var(--mint);cursor:pointer;font-weight:600;font-family:inherit">
+    <div style="display:flex;gap:5px;flex-wrap:wrap;padding-top:4px">
+      <button onclick="showFeeSettingsModal()" style="font-size:11px;padding:6px 10px;border:1px solid var(--line2);border-radius:8px;background:#fff;color:var(--text2);cursor:pointer;font-weight:600;font-family:inherit">⚙️ 費率</button>
+      <button onclick="exportPortfolio()" style="font-size:11px;padding:6px 10px;border:1px solid var(--sky);border-radius:8px;background:rgba(37,99,235,0.06);color:var(--sky);cursor:pointer;font-weight:600;font-family:inherit">📤 備份</button>
+      <button onclick="openHealthReport()" style="font-size:11px;padding:6px 10px;border:1px solid var(--mint);border-radius:8px;background:rgba(5,150,105,0.06);color:var(--mint);cursor:pointer;font-weight:600;font-family:inherit">🏥 健檢</button>
+      <label style="font-size:11px;padding:6px 10px;border:1px solid var(--mint);border-radius:8px;background:rgba(5,150,105,0.06);color:var(--mint);cursor:pointer;font-weight:600;font-family:inherit">
         📥 還原<input type="file" accept=".json" onchange="importPortfolio(event)" style="display:none">
       </label>
-      <label style="font-size:12px;padding:7px 14px;border:1px solid var(--gold);border-radius:8px;background:rgba(217,119,6,0.06);color:var(--gold);cursor:pointer;font-weight:600;font-family:inherit">
-        📊 匯入Excel<input type="file" accept=".xlsx,.xls,.csv" onchange="importExcel(event)" style="display:none">
+      <label style="font-size:11px;padding:6px 10px;border:1px solid var(--gold);border-radius:8px;background:rgba(217,119,6,0.06);color:var(--gold);cursor:pointer;font-weight:600;font-family:inherit">
+        📊 Excel<input type="file" accept=".xlsx,.xls,.csv" onchange="importExcel(event)" style="display:none">
       </label>
     </div>
   </div>
@@ -1020,9 +1020,10 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
   <!-- Summary -->
   <div class="port-summary" id="port-summary" style="background:#fff;border:1px solid var(--line);border-radius:16px;margin-bottom:16px"></div>
   <div id="portfolio-quick-nav" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px">
-    <button onclick="jumpPortfolioSection('us')" style="font-size:12px;padding:6px 10px;border:1px solid var(--line2);border-radius:8px;background:#fff;color:var(--text2);cursor:pointer">US</button>
-    <button onclick="jumpPortfolioSection('tw')" style="font-size:12px;padding:6px 10px;border:1px solid var(--line2);border-radius:8px;background:#fff;color:var(--text2);cursor:pointer">TW</button>
-    <button onclick="jumpPortfolioSection('sell')" style="font-size:12px;padding:6px 10px;border:1px solid var(--line2);border-radius:8px;background:#fff;color:var(--text2);cursor:pointer">Sell Records</button>
+    <button onclick="jumpPortfolioSection('us')" style="font-size:11px;padding:5px 9px;border:1px solid var(--line2);border-radius:8px;background:#fff;color:var(--text2);cursor:pointer">🇺🇸 美股</button>
+    <button onclick="jumpPortfolioSection('tw')" style="font-size:11px;padding:5px 9px;border:1px solid var(--line2);border-radius:8px;background:#fff;color:var(--text2);cursor:pointer">🇹🇼 台股</button>
+    <button onclick="jumpPortfolioSection('sell')" style="font-size:11px;padding:5px 9px;border:1px solid var(--line2);border-radius:8px;background:#fff;color:var(--text2);cursor:pointer">📋 賣出</button>
+    <button onclick="jumpPortfolioSection('buy')" style="font-size:11px;padding:5px 9px;border:1px solid var(--line2);border-radius:8px;background:#fff;color:var(--text2);cursor:pointer">📥 購買</button>
     <input id="portfolio-search" placeholder="Find: NVDA / 2330" oninput="setPortfolioSearch(this.value)" onkeydown="if(event.key==='Enter'){jumpToStockInPortfolio();}" style="flex:1;min-width:180px;padding:7px 10px;border:1px solid var(--line2);border-radius:8px;font-family:monospace">
     <button onclick="jumpToStockInPortfolio()" style="font-size:12px;padding:6px 10px;border:1px solid var(--sky);border-radius:8px;background:rgba(37,99,235,0.08);color:var(--sky);cursor:pointer">Go</button>
     <button onclick="clearPortfolioSearch()" style="font-size:12px;padding:6px 10px;border:1px solid var(--line2);border-radius:8px;background:#fff;color:var(--text3);cursor:pointer">Clear</button>
@@ -1166,7 +1167,7 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
       </div>
       <div>
         <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">賣出日期</div>
-        <input id="sell-date" class="sim-input" type="date">
+        <input id="sell-date" class="sim-input" type="date" style="width:100%;max-width:100%;appearance:none;-webkit-appearance:none">
       </div>
       <div>
         <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">備註（可選）</div>
@@ -3978,7 +3979,8 @@ function clearPortfolioSearch() {
 
 function jumpPortfolioSection(which) {
   switchNav('portfolio');
-  var targetId = which === 'us' ? 'us-portfolio-section' : (which === 'tw' ? 'tw-portfolio-section' : 'sell-records-section');
+  var map = { us:'us-portfolio-section', tw:'tw-portfolio-section', sell:'sell-records-section', buy:'buy-records-section' };
+  var targetId = map[which] || 'sell-records-section';
   setTimeout(function() {
     var el = document.getElementById(targetId);
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
