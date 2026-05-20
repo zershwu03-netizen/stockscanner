@@ -122,6 +122,366 @@ function saveHistoryAdj() {
 
 
 
+// ===== CONFIRM MODAL =====
+var _confirmCallback = null;
+function showConfirmModal(title, body, onOk) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-body').innerHTML = body;
+  _confirmCallback = onOk;
+  document.getElementById('confirm-modal').style.display = 'flex';
+}
+function hideConfirmModal() {
+  document.getElementById('confirm-modal').style.display = 'none';
+  _confirmCallback = null;
+}
+document.getElementById('confirm-ok-btn').onclick = function() {
+  hideConfirmModal();
+  if (_confirmCallback) _confirmCallback();
+};
+
+// ===== BUY RECORDS =====
+var buyTrades = JSON.parse(localStorage.getItem('sr_buy_trades') || '[]');
+
+function saveBuyTrades() {
+  localStorage.setItem('sr_buy_trades', JSON.stringify(buyTrades || []));
+}
+
+function showBuyRecordModal() {
+  document.getElementById('br-sym').value = '';
+  document.getElementById('br-price').value = '';
+  document.getElementById('br-qty').value = '';
+  document.getElementById('br-fee').value = '0';
+  document.getElementById('br-broker').value = '';
+  document.getElementById('br-note').value = '';
+  document.getElementById('br-market').value = 'tw';
+  document.getElementById('br-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('br-total-preview').textContent = '總金額：-';
+  document.getElementById('buy-record-modal').style.display = 'flex';
+
+  // Live preview of total
+  function updatePreview() {
+    var price = parseFloat(document.getElementById('br-price').value) || 0;
+    var qty   = parseFloat(document.getElementById('br-qty').value)   || 0;
+    var fee   = parseFloat(document.getElementById('br-fee').value)   || 0;
+    var mkt   = document.getElementById('br-market').value;
+    if (price && qty) {
+      var total = price * qty + fee;
+      var cur = mkt === 'us' ? '$' : '';
+      document.getElementById('br-total-preview').textContent =
+        '總金額：' + cur + total.toLocaleString(undefined, {maximumFractionDigits:2}) +
+        (mkt==='us' ? '（美元）' : '（台幣）');
+    } else {
+      document.getElementById('br-total-preview').textContent = '總金額：-';
+    }
+  }
+  ['br-price','br-qty','br-fee','br-market'].forEach(function(id) {
+    document.getElementById(id).oninput = updatePreview;
+    document.getElementById(id).onchange = updatePreview;
+  });
+
+  setTimeout(function(){ document.getElementById('br-sym').focus(); }, 100);
+}
+
+function hideBuyRecordModal() {
+  document.getElementById('buy-record-modal').style.display = 'none';
+}
+
+function saveBuyRecord() {
+  var sym    = (document.getElementById('br-sym').value || '').trim().toUpperCase();
+  var market = document.getElementById('br-market').value;
+  var price  = parseFloat(document.getElementById('br-price').value);
+  var qty    = parseFloat(document.getElementById('br-qty').value);
+  var fee    = parseFloat(document.getElementById('br-fee').value)   || 0;
+  var broker = (document.getElementById('br-broker').value || '').trim();
+  var date   = document.getElementById('br-date').value || new Date().toISOString().slice(0,10);
+  var note   = (document.getElementById('br-note').value || '').trim();
+
+  if (!sym)            { toast('⚠️ 請輸入股票代號'); return; }
+  if (!price || price <= 0) { toast('⚠️ 請輸入有效的買入價格'); return; }
+  if (!qty   || qty   <= 0) { toast('⚠️ 請輸入有效的股數'); return; }
+
+  var total = price * qty + fee;
+
+  buyTrades.unshift({
+    ts: new Date(date).toISOString(),
+    market: market,
+    sym: sym,
+    price: price,
+    qty: qty,
+    fee: fee,
+    total: total,
+    broker: broker || '-',
+    note: note
+  });
+  if (buyTrades.length > 500) buyTrades = buyTrades.slice(0, 500);
+  saveBuyTrades();
+  renderBuyRecords();
+  hideBuyRecordModal();
+  toast('📥 已新增 ' + sym + ' 買入紀錄 × ' + qty);
+}
+
+function deleteBuyRecord(idx) {
+  if (idx < 0 || idx >= buyTrades.length) return;
+  var t = buyTrades[idx];
+  showConfirmModal(
+    '刪除購買紀錄',
+    '確定要刪除 <b>' + t.sym + '</b> 的這筆買入紀錄嗎？',
+    function() {
+      buyTrades.splice(idx, 1);
+      saveBuyTrades();
+      renderBuyRecords();
+      toast('已刪除購買紀錄');
+    }
+  );
+}
+
+function renderBuyRecords() {
+  var el = document.getElementById('buy-records-list');
+  if (!el) return;
+  if (!buyTrades || !buyTrades.length) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">尚無購買紀錄，點擊「＋ 新增」加入</div>';
+    return;
+  }
+  // Summary
+  var totalSpent = buyTrades.reduce(function(s,t){ return s + (t.total||0); }, 0);
+  el.innerHTML =
+    '<div style="padding:8px 0 10px;font-size:12px;color:var(--text2)">' +
+      '共 <b>' + buyTrades.length + '</b> 筆　總投入（混合）：<b style="color:var(--sky)">' +
+      totalSpent.toLocaleString(undefined,{maximumFractionDigits:0}) + '</b>' +
+    '</div>' +
+    buyTrades.map(function(t, i) {
+      var cur   = t.market === 'us' ? '$' : '';
+      var mktB  = t.market === 'us'
+        ? '<span style="font-size:9px;background:rgba(37,99,235,0.1);color:#1e40af;border-radius:4px;padding:1px 5px;font-weight:600">美股</span>'
+        : '<span style="font-size:9px;background:rgba(5,150,105,0.1);color:#065f46;border-radius:4px;padding:1px 5px;font-weight:600">台股</span>';
+      var dateStr = t.ts ? t.ts.slice(0,10) : '-';
+      return '<div style="display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px 0;border-bottom:1px solid var(--line);align-items:start">' +
+        '<div>' +
+          '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">' +
+            '<span style="font-family:monospace;font-size:14px;font-weight:700">' + t.sym + '</span>' +
+            mktB +
+            (t.broker&&t.broker!=='-'?'<span style="font-size:10px;color:var(--text3)">'+t.broker+'</span>':'') +
+          '</div>' +
+          '<div style="font-size:12px;color:var(--text2)">' +
+            '買入價 <b style="font-family:monospace">' + cur + t.price + '</b>　' +
+            '股數 <b style="font-family:monospace">' + t.qty + '</b>　' +
+            '總計 <b style="font-family:monospace;color:var(--ember)">' + cur + (t.total||0).toLocaleString(undefined,{maximumFractionDigits:0}) + '</b>' +
+            (t.fee ? '　手續費 ' + cur + t.fee : '') +
+          '</div>' +
+          '<div style="font-size:11px;color:var(--text3);margin-top:3px">' +
+            dateStr + (t.note ? '　' + t.note : '') +
+          '</div>' +
+        '</div>' +
+        '<button onclick="deleteBuyRecord(' + i + ')" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:4px;line-height:1">✕</button>' +
+      '</div>';
+    }).join('');
+}
+
+// ===== 手續費設定 =====
+var FEE_DEFAULTS = { brokerage: 0.1425, taxStock: 0.3, taxEtf: 0.1 };
+var feeSettings = Object.assign({}, FEE_DEFAULTS, JSON.parse(localStorage.getItem('sr_fee_settings') || '{}'));
+
+function saveFeeSettingsData() {
+  localStorage.setItem('sr_fee_settings', JSON.stringify(feeSettings));
+}
+
+function showFeeSettingsModal() {
+  document.getElementById('fs-brokerage').value  = feeSettings.brokerage;
+  document.getElementById('fs-tax-stock').value  = feeSettings.taxStock;
+  document.getElementById('fs-tax-etf').value    = feeSettings.taxEtf;
+  document.getElementById('fee-settings-modal').style.display = 'flex';
+}
+
+function hideFeeSettingsModal() {
+  document.getElementById('fee-settings-modal').style.display = 'none';
+}
+
+function saveFeeSettings() {
+  var b = parseFloat(document.getElementById('fs-brokerage').value);
+  var s = parseFloat(document.getElementById('fs-tax-stock').value);
+  var e = parseFloat(document.getElementById('fs-tax-etf').value);
+  if (isNaN(b)||isNaN(s)||isNaN(e)||b<=0||s<0||e<0) { toast('⚠️ 請輸入有效的費率'); return; }
+  feeSettings = { brokerage: b, taxStock: s, taxEtf: e };
+  saveFeeSettingsData();
+  hideFeeSettingsModal();
+  toast('✅ 手續費設定已儲存');
+}
+
+function resetFeeSettings() {
+  feeSettings = Object.assign({}, FEE_DEFAULTS);
+  saveFeeSettingsData();
+  document.getElementById('fs-brokerage').value  = feeSettings.brokerage;
+  document.getElementById('fs-tax-stock').value  = feeSettings.taxStock;
+  document.getElementById('fs-tax-etf').value    = feeSettings.taxEtf;
+  toast('✅ 已恢復預設費率');
+}
+
+// ===== 賣出股票 =====
+var _sellCtx = null; // { market, idx }
+var _sellType = 'stock'; // 'stock' | 'etf' | 'us'
+
+function setSellType(type) {
+  _sellType = type;
+  var types = ['stock','etf','us'];
+  types.forEach(function(t) {
+    var btn = document.getElementById('sell-type-' + t);
+    var active = t === type;
+    btn.style.borderColor  = active ? 'var(--sky)' : 'var(--line2)';
+    btn.style.background   = active ? 'var(--sky)' : '#fff';
+    btn.style.color        = active ? '#fff' : 'var(--text2)';
+  });
+  updateSellPreview();
+}
+
+function openSellModal(market, idx) {
+  var p = (portfolio[market] || [])[idx];
+  if (!p) return;
+  _sellCtx = { market: market, idx: idx };
+
+  // Auto-detect type
+  var autoType = market === 'us' ? 'us' : 'stock';
+  setSellType(autoType);
+
+  // Prefill
+  document.getElementById('sell-modal-title').textContent = '💰 賣出 ' + (p.displaySym || p.sym);
+  document.getElementById('sell-modal-subtitle').textContent =
+    '持有 ' + p.qty + ' 股　成本 ' + (market==='us'?'$':'') + p.cost.toFixed(market==='tw'?1:2) +
+    (p.broker && p.broker!=='-' ? '　' + p.broker : '');
+  document.getElementById('sell-qty-hint').textContent = '（持有 ' + p.qty + '）';
+  document.getElementById('sell-qty').value  = p.qty; // 預設全賣
+  document.getElementById('sell-qty').max    = p.qty;
+  document.getElementById('sell-price').value = p.price ? p.price.toFixed(market==='tw'?1:2) : '';
+  document.getElementById('sell-date').value  = new Date().toISOString().slice(0,10);
+  document.getElementById('sell-note').value  = '';
+  updateSellPreview();
+  document.getElementById('sell-position-modal').style.display = 'flex';
+  setTimeout(function(){ document.getElementById('sell-price').focus(); }, 100);
+}
+
+function hideSellModal() {
+  document.getElementById('sell-position-modal').style.display = 'none';
+  _sellCtx = null;
+}
+
+function updateSellPreview() {
+  var qty   = parseFloat(document.getElementById('sell-qty').value)   || 0;
+  var price = parseFloat(document.getElementById('sell-price').value) || 0;
+  if (!qty || !price) {
+    document.getElementById('sell-prev-gross').textContent = '-';
+    document.getElementById('sell-prev-fees').textContent  = '-';
+    document.getElementById('sell-prev-pnl').textContent   = '-';
+    document.getElementById('sell-prev-remain').textContent = '';
+    document.getElementById('sell-fee').value = '';
+    document.getElementById('sell-tax').value = '';
+    return;
+  }
+  var gross = qty * price;
+  var cur   = _sellType === 'us' ? '$' : '';
+  // Fee: brokerage on gross
+  var fee   = Math.round(gross * feeSettings.brokerage / 100);
+  // Tax: only on sell side, 0 for US
+  var taxRate = _sellType === 'stock' ? feeSettings.taxStock : _sellType === 'etf' ? feeSettings.taxEtf : 0;
+  var tax     = Math.round(gross * taxRate / 100);
+  document.getElementById('sell-fee').value = fee;
+  document.getElementById('sell-tax').value = tax;
+  var totalFees = fee + tax;
+  var net = gross - totalFees;
+
+  // PnL
+  var ctx = _sellCtx;
+  var cost = ctx ? (portfolio[ctx.market][ctx.idx]?.cost || 0) : 0;
+  var pnl  = net - qty * cost;
+  var pnlColor = pnl >= 0 ? '#059669' : '#dc2626';
+
+  document.getElementById('sell-prev-gross').textContent = cur + gross.toLocaleString(undefined,{maximumFractionDigits:0});
+  document.getElementById('sell-prev-fees').textContent  = '-' + cur + totalFees.toLocaleString(undefined,{maximumFractionDigits:0});
+  document.getElementById('sell-prev-pnl').textContent   = (pnl>=0?'+':'') + cur + Math.round(pnl).toLocaleString();
+  document.getElementById('sell-prev-pnl').style.color   = pnlColor;
+
+  // Remain
+  if (ctx) {
+    var remain = (portfolio[ctx.market][ctx.idx]?.qty || 0) - qty;
+    document.getElementById('sell-prev-remain').textContent =
+      remain > 0 ? '賣出後剩餘 ' + remain + ' 股' : '全部賣出，持倉將刪除';
+  }
+}
+
+function confirmSell() {
+  if (!_sellCtx) return;
+  var market = _sellCtx.market;
+  var idx    = _sellCtx.idx;
+  var p = portfolio[market]?.[idx];
+  if (!p) return;
+
+  var qty   = parseFloat(document.getElementById('sell-qty').value);
+  var price = parseFloat(document.getElementById('sell-price').value);
+  var fee   = parseFloat(document.getElementById('sell-fee').value)  || 0;
+  var tax   = parseFloat(document.getElementById('sell-tax').value)  || 0;
+  var date  = document.getElementById('sell-date').value || new Date().toISOString().slice(0,10);
+  var note  = (document.getElementById('sell-note').value || '').trim();
+
+  if (!qty || qty <= 0)   { toast('⚠️ 請輸入賣出股數'); return; }
+  if (!price || price <=0){ toast('⚠️ 請輸入賣出價格'); return; }
+  if (qty > p.qty)        { toast('⚠️ 賣出股數不能超過持有股數（' + p.qty + '）'); return; }
+
+  var gross  = qty * price;
+  var net    = gross - fee - tax;
+  var cost   = p.cost;
+  var pnl    = net - qty * cost;
+  var fx     = market === 'us' ? getPortfolioFx() : 1;
+  var pnlTwd = pnl * fx;
+  var sym    = p.displaySym || p.sym;
+
+  // Write sell record
+  realizedTrades.unshift({
+    ts: new Date(date).toISOString(),
+    market: market,
+    sym: sym,
+    broker: p.broker || '-',
+    soldQty: qty,
+    cost: cost,
+    sellPrice: price,
+    gross: gross,
+    fee: fee,
+    tax: tax,
+    net: net,
+    fx: fx,
+    netTwd: pnlTwd,
+    note: note
+  });
+  if (realizedTrades.length > 500) realizedTrades = realizedTrades.slice(0,500);
+  saveRealizedTrades();
+
+  // Also write buy record (for reference — sell side)
+  buyTrades.unshift({
+    ts: new Date(date).toISOString(),
+    market: market,
+    sym: sym + '（賣出）',
+    price: price,
+    qty: -qty,
+    fee: fee + tax,
+    total: -net,
+    broker: p.broker || '-',
+    note: note || '賣出紀錄'
+  });
+  if (buyTrades.length > 500) buyTrades = buyTrades.slice(0,500);
+  saveBuyTrades();
+
+  // Update position
+  var remain = p.qty - qty;
+  if (remain <= 0) {
+    portfolio[market].splice(idx, 1);
+  } else {
+    portfolio[market][idx].qty = remain;
+  }
+  savePortfolio();
+  hideSellModal();
+  renderPortfolio();
+  renderSellRecords();
+  renderBuyRecords();
+  toast((pnl >= 0 ? '✅ 獲利' : '📝 虧損') + ' ' + sym + ' 賣出 ' + qty + ' 股，損益 ' + (pnl>=0?'+':'') + Math.round(pnlTwd).toLocaleString() + ' 台幣');
+}
+
 </script>
 <title>StockRadar v4</title>
 <style>
@@ -629,12 +989,23 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 
 <!-- Portfolio Page -->
 <div class="wrap portfolio-page" id="portfolio-page">
+  <!-- Update progress bar -->
+  <div id="port-progress-wrap" style="display:none;padding:10px 0 4px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <span id="port-progress-label" style="font-size:12px;color:var(--text2);font-weight:600"></span>
+      <span id="port-progress-count" style="font-size:11px;color:var(--text3);font-family:monospace"></span>
+    </div>
+    <div style="height:5px;background:var(--line);border-radius:3px;overflow:hidden">
+      <div id="port-progress-fill" style="height:100%;background:linear-gradient(90deg,var(--sky),var(--mint));border-radius:3px;transition:width 0.3s;width:0%"></div>
+    </div>
+  </div>
   <div style="padding:20px 0 8px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
     <div>
       <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px">💼 我的持倉</div>
       <div style="font-size:13px;color:var(--text3)">新增持倉後自動抓取現價，顯示損益與健檢建議</div>
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:4px">
+      <button onclick="showFeeSettingsModal()" style="font-size:12px;padding:7px 14px;border:1px solid var(--line2);border-radius:8px;background:#fff;color:var(--text2);cursor:pointer;font-weight:600;font-family:inherit">⚙️ 手續費</button>
       <button onclick="exportPortfolio()" style="font-size:12px;padding:7px 14px;border:1px solid var(--sky);border-radius:8px;background:rgba(37,99,235,0.06);color:var(--sky);cursor:pointer;font-weight:600;font-family:inherit">📤 備份</button>
       <button onclick="openHealthReport()" style="font-size:12px;padding:7px 14px;border:1px solid var(--mint);border-radius:8px;background:rgba(5,150,105,0.06);color:var(--mint);cursor:pointer;font-weight:600;font-family:inherit">🏥 健康報告</button>
       <label style="font-size:12px;padding:7px 14px;border:1px solid var(--mint);border-radius:8px;background:rgba(5,150,105,0.06);color:var(--mint);cursor:pointer;font-weight:600;font-family:inherit">
@@ -717,6 +1088,107 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
     <div id="sell-records-summary" style="padding:10px 16px;border-bottom:1px solid var(--line);font-size:12px;color:var(--text2)"></div>
     <div id="sell-records-list" style="padding:8px 12px"></div>
   </div>
+
+  <!-- Buy Records Section -->
+  <div class="port-section" id="buy-records-section" style="margin-top:16px">
+    <div class="port-section-head">
+      <h3>📥 購買紀錄</h3>
+      <button onclick="showBuyRecordModal()" style="font-size:11px;padding:4px 10px;border:1px solid var(--mint);border-radius:6px;background:rgba(5,150,105,0.06);color:var(--mint);cursor:pointer;font-family:inherit;font-weight:600">＋ 新增</button>
+    </div>
+    <div id="buy-records-list" style="padding:8px 12px"></div>
+  </div>
+</div>
+
+<!-- Fee Settings Modal -->
+<div id="fee-settings-modal" onclick="if(event.target===this)hideFeeSettingsModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:16px;padding:20px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+    <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:4px">⚙️ 手續費設定</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:16px">調整各類交易的費率</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+      <div>
+        <div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:4px">買賣手續費率（%）</div>
+        <input id="fs-brokerage" class="sim-input" type="number" step="0.001" placeholder="0.1425">
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">台股/美股買賣雙方均適用</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:4px">一般股票交易稅率（%）</div>
+        <input id="fs-tax-stock" class="sim-input" type="number" step="0.001" placeholder="0.3">
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">賣出時收取，台股一般股票</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:4px">ETF 交易稅率（%）</div>
+        <input id="fs-tax-etf" class="sim-input" type="number" step="0.001" placeholder="0.1">
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">賣出時收取，台股 ETF</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--text3);background:var(--ink);border-radius:8px;padding:8px 10px;margin-bottom:14px">
+      💡 美股無交易稅，系統自動套用。修改後立即生效。
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button onclick="resetFeeSettings()" style="padding:10px;border-radius:8px;border:1px solid var(--line2);background:#fff;color:var(--text2);cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px">恢復預設</button>
+      <button onclick="saveFeeSettings()" style="padding:10px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--sky),#1d4ed8);color:#fff;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sell Position Modal -->
+<div id="sell-position-modal" onclick="if(event.target===this)hideSellModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:16px;padding:20px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+    <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:2px" id="sell-modal-title">賣出股票</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:14px" id="sell-modal-subtitle"></div>
+
+    <!-- Stock type buttons -->
+    <div style="margin-bottom:12px">
+      <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px">交易類型</div>
+      <div style="display:flex;gap:6px" id="sell-type-btns">
+        <button onclick="setSellType('stock')" id="sell-type-stock" style="flex:1;padding:8px 4px;border-radius:8px;border:2px solid var(--sky);background:var(--sky);color:#fff;cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;font-weight:700">一般股票<br><span style="font-size:10px;font-weight:400;opacity:0.85">交易稅 0.3%</span></button>
+        <button onclick="setSellType('etf')" id="sell-type-etf" style="flex:1;padding:8px 4px;border-radius:8px;border:2px solid var(--line2);background:#fff;color:var(--text2);cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;font-weight:700">ETF<br><span style="font-size:10px;font-weight:400">交易稅 0.1%</span></button>
+        <button onclick="setSellType('us')" id="sell-type-us" style="flex:1;padding:8px 4px;border-radius:8px;border:2px solid var(--line2);background:#fff;color:var(--text2);cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;font-weight:700">美股<br><span style="font-size:10px;font-weight:400">無交易稅</span></button>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">賣出股數 <span id="sell-qty-hint" style="color:var(--sky);font-weight:400"></span></div>
+        <input id="sell-qty" class="sim-input" type="number" step="1" oninput="updateSellPreview()">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">賣出價格（每股）</div>
+        <input id="sell-price" class="sim-input" type="number" step="0.01" oninput="updateSellPreview()" placeholder="0.00">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">手續費（自動估算）</div>
+        <input id="sell-fee" class="sim-input" type="number" step="1" oninput="updateSellPreview()" placeholder="0">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">交易稅（自動估算）</div>
+        <input id="sell-tax" class="sim-input" type="number" step="1" oninput="updateSellPreview()" placeholder="0">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">賣出日期</div>
+        <input id="sell-date" class="sim-input" type="date">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">備註（可選）</div>
+        <input id="sell-note" class="sim-input" placeholder="賣出原因..." autocomplete="off">
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div id="sell-preview" style="background:var(--ink);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center">
+        <div><div style="font-size:10px;color:var(--text3);margin-bottom:2px">賣出總額</div><div id="sell-prev-gross" style="font-family:monospace;font-weight:700">-</div></div>
+        <div><div style="font-size:10px;color:var(--text3);margin-bottom:2px">費用合計</div><div id="sell-prev-fees" style="font-family:monospace;color:var(--ember)">-</div></div>
+        <div><div style="font-size:10px;color:var(--text3);margin-bottom:2px">實現損益</div><div id="sell-prev-pnl" style="font-family:monospace;font-weight:800;font-size:14px">-</div></div>
+      </div>
+      <div id="sell-prev-remain" style="font-size:11px;color:var(--text3);text-align:center;margin-top:6px"></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button onclick="hideSellModal()" style="padding:10px;border-radius:8px;border:1px solid var(--line2);background:#fff;color:var(--text2);cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px">取消</button>
+      <button onclick="confirmSell()" style="padding:10px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--ember),#991b1b);color:#fff;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px">確認賣出</button>
+    </div>
+  </div>
 </div>
 
 <!-- History Adjustment Modal -->
@@ -785,6 +1257,68 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <button onclick="hideManualSellModal()" style="padding:10px;border-radius:8px;border:1px solid var(--line2);background:#fff;color:var(--text2);cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px">取消</button>
       <button onclick="saveManualSellRecord()" style="padding:10px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--sky),#1d4ed8);color:#fff;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px">確認補登</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div id="confirm-modal" onclick="if(event.target===this)hideConfirmModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:16px;padding:20px;width:100%;max-width:340px;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+    <div id="confirm-title" style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:8px"></div>
+    <div id="confirm-body" style="font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.6"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button onclick="hideConfirmModal()" style="padding:10px;border-radius:8px;border:1px solid var(--line2);background:#fff;color:var(--text2);cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px">取消</button>
+      <button id="confirm-ok-btn" style="padding:10px;border-radius:8px;border:none;background:var(--ember);color:#fff;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px">確認刪除</button>
+    </div>
+  </div>
+</div>
+
+<!-- Buy Record Modal -->
+<div id="buy-record-modal" onclick="if(event.target===this)hideBuyRecordModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:16px;padding:20px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+    <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:4px">📥 新增購買紀錄</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:14px">記錄每一次買入的明細</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">股票代號</div>
+        <input id="br-sym" class="sim-input" placeholder="NVDA / 2330" autocomplete="off" autocapitalize="characters">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">市場</div>
+        <select id="br-market" class="sim-input">
+          <option value="tw">🇹🇼 台股</option>
+          <option value="us">🇺🇸 美股</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">買入價格</div>
+        <input id="br-price" class="sim-input" type="number" placeholder="0.00" step="0.01">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">股數／張數</div>
+        <input id="br-qty" class="sim-input" type="number" placeholder="0">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">手續費（可選）</div>
+        <input id="br-fee" class="sim-input" type="number" placeholder="0" value="0">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">券商</div>
+        <input id="br-broker" class="sim-input" placeholder="國泰、元大...">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">買入日期</div>
+        <input id="br-date" class="sim-input" type="date">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">備註（可選）</div>
+        <input id="br-note" class="sim-input" placeholder="買入原因...">
+      </div>
+    </div>
+    <div id="br-total-preview" style="font-size:12px;color:var(--sky);background:rgba(37,99,235,0.06);border-radius:8px;padding:8px 10px;margin-bottom:12px;font-family:monospace">總金額：-</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button onclick="hideBuyRecordModal()" style="padding:10px;border-radius:8px;border:1px solid var(--line2);background:#fff;color:var(--text2);cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px">取消</button>
+      <button onclick="saveBuyRecord()" style="padding:10px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--mint),#065f46);color:#fff;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px">確認新增</button>
     </div>
   </div>
 </div>
@@ -1898,6 +2432,27 @@ function switchNav(page) {
 
 // 方案C：進入持倉頁時，只更新超過30分鐘的報價 + 匯率
 var AUTO_REFRESH_MS = 30 * 60 * 1000; // 30 分鐘
+
+// ===== 持倉更新進度 =====
+var _portUpdating = false;
+
+function showPortProgress(label, current, total) {
+  var wrap  = document.getElementById('port-progress-wrap');
+  var lbl   = document.getElementById('port-progress-label');
+  var count = document.getElementById('port-progress-count');
+  var fill  = document.getElementById('port-progress-fill');
+  if (!wrap) return;
+  wrap.style.display = 'block';
+  lbl.textContent   = label;
+  count.textContent = current + ' / ' + total;
+  fill.style.width  = (total > 0 ? Math.round(current / total * 100) : 0) + '%';
+}
+
+function hidePortProgress() {
+  var wrap = document.getElementById('port-progress-wrap');
+  if (wrap) wrap.style.display = 'none';
+}
+
 async function autoRefreshPortfolio() {
   var now = Date.now();
   var stalePositions = [];
@@ -1929,10 +2484,14 @@ async function autoRefreshPortfolio() {
   // 再逐一更新過期持倉
   for (var i = 0; i < stalePositions.length; i++) {
     var item = stalePositions[i];
+    var p = (portfolio[item.market] || [])[item.idx];
+    var sym = p ? (p.displaySym || p.sym) : '';
+    showPortProgress('🔄 更新中：' + sym, i + 1, stalePositions.length);
     await fetchPortfolioPrice(item.market, item.idx);
     await sleep(350);
   }
 
+  hidePortProgress();
   if (stalePositions.length > 0) {
     toast('✅ 已自動更新 ' + stalePositions.length + ' 支報價');
   }
@@ -2076,9 +2635,19 @@ function addPosition(market) {
 }
 
 function removePosition(market, idx) {
-  portfolio[market].splice(idx, 1);
-  savePortfolio();
-  renderPortfolio();
+  var p = portfolio[market]?.[idx];
+  if (!p) return;
+  var sym = p.displaySym || p.sym;
+  showConfirmModal(
+    '刪除持倉',
+    '確定要刪除 <b>' + sym + '</b> 嗎？<br><span style="font-size:12px;color:var(--text3)">此操作無法復原</span>',
+    function() {
+      portfolio[market].splice(idx, 1);
+      savePortfolio();
+      renderPortfolio();
+      toast('🗑 已刪除 ' + sym);
+    }
+  );
 }
 
 function editPositionQty(market, idx) {
@@ -2176,12 +2745,20 @@ async function fetchPortfolioPrice(market, idx) {
 }
 
 async function refreshPortfolio(market) {
-  toast('🔄 更新 ' + (market==='us'?'美股':'台股') + ' 報價中...');
-  for (let i = 0; i < portfolio[market].length; i++) {
+  if (_portUpdating) { toast('⚠️ 更新中，請稍候'); return; }
+  _portUpdating = true;
+  var total = portfolio[market].length;
+  if (!total) { toast('尚無' + (market==='us'?'美股':'台股') + '持倉'); _portUpdating = false; return; }
+  for (var i = 0; i < total; i++) {
+    var p = portfolio[market][i];
+    var sym = p ? (p.displaySym || p.sym) : '';
+    showPortProgress('🔄 ' + (market==='us'?'🇺🇸 美股':'🇹🇼 台股') + '：' + sym, i + 1, total);
     await fetchPortfolioPrice(market, i);
     await sleep(400);
   }
-  toast('✅ 報價已更新');
+  hidePortProgress();
+  _portUpdating = false;
+  toast('✅ ' + (market==='us'?'美股':'台股') + ' 報價已全部更新（' + total + ' 支）');
 }
 
 function renderPortfolio() {
@@ -2189,6 +2766,7 @@ function renderPortfolio() {
   renderPortfolioTable('tw');
   renderPortfolioSummary();
   renderSellRecords();
+  renderBuyRecords();
 }
 
 const PORT_USD_TWD_DEFAULT = 32;
@@ -2875,10 +3453,11 @@ async function runOptimize() {
 // ===== PORTFOLIO BACKUP / RESTORE =====
 function exportPortfolio() {
   var data = {
-    version: 2,
+    version: 3,
     exported: new Date().toISOString(),
     portfolio: portfolio,
-    realizedTrades: realizedTrades || []
+    realizedTrades: realizedTrades || [],
+    buyTrades: buyTrades || []
   };
   var json = JSON.stringify(data, null, 2);
   var blob = new Blob([json], {type: 'application/json'});
@@ -2904,14 +3483,23 @@ function importPortfolio(event) {
       var usCount = imported.us.length, twCount = imported.tw.length;
       portfolio = imported;
       savePortfolio();
-      // Restore realizedTrades if present (v2 backup)
+      // Restore realizedTrades if present (v2+)
       if (data.realizedTrades && Array.isArray(data.realizedTrades)) {
         realizedTrades = data.realizedTrades;
         saveRealizedTrades();
       }
+      // Restore buyTrades if present (v3+)
+      if (data.buyTrades && Array.isArray(data.buyTrades)) {
+        buyTrades = data.buyTrades;
+        saveBuyTrades();
+      }
       renderPortfolio();
+      renderBuyRecords();
       var sellCount = (data.realizedTrades || []).length;
-      toast('✅ 已還原 美股' + usCount + '筆 + 台股' + twCount + '筆持倉' + (sellCount ? '、賣出紀錄' + sellCount + '筆' : ''));
+      var buyCount  = (data.buyTrades || []).length;
+      toast('✅ 已還原 美股' + usCount + '筆 + 台股' + twCount + '筆持倉' +
+        (sellCount ? '、賣出' + sellCount + '筆' : '') +
+        (buyCount  ? '、購買' + buyCount  + '筆' : ''));
       // Refresh prices
       setTimeout(function() {
         refreshPortfolio('us');
@@ -3633,6 +4221,7 @@ function renderPortfolioTable(market) {
       '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;flex-wrap:wrap">' +
         '<button onclick="openCostCalc(\'' + market + '\',' + i + ')" style="background:none;border:1px solid var(--gold);border-radius:6px;cursor:pointer;color:var(--gold);font-size:11px;padding:4px 8px">📊 加碼試算</button>' +
         '<button onclick="addPortToCompare(\'' + market + '\',' + i + ')" style="background:none;border:1px solid var(--line2);border-radius:6px;cursor:pointer;color:var(--text3);font-size:11px;padding:4px 8px">⚖️ 比較</button>' +
+        '<button onclick="openSellModal(\'' + market + '\',' + i + ')" style="background:linear-gradient(135deg,var(--ember),#991b1b);border:none;border-radius:6px;cursor:pointer;color:#fff;font-size:11px;padding:5px 12px;font-weight:700">💰 賣出</button>' +
         '<button onclick="editPositionQty(\'' + market + '\',' + i + ')" style="background:none;border:none;cursor:pointer;color:var(--sky);font-size:12px">編輯</button>' +
         '<button onclick="removePosition(\'' + market + '\',' + i + ')" style="background:none;border:none;cursor:pointer;color:var(--ember);font-size:12px">刪除</button>' +
       '</div>' +
@@ -4165,6 +4754,366 @@ function saveHistoryAdj() {
 }
 
 
+
+// ===== CONFIRM MODAL =====
+var _confirmCallback = null;
+function showConfirmModal(title, body, onOk) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-body').innerHTML = body;
+  _confirmCallback = onOk;
+  document.getElementById('confirm-modal').style.display = 'flex';
+}
+function hideConfirmModal() {
+  document.getElementById('confirm-modal').style.display = 'none';
+  _confirmCallback = null;
+}
+document.getElementById('confirm-ok-btn').onclick = function() {
+  hideConfirmModal();
+  if (_confirmCallback) _confirmCallback();
+};
+
+// ===== BUY RECORDS =====
+var buyTrades = JSON.parse(localStorage.getItem('sr_buy_trades') || '[]');
+
+function saveBuyTrades() {
+  localStorage.setItem('sr_buy_trades', JSON.stringify(buyTrades || []));
+}
+
+function showBuyRecordModal() {
+  document.getElementById('br-sym').value = '';
+  document.getElementById('br-price').value = '';
+  document.getElementById('br-qty').value = '';
+  document.getElementById('br-fee').value = '0';
+  document.getElementById('br-broker').value = '';
+  document.getElementById('br-note').value = '';
+  document.getElementById('br-market').value = 'tw';
+  document.getElementById('br-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('br-total-preview').textContent = '總金額：-';
+  document.getElementById('buy-record-modal').style.display = 'flex';
+
+  // Live preview of total
+  function updatePreview() {
+    var price = parseFloat(document.getElementById('br-price').value) || 0;
+    var qty   = parseFloat(document.getElementById('br-qty').value)   || 0;
+    var fee   = parseFloat(document.getElementById('br-fee').value)   || 0;
+    var mkt   = document.getElementById('br-market').value;
+    if (price && qty) {
+      var total = price * qty + fee;
+      var cur = mkt === 'us' ? '$' : '';
+      document.getElementById('br-total-preview').textContent =
+        '總金額：' + cur + total.toLocaleString(undefined, {maximumFractionDigits:2}) +
+        (mkt==='us' ? '（美元）' : '（台幣）');
+    } else {
+      document.getElementById('br-total-preview').textContent = '總金額：-';
+    }
+  }
+  ['br-price','br-qty','br-fee','br-market'].forEach(function(id) {
+    document.getElementById(id).oninput = updatePreview;
+    document.getElementById(id).onchange = updatePreview;
+  });
+
+  setTimeout(function(){ document.getElementById('br-sym').focus(); }, 100);
+}
+
+function hideBuyRecordModal() {
+  document.getElementById('buy-record-modal').style.display = 'none';
+}
+
+function saveBuyRecord() {
+  var sym    = (document.getElementById('br-sym').value || '').trim().toUpperCase();
+  var market = document.getElementById('br-market').value;
+  var price  = parseFloat(document.getElementById('br-price').value);
+  var qty    = parseFloat(document.getElementById('br-qty').value);
+  var fee    = parseFloat(document.getElementById('br-fee').value)   || 0;
+  var broker = (document.getElementById('br-broker').value || '').trim();
+  var date   = document.getElementById('br-date').value || new Date().toISOString().slice(0,10);
+  var note   = (document.getElementById('br-note').value || '').trim();
+
+  if (!sym)            { toast('⚠️ 請輸入股票代號'); return; }
+  if (!price || price <= 0) { toast('⚠️ 請輸入有效的買入價格'); return; }
+  if (!qty   || qty   <= 0) { toast('⚠️ 請輸入有效的股數'); return; }
+
+  var total = price * qty + fee;
+
+  buyTrades.unshift({
+    ts: new Date(date).toISOString(),
+    market: market,
+    sym: sym,
+    price: price,
+    qty: qty,
+    fee: fee,
+    total: total,
+    broker: broker || '-',
+    note: note
+  });
+  if (buyTrades.length > 500) buyTrades = buyTrades.slice(0, 500);
+  saveBuyTrades();
+  renderBuyRecords();
+  hideBuyRecordModal();
+  toast('📥 已新增 ' + sym + ' 買入紀錄 × ' + qty);
+}
+
+function deleteBuyRecord(idx) {
+  if (idx < 0 || idx >= buyTrades.length) return;
+  var t = buyTrades[idx];
+  showConfirmModal(
+    '刪除購買紀錄',
+    '確定要刪除 <b>' + t.sym + '</b> 的這筆買入紀錄嗎？',
+    function() {
+      buyTrades.splice(idx, 1);
+      saveBuyTrades();
+      renderBuyRecords();
+      toast('已刪除購買紀錄');
+    }
+  );
+}
+
+function renderBuyRecords() {
+  var el = document.getElementById('buy-records-list');
+  if (!el) return;
+  if (!buyTrades || !buyTrades.length) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">尚無購買紀錄，點擊「＋ 新增」加入</div>';
+    return;
+  }
+  // Summary
+  var totalSpent = buyTrades.reduce(function(s,t){ return s + (t.total||0); }, 0);
+  el.innerHTML =
+    '<div style="padding:8px 0 10px;font-size:12px;color:var(--text2)">' +
+      '共 <b>' + buyTrades.length + '</b> 筆　總投入（混合）：<b style="color:var(--sky)">' +
+      totalSpent.toLocaleString(undefined,{maximumFractionDigits:0}) + '</b>' +
+    '</div>' +
+    buyTrades.map(function(t, i) {
+      var cur   = t.market === 'us' ? '$' : '';
+      var mktB  = t.market === 'us'
+        ? '<span style="font-size:9px;background:rgba(37,99,235,0.1);color:#1e40af;border-radius:4px;padding:1px 5px;font-weight:600">美股</span>'
+        : '<span style="font-size:9px;background:rgba(5,150,105,0.1);color:#065f46;border-radius:4px;padding:1px 5px;font-weight:600">台股</span>';
+      var dateStr = t.ts ? t.ts.slice(0,10) : '-';
+      return '<div style="display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px 0;border-bottom:1px solid var(--line);align-items:start">' +
+        '<div>' +
+          '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">' +
+            '<span style="font-family:monospace;font-size:14px;font-weight:700">' + t.sym + '</span>' +
+            mktB +
+            (t.broker&&t.broker!=='-'?'<span style="font-size:10px;color:var(--text3)">'+t.broker+'</span>':'') +
+          '</div>' +
+          '<div style="font-size:12px;color:var(--text2)">' +
+            '買入價 <b style="font-family:monospace">' + cur + t.price + '</b>　' +
+            '股數 <b style="font-family:monospace">' + t.qty + '</b>　' +
+            '總計 <b style="font-family:monospace;color:var(--ember)">' + cur + (t.total||0).toLocaleString(undefined,{maximumFractionDigits:0}) + '</b>' +
+            (t.fee ? '　手續費 ' + cur + t.fee : '') +
+          '</div>' +
+          '<div style="font-size:11px;color:var(--text3);margin-top:3px">' +
+            dateStr + (t.note ? '　' + t.note : '') +
+          '</div>' +
+        '</div>' +
+        '<button onclick="deleteBuyRecord(' + i + ')" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:4px;line-height:1">✕</button>' +
+      '</div>';
+    }).join('');
+}
+
+// ===== 手續費設定 =====
+var FEE_DEFAULTS = { brokerage: 0.1425, taxStock: 0.3, taxEtf: 0.1 };
+var feeSettings = Object.assign({}, FEE_DEFAULTS, JSON.parse(localStorage.getItem('sr_fee_settings') || '{}'));
+
+function saveFeeSettingsData() {
+  localStorage.setItem('sr_fee_settings', JSON.stringify(feeSettings));
+}
+
+function showFeeSettingsModal() {
+  document.getElementById('fs-brokerage').value  = feeSettings.brokerage;
+  document.getElementById('fs-tax-stock').value  = feeSettings.taxStock;
+  document.getElementById('fs-tax-etf').value    = feeSettings.taxEtf;
+  document.getElementById('fee-settings-modal').style.display = 'flex';
+}
+
+function hideFeeSettingsModal() {
+  document.getElementById('fee-settings-modal').style.display = 'none';
+}
+
+function saveFeeSettings() {
+  var b = parseFloat(document.getElementById('fs-brokerage').value);
+  var s = parseFloat(document.getElementById('fs-tax-stock').value);
+  var e = parseFloat(document.getElementById('fs-tax-etf').value);
+  if (isNaN(b)||isNaN(s)||isNaN(e)||b<=0||s<0||e<0) { toast('⚠️ 請輸入有效的費率'); return; }
+  feeSettings = { brokerage: b, taxStock: s, taxEtf: e };
+  saveFeeSettingsData();
+  hideFeeSettingsModal();
+  toast('✅ 手續費設定已儲存');
+}
+
+function resetFeeSettings() {
+  feeSettings = Object.assign({}, FEE_DEFAULTS);
+  saveFeeSettingsData();
+  document.getElementById('fs-brokerage').value  = feeSettings.brokerage;
+  document.getElementById('fs-tax-stock').value  = feeSettings.taxStock;
+  document.getElementById('fs-tax-etf').value    = feeSettings.taxEtf;
+  toast('✅ 已恢復預設費率');
+}
+
+// ===== 賣出股票 =====
+var _sellCtx = null; // { market, idx }
+var _sellType = 'stock'; // 'stock' | 'etf' | 'us'
+
+function setSellType(type) {
+  _sellType = type;
+  var types = ['stock','etf','us'];
+  types.forEach(function(t) {
+    var btn = document.getElementById('sell-type-' + t);
+    var active = t === type;
+    btn.style.borderColor  = active ? 'var(--sky)' : 'var(--line2)';
+    btn.style.background   = active ? 'var(--sky)' : '#fff';
+    btn.style.color        = active ? '#fff' : 'var(--text2)';
+  });
+  updateSellPreview();
+}
+
+function openSellModal(market, idx) {
+  var p = (portfolio[market] || [])[idx];
+  if (!p) return;
+  _sellCtx = { market: market, idx: idx };
+
+  // Auto-detect type
+  var autoType = market === 'us' ? 'us' : 'stock';
+  setSellType(autoType);
+
+  // Prefill
+  document.getElementById('sell-modal-title').textContent = '💰 賣出 ' + (p.displaySym || p.sym);
+  document.getElementById('sell-modal-subtitle').textContent =
+    '持有 ' + p.qty + ' 股　成本 ' + (market==='us'?'$':'') + p.cost.toFixed(market==='tw'?1:2) +
+    (p.broker && p.broker!=='-' ? '　' + p.broker : '');
+  document.getElementById('sell-qty-hint').textContent = '（持有 ' + p.qty + '）';
+  document.getElementById('sell-qty').value  = p.qty; // 預設全賣
+  document.getElementById('sell-qty').max    = p.qty;
+  document.getElementById('sell-price').value = p.price ? p.price.toFixed(market==='tw'?1:2) : '';
+  document.getElementById('sell-date').value  = new Date().toISOString().slice(0,10);
+  document.getElementById('sell-note').value  = '';
+  updateSellPreview();
+  document.getElementById('sell-position-modal').style.display = 'flex';
+  setTimeout(function(){ document.getElementById('sell-price').focus(); }, 100);
+}
+
+function hideSellModal() {
+  document.getElementById('sell-position-modal').style.display = 'none';
+  _sellCtx = null;
+}
+
+function updateSellPreview() {
+  var qty   = parseFloat(document.getElementById('sell-qty').value)   || 0;
+  var price = parseFloat(document.getElementById('sell-price').value) || 0;
+  if (!qty || !price) {
+    document.getElementById('sell-prev-gross').textContent = '-';
+    document.getElementById('sell-prev-fees').textContent  = '-';
+    document.getElementById('sell-prev-pnl').textContent   = '-';
+    document.getElementById('sell-prev-remain').textContent = '';
+    document.getElementById('sell-fee').value = '';
+    document.getElementById('sell-tax').value = '';
+    return;
+  }
+  var gross = qty * price;
+  var cur   = _sellType === 'us' ? '$' : '';
+  // Fee: brokerage on gross
+  var fee   = Math.round(gross * feeSettings.brokerage / 100);
+  // Tax: only on sell side, 0 for US
+  var taxRate = _sellType === 'stock' ? feeSettings.taxStock : _sellType === 'etf' ? feeSettings.taxEtf : 0;
+  var tax     = Math.round(gross * taxRate / 100);
+  document.getElementById('sell-fee').value = fee;
+  document.getElementById('sell-tax').value = tax;
+  var totalFees = fee + tax;
+  var net = gross - totalFees;
+
+  // PnL
+  var ctx = _sellCtx;
+  var cost = ctx ? (portfolio[ctx.market][ctx.idx]?.cost || 0) : 0;
+  var pnl  = net - qty * cost;
+  var pnlColor = pnl >= 0 ? '#059669' : '#dc2626';
+
+  document.getElementById('sell-prev-gross').textContent = cur + gross.toLocaleString(undefined,{maximumFractionDigits:0});
+  document.getElementById('sell-prev-fees').textContent  = '-' + cur + totalFees.toLocaleString(undefined,{maximumFractionDigits:0});
+  document.getElementById('sell-prev-pnl').textContent   = (pnl>=0?'+':'') + cur + Math.round(pnl).toLocaleString();
+  document.getElementById('sell-prev-pnl').style.color   = pnlColor;
+
+  // Remain
+  if (ctx) {
+    var remain = (portfolio[ctx.market][ctx.idx]?.qty || 0) - qty;
+    document.getElementById('sell-prev-remain').textContent =
+      remain > 0 ? '賣出後剩餘 ' + remain + ' 股' : '全部賣出，持倉將刪除';
+  }
+}
+
+function confirmSell() {
+  if (!_sellCtx) return;
+  var market = _sellCtx.market;
+  var idx    = _sellCtx.idx;
+  var p = portfolio[market]?.[idx];
+  if (!p) return;
+
+  var qty   = parseFloat(document.getElementById('sell-qty').value);
+  var price = parseFloat(document.getElementById('sell-price').value);
+  var fee   = parseFloat(document.getElementById('sell-fee').value)  || 0;
+  var tax   = parseFloat(document.getElementById('sell-tax').value)  || 0;
+  var date  = document.getElementById('sell-date').value || new Date().toISOString().slice(0,10);
+  var note  = (document.getElementById('sell-note').value || '').trim();
+
+  if (!qty || qty <= 0)   { toast('⚠️ 請輸入賣出股數'); return; }
+  if (!price || price <=0){ toast('⚠️ 請輸入賣出價格'); return; }
+  if (qty > p.qty)        { toast('⚠️ 賣出股數不能超過持有股數（' + p.qty + '）'); return; }
+
+  var gross  = qty * price;
+  var net    = gross - fee - tax;
+  var cost   = p.cost;
+  var pnl    = net - qty * cost;
+  var fx     = market === 'us' ? getPortfolioFx() : 1;
+  var pnlTwd = pnl * fx;
+  var sym    = p.displaySym || p.sym;
+
+  // Write sell record
+  realizedTrades.unshift({
+    ts: new Date(date).toISOString(),
+    market: market,
+    sym: sym,
+    broker: p.broker || '-',
+    soldQty: qty,
+    cost: cost,
+    sellPrice: price,
+    gross: gross,
+    fee: fee,
+    tax: tax,
+    net: net,
+    fx: fx,
+    netTwd: pnlTwd,
+    note: note
+  });
+  if (realizedTrades.length > 500) realizedTrades = realizedTrades.slice(0,500);
+  saveRealizedTrades();
+
+  // Also write buy record (for reference — sell side)
+  buyTrades.unshift({
+    ts: new Date(date).toISOString(),
+    market: market,
+    sym: sym + '（賣出）',
+    price: price,
+    qty: -qty,
+    fee: fee + tax,
+    total: -net,
+    broker: p.broker || '-',
+    note: note || '賣出紀錄'
+  });
+  if (buyTrades.length > 500) buyTrades = buyTrades.slice(0,500);
+  saveBuyTrades();
+
+  // Update position
+  var remain = p.qty - qty;
+  if (remain <= 0) {
+    portfolio[market].splice(idx, 1);
+  } else {
+    portfolio[market][idx].qty = remain;
+  }
+  savePortfolio();
+  hideSellModal();
+  renderPortfolio();
+  renderSellRecords();
+  renderBuyRecords();
+  toast((pnl >= 0 ? '✅ 獲利' : '📝 虧損') + ' ' + sym + ' 賣出 ' + qty + ' 股，損益 ' + (pnl>=0?'+':'') + Math.round(pnlTwd).toLocaleString() + ' 台幣');
+}
 
 </script>
 </body>
