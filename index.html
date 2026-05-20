@@ -809,7 +809,7 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
     <div id="confirm-body" style="font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.6"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <button onclick="hideConfirmModal()" style="padding:10px;border-radius:8px;border:1px solid var(--line2);background:#fff;color:var(--text2);cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px">取消</button>
-      <button id="confirm-ok-btn" onclick="hideConfirmModal();if(_confirmCallback)_confirmCallback();" style="padding:10px;border-radius:8px;border:none;background:var(--ember);color:#fff;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px">確認刪除</button>
+      <button id="confirm-ok-btn" onclick="executeConfirm()" style="padding:10px;border-radius:8px;border:none;background:var(--ember);color:#fff;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px">確認刪除</button>
     </div>
   </div>
 </div>
@@ -1217,14 +1217,28 @@ function saveHistoryAdj() {
 // ===== CONFIRM MODAL =====
 var _confirmCallback = null;
 function showConfirmModal(title, body, onOk) {
-  document.getElementById('confirm-title').textContent = title;
-  document.getElementById('confirm-body').innerHTML = body;
   _confirmCallback = onOk;
-  document.getElementById('confirm-modal').style.display = 'flex';
+  var modal = document.getElementById('confirm-modal');
+  var titleEl = document.getElementById('confirm-title');
+  var bodyEl = document.getElementById('confirm-body');
+  if (!modal || !titleEl || !bodyEl) {
+    // fallback: use native confirm if modal not ready
+    if (window.confirm(title + '\n' + body.replace(/<[^>]+>/g,''))) onOk();
+    return;
+  }
+  titleEl.textContent = title;
+  bodyEl.innerHTML = body;
+  modal.style.display = 'flex';
 }
 function hideConfirmModal() {
-  document.getElementById('confirm-modal').style.display = 'none';
+  var modal = document.getElementById('confirm-modal');
+  if (modal) modal.style.display = 'none';
   _confirmCallback = null;
+}
+function executeConfirm() {
+  var cb = _confirmCallback;
+  hideConfirmModal();
+  if (cb) cb();
 }
 
 // ===== BUY RECORDS =====
