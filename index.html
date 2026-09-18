@@ -1587,9 +1587,9 @@ let scanHistory=JSON.parse(localStorage.getItem('sr_history')||'{}');
 const CACHE_TTL=30*60*1000;
 function cacheGet(symbol){
   try{const raw=localStorage.getItem('sr_cache_'+symbol);if(!raw)return null;
-  const obj=JSON.parse(raw);if(Date.now()-obj.ts>CACHE_TTL){localStorage.removeItem('sr_cache_'+symbol);return null;}return obj.data;}catch{return null;}
+  const obj=JSON.parse(raw);if(obj.version!==2||Date.now()-obj.ts>CACHE_TTL){localStorage.removeItem('sr_cache_'+symbol);return null;}return obj.data;}catch{return null;}
 }
-function cacheSet(symbol,data){try{localStorage.setItem('sr_cache_'+symbol,JSON.stringify({ts:Date.now(),data}));}catch{}}
+function cacheSet(symbol,data){try{localStorage.setItem('sr_cache_'+symbol,JSON.stringify({version:2,ts:Date.now(),data}));}catch{}}
 function setMarket(mkt,btn){
   currentMarket=mkt;document.querySelectorAll('.mkt-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderPresets();
 }
@@ -1831,14 +1831,15 @@ async function loadHotStocks(){
 
 // ===== PROXY / FETCH =====
 const PROXIES=[
-  url=>'https://corsproxy.io/?url='+encodeURIComponent(url),
   url=>'https://api.allorigins.win/raw?url='+encodeURIComponent(url),
+  url=>'https://corsproxy.io/?url='+encodeURIComponent(url),
   url=>'https://corsproxy.org/?'+encodeURIComponent(url),
   url=>'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(url),
 ];
+const proxyCooldown = new Map();
 async function fetchWithTimeout(url,ms,options={}){
   const ctrl=new AbortController();
-  const { signal: externalSignal, ...rest } = options || {};
+  const { signal: externalSignal, readText = false, ...rest } = options || {};
   let onExternalAbort=null;
   if(externalSignal){
     if(externalSignal.aborted) ctrl.abort();
@@ -1850,57 +1851,100 @@ async function fetchWithTimeout(url,ms,options={}){
   const id=setTimeout(()=>ctrl.abort(),ms);
   try{
     const r=await fetch(url,{...rest, signal:ctrl.signal});
-    clearTimeout(id);
+    if(readText) return {ok:r.ok,status:r.status,body:await r.text()};
     return r;
   }catch(e){
     clearTimeout(id);
     throw e;
   }finally{
+    clearTimeout(id);
     if(externalSignal&&onExternalAbort) externalSignal.removeEventListener('abort', onExternalAbort);
   }
 }
-async function fetchYahooOnce(symbol,range,interval,signal){
-  const targets=[
-    'https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(symbol)+'?interval='+interval+'&range='+range+'&includePrePost=false&events=div%2Csplit',
-    'https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(symbol)+'?interval='+interval+'&range='+range+'&includePrePost=false&events=div%2Csplit',
-  ];
+// A successful route is preferred during this visit; failures are scoped to a host.
+let preferredQuoteRoute = '';
+async function fetchYahooOnce(symbol,range,interval,signal,deadline=Date.now()+30000){
   const errors=[];
-  for(const targetUrl of targets){
-    for(const makeProxy of PROXIES){
-      const proxyUrl=makeProxy(targetUrl);
-      try{
-        const resp=await fetchWithTimeout(proxyUrl,12000,{signal:signal});
-        if(!resp.ok){errors.push('HTTP '+resp.status);continue;}
-        const text=await resp.text();
-        if(!text||!text.trim()){errors.push('empty');continue;}
-        let data;try{data=JSON.parse(text);}catch{errors.push('JSON fail');continue;}
-        if(data?.chart?.result?.[0]) return data;
-        if(data?.chart?.error) errors.push('Yahoo: '+data.chart.error.description);
-      }catch(e){errors.push(e.name+': '+e.message);}
-      await sleep(150);
+  const routes=[];
+  PROXIES.forEach((proxy,i)=>{
+    for(const host of ['query1.finance.yahoo.com','query2.finance.yahoo.com']) routes.push({key:host+'|'+i,host,proxy});
+  });
+  routes.sort((a,b)=>(b.key===preferredQuoteRoute)-(a.key===preferredQuoteRoute));
+  for (const route of routes) {
+    if(signal?.aborted) throw new DOMException('Aborted','AbortError');
+    if(Date.now()>=deadline) break;
+    if((proxyCooldown.get(route.key)||0)>Date.now()) continue;
+    const url='https://'+route.host+'/v8/finance/chart/'+encodeURIComponent(symbol)+
+      '?interval='+interval+'&range='+range+'&includePrePost=false&events=div%2Csplit';
+    try {
+      const resp=await fetchWithTimeout(route.proxy(url),Math.min(7000,deadline-Date.now()),{signal,readText:true});
+      if(resp.status===404) {
+        try { if(JSON.parse(resp.body)?.chart?.error?.code==='Not Found') return {_notFound:true,_errors:['找不到代號 '+symbol]}; } catch {}
+      }
+      if(!resp.ok) {
+        errors.push(route.host+': HTTP '+resp.status);
+        if([401,403,429].includes(resp.status)||resp.status>=500) proxyCooldown.set(route.key,Date.now()+60000);
+        continue;
+      }
+      const data=JSON.parse(resp.body);
+      if(data?.chart?.result?.[0]) {
+        preferredQuoteRoute=route.key;
+        return data;
+      }
+      if(data?.chart?.error?.code==='Not Found') return {_notFound:true,_errors:['找不到代號 '+symbol]};
+      errors.push(data?.chart?.error?.description||'回應缺少行情');
+    } catch(e) {
+      if(signal?.aborted) throw e;
+      proxyCooldown.set(route.key,Date.now()+60000);
+      errors.push(route.host+': '+e.name);
     }
   }
-  return {_errors:errors};
+  return {_errors:errors.length?errors:['報價來源暫時無法連線，請稍後重試']};
 }
-
 async function fetchYahoo(symbol,range='6mo',interval='1d',signal){
-  // First attempt with given symbol
-  const r1=await fetchYahooOnce(symbol,range,interval,signal);
-  if(r1?.chart?.result?.[0]) return r1;
-
-  // Auto-fallback: .TW → .TWO (上櫃股票)
-  if(symbol.endsWith('.TW')){
-    const altSym=symbol.slice(0,-3)+'.TWO';
-    const r2=await fetchYahooOnce(altSym,range,interval,signal);
-    if(r2?.chart?.result?.[0]){
-      // Tag so downstream knows the resolved symbol
-      r2.chart.result[0].meta._resolvedSymbol=altSym;
-      return r2;
+  const deadline=Date.now()+30000;
+  const first=await fetchYahooOnce(symbol,range,interval,signal,deadline);
+  if(first?.chart?.result?.[0]) return first;
+  if(signal?.aborted) throw new DOMException('Aborted','AbortError');
+  // Only a missing listing warrants a market suffix change, not a network error.
+  if(symbol.endsWith('.TW') && first._notFound) {
+    const alt=symbol.slice(0,-3)+'.TWO';
+    const next=await fetchYahooOnce(alt,range,interval,signal,deadline);
+    if(next?.chart?.result?.[0]) {
+      next.chart.result[0].meta._resolvedSymbol=alt;
+      return next;
     }
+    throw new Error('報價更新失敗：'+(next._errors||[]).slice(0,2).join('；'));
   }
-
-  const errors=(r1._errors||[]);
-  throw new Error('所有代理均失敗\n'+errors.slice(0,4).join('\n'));
+  throw new Error('報價更新失敗：'+(first._errors||[]).slice(0,2).join('；'));
+}
+function quoteRows(result) {
+  const q=result.indicators?.quote?.[0];
+  if(!q?.close) return [];
+  return q.close.map((c,i)=>({c,h:q.high?.[i],l:q.low?.[i],v:q.volume?.[i]??0,t:result.timestamp?.[i]}))
+    .filter(r=>Number.isFinite(r.c)&&Number.isFinite(r.h)&&Number.isFinite(r.l));
+}
+function dailyChange(result) {
+  const meta=result.meta||{}, price=meta.regularMarketPrice;
+  let previous=meta.previousClose;
+  if(!Number.isFinite(previous)||previous<=0) {
+    const rows=quoteRows(result), time=meta.regularMarketTime;
+    if(!Number.isFinite(time)) return null;
+    const day=t=>new Date(t*1000).toLocaleDateString('en-CA',{timeZone:meta.exchangeTimezoneName||'UTC'});
+    const quoteDay=day(time);
+    // Chart previousClose refers to the start of the requested range, not yesterday.
+    const prior=rows.filter(r=>Number.isFinite(r.t)&&r.t<=time&&day(r.t)!==quoteDay);
+    previous=prior.at(-1)?.c;
+  }
+  return Number.isFinite(price)&&Number.isFinite(previous)&&previous>0?(price-previous)/previous:null;
+}
+function changeText(value) {
+  return Number.isFinite(value)?(value>=0?'+':'')+(value*100).toFixed(2)+'%':'漲跌資料不足';
+}
+function hasFreshPortfolioQuote(p) {
+  return Number.isFinite(p.price)&&p.price>0&&!p.quoteError&&p.lastUpdatedAt>0&&
+    Date.now()-p.lastUpdatedAt<=AUTO_REFRESH_MS&&Number.isFinite(p.quoteTime)&&
+    Date.now()-p.quoteTime*1000<=7*24*60*60*1000;
 }
 
 // ===== ANALYSIS =====
@@ -1924,21 +1968,17 @@ async function analyzeSymbol(symbol, signal){
   const isTW=effectiveSym.endsWith('.TW')||effectiveSym.endsWith('.TWO')||symbol.endsWith('.TW')||symbol.endsWith('.TWO');
 
   const meta=result.meta;
-  const closes=result.indicators.quote[0].close.filter(v=>v!=null);
-  const highs=result.indicators.quote[0].high?.filter(v=>v!=null)||closes;
-  const lows=result.indicators.quote[0].low?.filter(v=>v!=null)||closes;
-  const volumes=result.indicators.quote[0].volume?.filter(v=>v!=null)||[];
-
+  const rows=quoteRows(result);
+  const closes=rows.map(r=>r.c),highs=rows.map(r=>r.h),lows=rows.map(r=>r.l),volumes=rows.map(r=>r.v);
   if(closes.length<30) return null;
-
-  const price=meta.regularMarketPrice||closes.at(-1);
-  const prevClose=meta.chartPreviousClose||closes.at(-2);
-  const changePct=prevClose?(price-prevClose)/prevClose:0;
+  const price=meta.regularMarketPrice;
+  if(!Number.isFinite(price)||price<=0) throw new Error('行情缺少有效價格');
+  const changePct=dailyChange(result);
   const currency=meta.currency||(isTW?'TWD':'USD');
   const dp=isTW?1:2;
 
   const rsi14=calcRSI(closes,14);
-  const rsiVal=rsi14.at(-1)||50;
+  const rsiVal=rsi14.at(-1)??50;
   const macdData=calcMACD(closes);
   const macdHist=macdData.macd.at(-1)-macdData.signal.at(-1);
   const bb=calcBB(closes,20,2);
@@ -2002,7 +2042,7 @@ async function analyzeSymbol(symbol, signal){
   const scoreDelta=h&&h.prev!=null?score-h.prev:null;
 
   const obj={
-    symbol,isTW,price,changePct,currency,dp,
+    symbol,isTW,price,changePct,currency,dp,quoteTime:meta.regularMarketTime||null,
     name:meta.shortName||meta.longName||symbol,
     rsi:rsiVal,macdHist,bbU,bbM,bbL,ma20,ma60,
     atrVal,volRatio,
@@ -2226,7 +2266,8 @@ function buildCard(r,idx){
       '</div>' +
       '<div class="card-price-wrap">' +
         '<div class="card-price">'+(r.isTW?'':'$')+pFmt+'</div>' +
-        '<div class="card-change '+cCls+'">'+cs+(r.changePct*100).toFixed(2)+'%</div>' +
+        '<div class="card-change '+cCls+'">'+changeText(r.changePct)+'</div>' +
+        '<div style="font-size:10px;color:var(--text3)">行情：'+(r.quoteTime?new Date(r.quoteTime*1000).toLocaleString('zh-TW'):'時間未知')+'</div>' +
       '</div>' +
     '</div>' +
 
@@ -2439,49 +2480,41 @@ function hidePortProgress() {
   if (wrap) wrap.style.display = 'none';
 }
 
-async function autoRefreshPortfolio() {
-  var now = Date.now();
-  var stalePositions = [];
-
-  // 收集需要更新的持倉（price 為 null 或超過30分鐘沒更新）
-  ['us', 'tw'].forEach(function(market) {
-    (portfolio[market] || []).forEach(function(p, i) {
-      var lastUp = p.lastUpdatedAt || 0;
-      if (!p.price || (now - lastUp) > AUTO_REFRESH_MS) {
-        stalePositions.push({ market: market, idx: i });
-      }
-    });
-  });
-
-  // 同時更新匯率（超過30分鐘或從未更新）
-  var needFx = !fxLastFetched || (now - fxLastFetched) > AUTO_REFRESH_MS;
-
-  if (stalePositions.length === 0 && !needFx) return; // 全部都是新的，不需要更新
-
-  var totalCount = stalePositions.length + (needFx ? 1 : 0);
-  toast('🔄 自動更新 ' + totalCount + ' 筆資料...');
-
-  // 先抓匯率（快）
-  if (needFx) {
-    await fetchLatestFx(true);
-    await sleep(300);
+async function updatePortfolioBatch(items) {
+  let next=0,completed=0,succeeded=0;
+  async function worker() {
+    while(next<items.length) {
+      const item=items[next++];
+      const idx=portfolio[item.market].indexOf(item.pos);
+      if(idx>=0 && await fetchPortfolioPrice(item.market,idx)) succeeded++;
+      completed++;
+      showPortProgress('🔄 已處理 '+completed+' 檔',completed,items.length);
+    }
   }
-
-  // 再逐一更新過期持倉
-  for (var i = 0; i < stalePositions.length; i++) {
-    var item = stalePositions[i];
-    var p = (portfolio[item.market] || [])[item.idx];
-    var sym = p ? (p.displaySym || p.sym) : '';
-    showPortProgress('🔄 更新中：' + sym, i + 1, stalePositions.length);
-    await fetchPortfolioPrice(item.market, item.idx);
-    await sleep(350);
-  }
-
-  hidePortProgress();
-  if (stalePositions.length > 0) {
-    toast('✅ 已自動更新 ' + stalePositions.length + ' 支報價');
-  }
+  showPortProgress('🔄 更新報價中',0,items.length);
+  await Promise.allSettled([worker(),worker()]);
+  return succeeded;
 }
+async function autoRefreshPortfolio() {
+  if(_portUpdating) return;
+  const items=[];
+  for(const market of ['us','tw']) for(const pos of portfolio[market]||[]) {
+    if(!hasFreshPortfolioQuote(pos)) items.push({market,pos});
+  }
+  const needFx=!fxLastFetched||Date.now()-fxLastFetched>60*60*1000;
+  if(!items.length&&!needFx) return;
+  _portUpdating=true;
+  try {
+    const [succeeded]=await Promise.all([updatePortfolioBatch(items),needFx?fetchLatestFx(true):Promise.resolve()]);
+    if(items.length) reportPortfolioRefresh(succeeded,items.length);
+  } finally { hidePortProgress(); _portUpdating=false; }
+}
+function reportPortfolioRefresh(succeeded, total) {
+  var failed = total - succeeded;
+  toast(failed ? ('⚠️ 成功 ' + succeeded + ' 檔，失敗 ' + failed + ' 檔；失敗項目保留舊報價')
+    : ('✅ 已更新 ' + succeeded + ' 檔報價'));
+}
+
 function toggleToTopBtn(){
   var btn = document.getElementById('to-top-btn');
   if(!btn) return;
@@ -2683,24 +2716,31 @@ function editPositionQty(market, idx) {
 }
 
 async function fetchPortfolioPrice(market, idx) {
-  const pos = portfolio[market][idx];
-  if (!pos) return;
+  const original = portfolio[market][idx];
+  if (!original) return false;
+  const pos = {...original};
   try {
     const data = await fetchYahoo(pos.sym, '6mo', '1d');
     const result = data?.chart?.result?.[0];
-    if (!result) return;
+    if (!result) throw new Error('缺少報價資料');
     const meta = result.meta;
-    const closes = result.indicators.quote[0].close.filter(v => v != null);
-    const highs = result.indicators.quote[0].high?.filter(v => v != null) || closes;
-    const lows = result.indicators.quote[0].low?.filter(v => v != null) || closes;
-    pos.price = meta.regularMarketPrice || closes.at(-1);
+    const rows = quoteRows(result);
+
+    const closes = rows.map(r=>r.c), highs = rows.map(r=>r.h), lows = rows.map(r=>r.l);
+    const price = meta.regularMarketPrice;
+    if (!Number.isFinite(price) || price <= 0) throw new Error('無效現價');
+    pos.price = price;
+    pos.quoteError = false;
+    pos.quoteTime = meta.regularMarketTime || null;
     pos.name = meta.shortName || meta.longName || pos.sym;
     pos.lastUpdate = new Date().toLocaleTimeString('zh-TW');
     pos.lastUpdatedAt = Date.now();
 
+    pos.tech = null; pos.health = null; pos.sellTarget = null; pos.sellStop = null;
+    if (rows.length >= 60) {
     // Calculate health indicators for sell suggestion and health check
     const rsiArr = calcRSI(closes, 14);
-    const rsi = rsiArr.at(-1) || 50;
+    const rsi = rsiArr.at(-1) ?? 50;
     const macdData = calcMACD(closes);
     const macdHist = macdData.macd.at(-1) - macdData.signal.at(-1);
     const bb = calcBB(closes, 20, 2);
@@ -2744,9 +2784,20 @@ async function fetchPortfolioPrice(market, idx) {
       bbPct: parseFloat((bbPct * 100).toFixed(1))
     };
 
+    }
+    if(!portfolio[market].includes(original)) return false;
+    // Apply quote fields atomically; preserve quantities/costs changed while awaiting the response.
+    for(const key of ['price','name','lastUpdate','lastUpdatedAt','quoteError','quoteTime','tech','health','sellTarget','sellStop']) original[key]=pos[key];
     savePortfolio();
     renderPortfolio();
-  } catch(e) { console.warn('Portfolio price fetch failed:', pos.sym, e.message); }
+    return true;
+  } catch(e) {
+    original.quoteError = true;
+    savePortfolio();
+    renderPortfolio();
+    console.warn('Portfolio price fetch failed:', pos.sym, e.message);
+    return false;
+  }
 }
 
 async function refreshPortfolio(market) {
@@ -2754,16 +2805,18 @@ async function refreshPortfolio(market) {
   _portUpdating = true;
   var total = portfolio[market].length;
   if (!total) { toast('尚無' + (market==='us'?'美股':'台股') + '持倉'); _portUpdating = false; return; }
-  for (var i = 0; i < total; i++) {
-    var p = portfolio[market][i];
-    var sym = p ? (p.displaySym || p.sym) : '';
-    showPortProgress('🔄 ' + (market==='us'?'🇺🇸 美股':'🇹🇼 台股') + '：' + sym, i + 1, total);
-    await fetchPortfolioPrice(market, i);
-    await sleep(400);
-  }
-  hidePortProgress();
-  _portUpdating = false;
-  toast('✅ ' + (market==='us'?'美股':'台股') + ' 報價已全部更新（' + total + ' 支）');
+  try {
+    const items=portfolio[market].map(pos=>({market,pos}));
+    const succeeded=await updatePortfolioBatch(items);
+    reportPortfolioRefresh(succeeded,total);
+  } finally { hidePortProgress(); _portUpdating=false; }
+}
+function portfolioQuoteStatus(p) {
+  if (p.quoteError) return p.price==null?'⚠️ 尚未取得報價，請稍後重試':'⚠️ 更新失敗，保留上次報價'+(p.quoteTime?'；行情時間：'+new Date(p.quoteTime*1000).toLocaleString('zh-TW'):'');
+  if (!p.lastUpdatedAt) return '尚未取得報價';
+  return ((!hasFreshPortfolioQuote(p)) ? '⚠️ 行情待確認；' : '') +
+    '取得時間：' + new Date(p.lastUpdatedAt).toLocaleString('zh-TW') +
+    (p.quoteTime ? '；行情時間：' + new Date(p.quoteTime*1000).toLocaleString('zh-TW') : '');
 }
 
 function renderPortfolio() {
@@ -2775,7 +2828,8 @@ function renderPortfolio() {
 }
 
 const PORT_USD_TWD_DEFAULT = 32;
-var fxLastFetched = 0; // timestamp
+var fxLastFetched = Number(localStorage.getItem('sr_fx_fetched_at')) || 0; // timestamp
+var fxUpdateFailed = false;
 var fxFetching = false;
 
 function getPortfolioFx() {
@@ -2784,38 +2838,45 @@ function getPortfolioFx() {
 }
 
 async function fetchLatestFx(silent) {
-  if (fxFetching) return;
-  fxFetching = true;
-  // Update FX icon to loading state
-  var fxEl = document.getElementById('fx-rate-val');
-  var fxBtn = document.getElementById('fx-refresh-btn');
-  if (fxBtn) fxBtn.textContent = '⏳';
-  try {
-    var data = await fetchYahoo('USDTWD=X', '1d', '1d');
-    var result = data && data.chart && data.chart.result && data.chart.result[0];
-    var rate = result && result.meta && result.meta.regularMarketPrice;
-    if (rate && rate > 20 && rate < 50) {
-      localStorage.setItem('sr_usd_twd', rate.toFixed(4));
-      fxLastFetched = Date.now();
-      if (fxEl) fxEl.textContent = rate.toFixed(2);
-      if (fxBtn) fxBtn.textContent = '🔄';
-      // Re-render summary with new rate
-      renderPortfolioSummary();
-      if (!silent) toast('💱 匯率已更新：1 USD = ' + rate.toFixed(2) + ' TWD');
-    } else {
-      if (fxBtn) fxBtn.textContent = '🔄';
-    }
-  } catch(e) {
-    if (fxBtn) fxBtn.textContent = '🔄';
-    if (!silent) toast('⚠️ 匯率更新失敗，使用上次數值');
+  if(fxFetching) return;
+  if(fxLastFetched && Date.now()-fxLastFetched<60*60*1000 && !fxUpdateFailed) {
+    if(!silent) toast('💱 使用一小時內已取得的參考匯率');
+    return;
   }
-  fxFetching = false;
+  fxFetching=true;
+  const btn=document.getElementById('fx-refresh-btn');
+  if(btn) btn.textContent='⏳';
+  try {
+    const response=await fetchWithTimeout('https://open.er-api.com/v6/latest/USD',10000,{readText:true});
+    if(!response.ok) throw new Error('匯率來源暫時無法連線');
+    const data=JSON.parse(response.body),rate=data.rates?.TWD;
+    if(data.result!=='success'||data.base_code!=='USD'||!Number.isFinite(rate)||rate<=0||
+       !Number.isFinite(data.time_last_update_unix)||Date.now()-data.time_last_update_unix*1000>3*86400000)
+      throw new Error('匯率資料無效或過期');
+    localStorage.setItem('sr_usd_twd',rate.toFixed(4));
+    localStorage.setItem('sr_fx_quote_time',String(data.time_last_update_unix));
+    localStorage.setItem('sr_fx_source','ExchangeRate-API');
+    fxLastFetched=Date.now();
+    localStorage.setItem('sr_fx_fetched_at',String(fxLastFetched));
+    fxUpdateFailed=false;
+    if(!silent) toast('💱 參考匯率已更新（每日資料）：1 USD = '+rate.toFixed(2)+' TWD');
+  } catch(e) {
+    fxUpdateFailed=true;
+    if(!silent) toast('⚠️ 匯率更新失敗，保留已存匯率或預設值');
+  } finally {
+    fxFetching=false;
+    renderPortfolio();
+  }
 }
 function getPortfolioSuggestion(pos, pnlPct, hasPrice) {
+  if (!hasFreshPortfolioQuote(pos)) {
+    return {action:'等待報價更新',reason:'報價尚未更新，暫停技術面建議。',color:'var(--text3)',scoreText:'N/A'};
+  }
   if (!hasPrice || pnlPct == null) {
     return { action: '等待報價更新', reason: '尚無即時價格，完成更新後再判斷。', color: 'var(--text3)', scoreText: 'N/A' };
   }
-  var tech = pos.tech || {};
+  if(!pos.tech) return {action:'分析資料不足',reason:'已取得價格，但歷史行情不足，暫不提供技術面建議。',color:'var(--text3)',scoreText:'N/A'};
+  var tech = pos.tech;
   var score = Number.isFinite(tech.score) ? tech.score : Math.max(20, Math.min(85, Math.round(50 + pnlPct * 1.3)));
   var rsi = Number.isFinite(tech.rsi) ? tech.rsi : null;
   var macdHist = Number.isFinite(tech.macdHist) ? tech.macdHist : null;
@@ -2927,7 +2988,7 @@ function renderPortfolioSummary() {
   const totalValTWD = twValue + usValue * usdTwd;
   const totalPnl = totalValTWD - totalInvTWD;
   const pnlColor = totalPnl >= 0 ? '#059669' : '#dc2626';
-  const missingTxt = (usMissing || twMissing) ? ('未更新：美股 '+usMissing+' 檔 / 台股 '+twMissing+' 檔（暫以成本估算）') : '報價已完整更新';
+  const missingTxt = (usMissing || twMissing) ? ('未更新：美股 '+usMissing+' 檔 / 台股 '+twMissing+' 檔（暫以成本估算）') : '已有報價；請以各檔行情時間與更新狀態為準';
 
   document.getElementById('port-summary').innerHTML =
     '<div class="port-sum-card" style="grid-column:1/-1"><div class="port-sum-label">估算說明</div><div class="port-sum-sub">美股換算匯率：1 USD = '+usdTwd+' TWD；'+missingTxt+'</div></div>' +
@@ -2976,6 +3037,7 @@ function renderPortfolioTable(market) {
             '<div style="font-size:11px;color:var(--text3)">' + ((p.broker || '-') + ' | 股數 ' + p.qty) + '</div>' +
           '</div>' +
           '<div style="text-align:right">' +
+            '<div style="font-size:11px;color:var(--text3)">' + portfolioQuoteStatus(p) + '</div>' +
             '<div style="font-size:11px;color:var(--text3)">成本 / 現價</div>' +
             '<div style="font-family:monospace;font-size:13px">' + cur + p.cost.toFixed(dp) + ' / ' + (has ? cur + p.price.toFixed(dp) : '-') + '</div>' +
           '</div>' +
@@ -4152,8 +4214,11 @@ function renderPortfolioSummary() {
   var pnlColor = totalPnl >= 0 ? '#059669' : '#dc2626';
   var realized = getRealizedSummary();
   var realizedColor = realized.totalTwd >= 0 ? '#059669' : '#dc2626';
-  var fxTimeText = fxLastFetched ? '更新於 ' + new Date(fxLastFetched).toLocaleTimeString('zh-TW', {hour:'2-digit',minute:'2-digit'}) : '使用預設值';
+  var fxTimeText = (fxUpdateFailed?'⚠️ 更新失敗；':'') + (fxLastFetched ? '取得於 ' + new Date(fxLastFetched).toLocaleString('zh-TW') : (localStorage.getItem('sr_usd_twd')?'使用已存匯率（時間未知）':'使用預設值，尚未取得匯率'));
+  var missing=portfolio.us.concat(portfolio.tw).filter(p=>p.price==null).length;
+  var stale=portfolio.us.concat(portfolio.tw).filter(p=>p.price!=null&&!hasFreshPortfolioQuote(p)).length;
   document.getElementById('port-summary').innerHTML =
+    '<div class="port-sum-card" style="grid-column:1/-1;font-size:12px">'+(missing?'⚠️ '+missing+' 檔無報價，市值暫以成本估算。 ':'')+(stale?'⚠️ '+stale+' 檔使用舊報價，請更新。 ':'')+'行情可能延遲，請查看各檔行情時間。</div>'+
     '<div class="port-sum-card" style="display:flex;align-items:center;justify-content:space-between;gap:8px">' +
       '<div>' +
         '<div class="port-sum-label">💱 USD / TWD 匯率</div>' +
@@ -4161,7 +4226,7 @@ function renderPortfolioSummary() {
           '<div class="port-sum-val" style="color:var(--sky)" id="fx-rate-val">' + usdTwd.toFixed(2) + '</div>' +
           '<button id="fx-refresh-btn" onclick="fetchLatestFx(false)" style="background:none;border:none;cursor:pointer;font-size:16px;padding:0;line-height:1" title="更新匯率">🔄</button>' +
         '</div>' +
-        '<div class="port-sum-sub">' + fxTimeText + '</div>' +
+        '<div class="port-sum-sub">' + fxTimeText + (localStorage.getItem('sr_fx_source')==='ExchangeRate-API'?'<br>每日參考匯率 · <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">Rates By Exchange Rate API</a><br>資料時間：'+new Date(Number(localStorage.getItem('sr_fx_quote_time'))*1000).toLocaleString('zh-TW'):'') + '</div>' +
       '</div>' +
     '</div>' +
     '<div class="port-sum-card"><div class="port-sum-label">總市值(TWD)</div><div class="port-sum-val">' + (totalValTWD / 10000).toFixed(1) + '<span style="font-size:13px">萬</span></div><div class="port-sum-sub">總投入 ' + (totalInvTWD / 10000).toFixed(1) + ' 萬</div></div>' +
@@ -4215,7 +4280,7 @@ function renderPortfolioTable(market) {
     return '<div id="port-card-' + market + '-' + i + '" class="card" style="padding:14px 16px;margin-bottom:10px">' +
       '<div style="display:flex;justify-content:space-between;gap:12px">' +
         '<div><div style="font-family:monospace;font-size:16px;font-weight:700">' + (p.displaySym || p.sym || '-') + '</div><div style="font-size:12px;color:var(--text2)">' + (p.name || '-') + '</div><div style="font-size:11px;color:var(--text3)">' + ((p.broker || '-') + ' | \u80a1\u6578 ' + p.qty) + '</div></div>' +
-        '<div style="text-align:right"><div style="font-size:11px;color:var(--text3)">\u6210\u672c / \u73fe\u50f9</div><div style="font-family:monospace;font-size:13px">' + cur + p.cost.toFixed(dp) + ' / ' + (has ? cur + p.price.toFixed(dp) : '-') + '</div></div>' +
+        '<div style="text-align:right"><div style="font-size:11px;color:var(--text3)">' + portfolioQuoteStatus(p) + '</div><div style="font-size:11px;color:var(--text3)">\u6210\u672c / \u73fe\u50f9</div><div style="font-family:monospace;font-size:13px">' + cur + p.cost.toFixed(dp) + ' / ' + (has ? cur + p.price.toFixed(dp) : '-') + '</div></div>' +
       '</div>' +
       '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px">' +
         '<div style="background:var(--ink);border-radius:10px;padding:8px"><div style="font-size:10px;color:var(--text3)">\u6295\u5165\u6210\u672c\uff08\u53f0\u5e63\uff09</div><div style="font-family:monospace;font-size:12px">' + fmtMoney(investedTwd) + '</div></div>' +
@@ -4384,7 +4449,7 @@ function renderCmpCards() {
         '</div>' +
         '<div>' +
           '<div class="cmp-price">' + (r.isTW ? '' : '$') + r.price.toFixed(dp) + '</div>' +
-          '<div class="cmp-chg" style="color:' + chgColor + '">' + (r.changePct >= 0 ? '+' : '') + (r.changePct * 100).toFixed(2) + '%</div>' +
+          '<div class="cmp-chg" style="color:' + chgColor + '">' + changeText(r.changePct) + '</div>' +
         '</div>' +
       '</div>' +
 
@@ -4433,7 +4498,7 @@ function renderCmpSummary() {
 
   var rows = [
     { label: '現價', vals: cmpResults.map(function(r) { var dp=r.dp||(r.isTW?1:2); return (r.isTW?'':'$')+r.price.toFixed(dp); }) },
-    { label: '今日漲跌', vals: cmpResults.map(function(r) { var v=(r.changePct*100).toFixed(2); return '<span style="color:'+(r.changePct>=0?'var(--mint)':'var(--ember)')+';">'+(r.changePct>=0?'+':'')+v+'%</span>'; }) },
+    { label: '今日漲跌', vals: cmpResults.map(function(r) { var v=changeText(r.changePct); return '<span style="color:'+(r.changePct>=0?'var(--mint)':'var(--ember)')+';">'+v+'</span>'; }) },
     { label: '評分', vals: cmpResults.map(function(r) { var c=r.score>=70?'var(--mint)':r.score>=50?'var(--sky)':r.score<38?'var(--ember)':'var(--gold)'; return '<strong style="color:'+c+'">'+r.score+'</strong>'+(r.score===maxScore?' 🏆':''); }) },
     { label: 'RSI', vals: cmpResults.map(function(r) { var c=r.rsi<40?'var(--mint)':r.rsi>65?'var(--ember)':'var(--text)'; return '<span style="color:'+c+'">'+r.rsi.toFixed(1)+'</span>'+(r.rsi===minRSI?' 最低':''); }) },
     { label: 'MACD', vals: cmpResults.map(function(r) { return '<span style="color:'+(r.macdHist>0?'var(--mint)':'var(--ember)')+';">'+(r.macdHist>=0?'+':'')+r.macdHist.toFixed(3)+'</span>'; }) },
