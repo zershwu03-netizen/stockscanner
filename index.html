@@ -5143,7 +5143,10 @@ function updateSellPreview() {
     el.style.color = c[0];
     el.style.background = c[1];
     el.style.borderColor = c[2];
-    el.innerHTML = '<strong>📡 報價狀態：</strong>' + srEscape(quoteUiMessage);
+    el.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">' +
+      '<span><strong>📡 報價狀態：</strong>' + srEscape(quoteUiMessage) + '</span>' +
+      '<button type="button" onclick="downloadQuoteSymbols()" style="font-size:11px;padding:5px 9px;border:1px solid currentColor;border-radius:7px;background:#fff;color:inherit;cursor:pointer;font-weight:700">下載報價清單</button>' +
+    '</div>';
   }
 
   async function srLoadQuoteSnapshot(force) {
@@ -5484,21 +5487,21 @@ function updateSellPreview() {
       summary.parentNode.insertBefore(status, summary);
     }
 
-    var titleRow = document.querySelector('#portfolio-page > div:nth-of-type(2)');
-    var actionRow = titleRow && titleRow.querySelector('div:last-child');
+    var backupButton = document.querySelector('#portfolio-page button[onclick="exportPortfolio()"]');
+    var actionRow = backupButton && backupButton.parentElement;
     if (actionRow && !document.getElementById('sr-symbols-download')) {
       var button = document.createElement('button');
       button.id = 'sr-symbols-download';
       button.textContent = '📡 下載報價清單';
       button.onclick = window.downloadQuoteSymbols;
       button.style.cssText = 'font-size:11px;padding:6px 10px;border:1px solid var(--sky);border-radius:8px;background:#eff6ff;color:var(--sky);cursor:pointer;font-weight:600;font-family:inherit';
-      actionRow.appendChild(button);
+      backupButton.insertAdjacentElement('afterend', button);
     }
 
     document.querySelectorAll('#us-portfolio-section .port-section-head button, #tw-portfolio-section .port-section-head button').forEach(function (button) {
       button.textContent = '🔄 讀取最新報價';
     });
-    var subtitle = document.querySelector('#portfolio-page > div:nth-of-type(2) > div:first-child > div:last-child');
+    var subtitle = document.querySelector('#portfolio-page > div[style*="padding:20px"] > div:first-child > div:last-child');
     if (subtitle) subtitle.textContent = '買賣記帳、成本損益與免費排程報價';
   }
 
