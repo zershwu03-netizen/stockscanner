@@ -1616,8 +1616,9 @@ function autoSymbol(s) {
   s = s.trim().toUpperCase();
   if (!s) return '';
   if (s.endsWith('.TW') || s.endsWith('.TWO')) return s;
-  // Pure digits 4-6 chars = Taiwan stock
-  if (/^\d{4,6}[Bb]?$/.test(s)) return s + '.TW';
+  // Pure digits: 4 chars = 上市(.TW), 5-6 chars = 可能上櫃(.TWO)
+  if (/^\d{4}[Bb]?$/.test(s)) return s + '.TW';
+  if (/^\d{5,6}[Bb]?$/.test(s)) return s + '.TWO';
   return s;
 }
 
@@ -1869,7 +1870,7 @@ async function fetchYahooOnce(symbol,range,interval,signal){
     for(const makeProxy of PROXIES){
       const proxyUrl=makeProxy(targetUrl);
       try{
-        const resp=await fetchWithTimeout(proxyUrl,12000,{signal:signal});
+        const resp=await fetchWithTimeout(proxyUrl,6000,{signal:signal});
         if(!resp.ok){errors.push('HTTP '+resp.status);continue;}
         const text=await resp.text();
         if(!text||!text.trim()){errors.push('empty');continue;}
@@ -1877,7 +1878,7 @@ async function fetchYahooOnce(symbol,range,interval,signal){
         if(data?.chart?.result?.[0]) return data;
         if(data?.chart?.error) errors.push('Yahoo: '+data.chart.error.description);
       }catch(e){errors.push(e.name+': '+e.message);}
-      await sleep(150);
+      await sleep(50);
     }
   }
   return {_errors:errors};
@@ -2443,7 +2444,6 @@ async function autoRefreshPortfolio() {
   var now = Date.now();
   var stalePositions = [];
 
-  // 收集需要更新的持倉（price 為 null 或超過30分鐘沒更新）
   ['us', 'tw'].forEach(function(market) {
     (portfolio[market] || []).forEach(function(p, i) {
       var lastUp = p.lastUpdatedAt || 0;
@@ -2453,28 +2453,27 @@ async function autoRefreshPortfolio() {
     });
   });
 
-  // 同時更新匯率（超過30分鐘或從未更新）
   var needFx = !fxLastFetched || (now - fxLastFetched) > AUTO_REFRESH_MS;
-
-  if (stalePositions.length === 0 && !needFx) return; // 全部都是新的，不需要更新
+  if (stalePositions.length === 0 && !needFx) return;
 
   var totalCount = stalePositions.length + (needFx ? 1 : 0);
   toast('🔄 自動更新 ' + totalCount + ' 筆資料...');
 
-  // 先抓匯率（快）
-  if (needFx) {
-    await fetchLatestFx(true);
-    await sleep(300);
-  }
+  if (needFx) await fetchLatestFx(true);
 
-  // 再逐一更新過期持倉
-  for (var i = 0; i < stalePositions.length; i++) {
-    var item = stalePositions[i];
-    var p = (portfolio[item.market] || [])[item.idx];
-    var sym = p ? (p.displaySym || p.sym) : '';
-    showPortProgress('🔄 更新中：' + sym, i + 1, stalePositions.length);
-    await fetchPortfolioPrice(item.market, item.idx);
-    await sleep(350);
+  // 批次並行：每批 5 支同時抓，減少總等待時間
+  var BATCH = 5;
+  var done = 0;
+  for (var b = 0; b < stalePositions.length; b += BATCH) {
+    var batch = stalePositions.slice(b, b + BATCH);
+    showPortProgress('🔄 更新中...', done + 1, stalePositions.length);
+    await Promise.all(batch.map(function(item) {
+      return fetchPortfolioPrice(item.market, item.idx);
+    }));
+    done += batch.length;
+    showPortProgress('🔄 更新中...', done, stalePositions.length);
+    renderPortfolio();
+    if (b + BATCH < stalePositions.length) await sleep(200);
   }
 
   hidePortProgress();
@@ -2690,6 +2689,12 @@ async function fetchPortfolioPrice(market, idx) {
     const result = data?.chart?.result?.[0];
     if (!result) return;
     const meta = result.meta;
+    // If .TW resolved to .TWO, persist the correct symbol so next fetch is direct
+    const resolvedSym = result.meta._resolvedSymbol;
+    if (resolvedSym && resolvedSym !== pos.sym) {
+      pos.sym = resolvedSym;
+      pos.displaySym = resolvedSym.replace('.TW','').replace('.TWO','');
+    }
     const closes = result.indicators.quote[0].close.filter(v => v != null);
     const highs = result.indicators.quote[0].high?.filter(v => v != null) || closes;
     const lows = result.indicators.quote[0].low?.filter(v => v != null) || closes;
@@ -2754,12 +2759,18 @@ async function refreshPortfolio(market) {
   _portUpdating = true;
   var total = portfolio[market].length;
   if (!total) { toast('尚無' + (market==='us'?'美股':'台股') + '持倉'); _portUpdating = false; return; }
-  for (var i = 0; i < total; i++) {
-    var p = portfolio[market][i];
-    var sym = p ? (p.displaySym || p.sym) : '';
-    showPortProgress('🔄 ' + (market==='us'?'🇺🇸 美股':'🇹🇼 台股') + '：' + sym, i + 1, total);
-    await fetchPortfolioPrice(market, i);
-    await sleep(400);
+  // 批次並行：每批 5 支同時抓
+  var BATCH = 5;
+  var label = market==='us' ? '🇺🇸 美股' : '🇹🇼 台股';
+  for (var b = 0; b < total; b += BATCH) {
+    var indices = [];
+    for (var j = b; j < Math.min(b + BATCH, total); j++) indices.push(j);
+    showPortProgress('🔄 ' + label + ' 更新中...', b + 1, total);
+    await Promise.all(indices.map(function(i) {
+      return fetchPortfolioPrice(market, i);
+    }));
+    renderPortfolio();
+    if (b + BATCH < total) await sleep(150);
   }
   hidePortProgress();
   _portUpdating = false;
