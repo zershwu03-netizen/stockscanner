@@ -5519,5 +5519,319 @@ function updateSellPreview() {
   }
 })();
 </script>
+
+<!-- StockRadar Personal mobile-first interface -->
+<style id="sr-mobile-ui-style">
+.sr-mobile-only{display:none!important}
+.sr-position-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin-bottom:10px;box-shadow:0 2px 10px rgba(15,23,42,.04)}
+.sr-position-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.sr-position-symbol{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:800;line-height:1.2}
+.sr-position-name{font-size:12px;color:var(--text2);margin-top:3px;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sr-position-badge{display:inline-flex;font-size:10px;font-weight:700;border-radius:999px;padding:2px 7px;margin-top:5px}
+.sr-position-price{text-align:right;flex-shrink:0}
+.sr-position-price strong{display:block;font-family:'JetBrains Mono',monospace;font-size:19px;line-height:1.2}
+.sr-position-price span{display:block;font-size:10px;color:var(--text3);margin-top:4px}
+.sr-position-highlight{display:grid;grid-template-columns:1.25fr .75fr;gap:8px;margin-top:12px}
+.sr-highlight-box{background:var(--ink);border-radius:11px;padding:10px 11px}
+.sr-highlight-label{font-size:10px;color:var(--text3);margin-bottom:3px}
+.sr-highlight-value{font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:800}
+.sr-position-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:10px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.sr-meta-item{background:#fff;padding:8px 9px;min-width:0}
+.sr-meta-item span{display:block;font-size:9px;color:var(--text3);margin-bottom:3px}
+.sr-meta-item strong{display:block;font-family:'JetBrains Mono',monospace;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sr-card-details{margin-top:9px;border-top:1px solid var(--line)}
+.sr-card-details summary{list-style:none;cursor:pointer;color:var(--text3);font-size:11px;text-align:center;padding:9px 0 0;min-height:32px}
+.sr-card-details summary::-webkit-details-marker{display:none}
+.sr-card-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding-top:9px}
+.sr-card-actions button{min-height:40px;border-radius:9px;border:1px solid var(--line2);background:#fff;color:var(--text2);font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;padding:7px 5px}
+.sr-card-actions .sr-action-sell{background:#dc2626;border-color:#dc2626;color:#fff}
+.sr-card-actions .sr-action-danger{color:#dc2626}
+.sr-mobile-nav{display:none}
+.sr-sheet-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.48);z-index:12000;align-items:flex-end;justify-content:center;padding:0}
+.sr-sheet-overlay.open{display:flex}
+.sr-sheet{width:100%;max-width:560px;max-height:86dvh;background:#fff;border-radius:22px 22px 0 0;padding:10px 16px calc(18px + env(safe-area-inset-bottom));box-shadow:0 -12px 40px rgba(15,23,42,.2);overflow:auto;animation:srSheetUp .2s ease-out}
+@keyframes srSheetUp{from{transform:translateY(30px);opacity:.7}to{transform:none;opacity:1}}
+.sr-sheet-grab{width:40px;height:4px;border-radius:3px;background:#cbd5e1;margin:2px auto 12px}
+.sr-sheet-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.sr-sheet-title{font-size:18px;font-weight:800}
+.sr-sheet-close{width:38px;height:38px;border:none;border-radius:50%;background:var(--ink2);font-size:18px;color:var(--text2);cursor:pointer}
+.sr-sheet-search{width:100%;font-size:16px;padding:11px 13px;border:1px solid var(--line2);border-radius:11px;outline:none;margin-bottom:10px}
+.sr-picker-list{display:flex;flex-direction:column;gap:7px}
+.sr-picker-item{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 12px;cursor:pointer;color:var(--text)}
+.sr-picker-symbol{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:800}
+.sr-picker-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.sr-picker-pnl{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:800;text-align:right}
+.sr-more-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+.sr-more-grid button{min-height:62px;border:1px solid var(--line);border-radius:13px;background:var(--ink);font-family:inherit;font-size:13px;font-weight:700;color:var(--text);cursor:pointer;padding:10px}
+.sr-more-grid button span{display:block;font-size:21px;margin-bottom:3px}
+.sr-empty-picker{text-align:center;padding:28px 12px;color:var(--text3);font-size:13px}
+
+@media (max-width:720px){
+  html{scroll-padding-top:68px}
+  body{padding-bottom:calc(78px + env(safe-area-inset-bottom));background:#f4f6fa}
+  body::before,body::after{display:none}
+  .sr-mobile-only{display:flex!important}
+  .wrap{padding-left:10px;padding-right:10px}
+  header{height:58px;padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top));position:sticky;box-shadow:0 1px 10px rgba(15,23,42,.08)}
+  header .inner{height:42px;flex-wrap:nowrap}
+  .brand{gap:8px}
+  .brand-mark{width:34px;height:34px;border-radius:9px;font-size:17px}
+  .brand-name{font-size:16px}
+  .brand-sub{display:none}
+  header .key-bar{display:none!important}
+  #portfolio-page{padding-bottom:18px}
+  #portfolio-page>div[style*="padding:20px"]{padding:13px 2px 7px!important;align-items:center!important}
+  #portfolio-page>div[style*="padding:20px"]>div:first-child>div:first-child{font-size:19px!important}
+  #portfolio-page>div[style*="padding:20px"]>div:first-child>div:last-child{font-size:11px!important}
+  #portfolio-page>div[style*="padding:20px"]>div:last-child{display:none!important}
+  #sr-quote-status{font-size:11px!important;padding:8px 10px!important;margin-bottom:9px!important;border-radius:10px!important}
+  #sr-quote-status button{min-height:34px;padding:4px 8px!important}
+  .port-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important;padding:9px!important;border-radius:13px!important;margin-bottom:9px!important}
+  .port-sum-card{padding:9px!important;border-radius:9px!important;min-width:0}
+  .port-sum-label{font-size:9px!important;letter-spacing:0!important}
+  .port-sum-val{font-size:16px!important;white-space:nowrap}
+  .port-sum-sub{font-size:9px!important}
+  .port-sum-card[style*="grid-column"]{grid-column:1/-1!important}
+  #portfolio-quick-nav{position:sticky;top:62px;z-index:80;padding:7px!important;margin:0 0 9px!important;gap:6px!important;box-shadow:0 4px 12px rgba(15,23,42,.06)}
+  #portfolio-quick-nav button:not(:nth-last-of-type(-n+2)){display:none!important}
+  #portfolio-quick-nav input{min-width:0!important;width:100%;font-size:16px!important;padding:9px 10px!important}
+  #portfolio-quick-nav button{min-height:40px!important;padding:7px 9px!important}
+  .port-section{border-radius:14px!important;margin-bottom:11px!important}
+  .port-section-head{padding:11px 12px!important}
+  .port-section-head h3{font-size:14px!important}
+  .port-section-head button{min-height:38px;padding:6px 9px!important}
+  .port-add-form{display:none!important}
+  .sr-position-card{padding:13px;margin-bottom:8px;border-radius:14px}
+  .sr-position-name{max-width:170px}
+  .sr-card-actions{grid-template-columns:repeat(2,1fr)}
+  #sell-records-section,#buy-records-section{scroll-margin-top:118px}
+  #sell-records-section .port-section-head,#buy-records-section .port-section-head{align-items:center}
+  #sell-records-section .port-section-head>div{gap:4px!important}
+  #sell-records-section .port-section-head button,#buy-records-section .port-section-head button{font-size:10px!important;padding:5px 7px!important}
+  .to-top-btn{display:none!important}
+  .sr-mobile-nav{position:fixed;left:0;right:0;bottom:0;z-index:11000;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(255,255,255,.96);backdrop-filter:blur(18px);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -4px 20px rgba(15,23,42,.08)}
+  .sr-mobile-nav button{min-height:52px;border:none;background:transparent;border-radius:11px;color:#64748b;font-family:inherit;font-size:10px;font-weight:700;cursor:pointer;padding:3px 2px}
+  .sr-mobile-nav button span{display:block;font-size:21px;line-height:24px;margin-bottom:2px}
+  .sr-mobile-nav button.active{color:#2563eb;background:#eff6ff}
+  .sr-mobile-nav .sr-nav-buy{color:#047857}
+  .sr-mobile-nav .sr-nav-sell{color:#b91c1c}
+  input,select,textarea{font-size:16px!important}
+  #buy-record-modal,#sell-position-modal,#fee-settings-modal,#cost-calc-modal{align-items:flex-end!important;padding:0!important}
+  #buy-record-modal>div,#sell-position-modal>div,#fee-settings-modal>div,#cost-calc-modal>div{width:100%!important;max-width:none!important;max-height:91dvh!important;overflow:auto!important;border-radius:22px 22px 0 0!important;padding:18px 16px calc(20px + env(safe-area-inset-bottom))!important}
+  #buy-record-modal>div>div[style*="grid-template-columns"]{grid-template-columns:1fr 1fr!important;gap:9px!important}
+  #sell-position-modal button,#buy-record-modal button{min-height:46px!important;font-size:14px!important}
+}
+
+@media (max-width:390px){
+  .sr-position-symbol{font-size:17px}
+  .sr-position-price strong{font-size:17px}
+  .sr-highlight-value{font-size:15px}
+  .sr-more-grid{grid-template-columns:1fr 1fr}
+  #buy-record-modal>div>div[style*="grid-template-columns"]{grid-template-columns:1fr!important}
+}
+</style>
+
+<script>
+(function(){
+  'use strict';
+
+  function esc(value){
+    return String(value == null ? '' : value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function valid(value){return Number.isFinite(Number(value))&&Number(value)>0}
+  function displaySymbol(position){return String(position.displaySym||position.sym||'').replace('.TW','').replace('.TWO','')}
+  function brokerKey(value){var v=String(value||'').trim();return v&&v!=='-'?v:'未指定'}
+  function mobileMode(){return window.matchMedia('(max-width:720px)').matches}
+
+  function setMobileActive(name){
+    document.querySelectorAll('.sr-mobile-nav button').forEach(function(button){
+      button.classList.toggle('active',button.dataset.nav===name);
+    });
+  }
+
+  window.srMobilePortfolio=function(){
+    switchNav('portfolio');
+    setMobileActive('portfolio');
+    window.scrollTo({top:0,behavior:'smooth'});
+  };
+
+  window.srMobileBuy=function(){
+    setMobileActive('buy');
+    showBuyRecordModal();
+    var modal=document.getElementById('buy-record-modal');
+    if(modal){
+      var title=modal.querySelector('div>div:first-child');
+      var sub=modal.querySelector('div>div:nth-child(2)');
+      if(title) title.textContent='＋ 新增買入';
+      if(sub) sub.textContent='儲存後會同步更新持倉、平均成本與交易紀錄';
+    }
+  };
+
+  function renderSellPicker(query){
+    var list=document.getElementById('sr-sell-picker-list');
+    if(!list)return;
+    var q=String(query||'').trim().toLowerCase();
+    var items=[];
+    ['tw','us'].forEach(function(market){
+      (portfolio[market]||[]).forEach(function(position,index){
+        var text=[displaySymbol(position),position.name,position.broker].join(' ').toLowerCase();
+        if(!q||text.indexOf(q)!==-1)items.push({market:market,index:index,p:position});
+      });
+    });
+    if(!items.length){list.innerHTML='<div class="sr-empty-picker">找不到可賣出的持倉</div>';return}
+    list.innerHTML=items.map(function(item){
+      var p=item.p,has=valid(p.price),pct=has&&Number(p.cost)>0?(Number(p.price)-Number(p.cost))/Number(p.cost)*100:null;
+      var color=pct==null?'#64748b':pct>=0?'#059669':'#dc2626';
+      return '<button class="sr-picker-item" onclick="srSelectSell(\''+item.market+'\','+item.index+')">'+
+        '<span><span class="sr-picker-symbol">'+esc(displaySymbol(p))+'</span><span class="sr-picker-sub">'+esc(p.name||'')+' · '+esc(p.broker||'未指定')+' · '+esc(p.qty)+' 股</span></span>'+
+        '<span class="sr-picker-pnl" style="color:'+color+'">'+(pct==null?'無報價':(pct>=0?'+':'')+pct.toFixed(1)+'%')+'</span></button>';
+    }).join('');
+  }
+
+  window.srMobileSell=function(){
+    setMobileActive('sell');
+    renderSellPicker('');
+    var input=document.getElementById('sr-sell-search');
+    if(input)input.value='';
+    document.getElementById('sr-sell-picker').classList.add('open');
+  };
+  window.srFilterSellPicker=function(value){renderSellPicker(value)};
+  window.srSelectSell=function(market,index){
+    srCloseSheet('sr-sell-picker');
+    openSellModal(market,index);
+  };
+  window.srCloseSheet=function(id){
+    var sheet=document.getElementById(id);if(sheet)sheet.classList.remove('open');
+    setMobileActive('portfolio');
+  };
+
+  window.srMobileRecords=function(){
+    switchNav('portfolio');
+    setMobileActive('records');
+    var target=document.getElementById('sell-records-section');
+    if(target)target.scrollIntoView({behavior:'smooth',block:'start'});
+  };
+  window.srMobileMore=function(){
+    setMobileActive('more');
+    document.getElementById('sr-more-sheet').classList.add('open');
+  };
+  window.srMoreAction=function(action){
+    srCloseSheet('sr-more-sheet');
+    if(action==='refresh')refreshPortfolio();
+    else if(action==='backup')exportPortfolio();
+    else if(action==='symbols')downloadQuoteSymbols();
+    else if(action==='fees')showFeeSettingsModal();
+    else if(action==='health')openHealthReport();
+    else if(action==='restore'){
+      var input=document.querySelector('input[type="file"][onchange="importPortfolio(event)"]');if(input)input.click();
+    }else if(action==='excel'){
+      var excel=document.querySelector('input[type="file"][onchange="importExcel(event)"]');if(excel)excel.click();
+    }else if(['scan','sim','compare'].indexOf(action)!==-1){
+      switchNav(action);window.scrollTo({top:0,behavior:'smooth'});setMobileActive('more');
+    }
+  };
+
+  var originalHideBuyRecordModal=window.hideBuyRecordModal;
+  window.hideBuyRecordModal=function(){
+    originalHideBuyRecordModal();
+    setMobileActive('portfolio');
+  };
+
+  function applyBuy(data){
+    var market=data.market;
+    var raw=String(data.sym||'').trim().toUpperCase();
+    var full=market==='tw'?autoSymbol(raw):raw;
+    var shown=full.replace('.TW','').replace('.TWO','');
+    var broker=brokerKey(data.broker);
+    var price=Number(data.price),qty=Number(data.qty),fee=Number(data.fee)||0;
+    var existing=(portfolio[market]||[]).find(function(p){
+      return displaySymbol(p)===shown&&brokerKey(p.broker)===broker;
+    });
+    var isNew=!existing;
+    if(existing){
+      var newQty=Number(existing.qty)+qty;
+      existing.cost=(Number(existing.cost)*Number(existing.qty)+price*qty+fee)/newQty;
+      existing.qty=parseFloat(newQty.toFixed(4));
+      existing.broker=broker;
+    }else{
+      portfolio[market].push({sym:full,displaySym:shown,cost:(price*qty+fee)/qty,qty:qty,broker:broker,name:'',price:null,lastUpdate:null});
+    }
+    buyTrades.unshift({ts:data.ts||new Date().toISOString(),market:market,sym:shown,price:price,qty:qty,fee:fee,total:price*qty+fee,broker:broker,note:data.note||''});
+    savePortfolio();saveBuyTrades();renderPortfolio();renderBuyRecords();
+    var index=(portfolio[market]||[]).findIndex(function(p){return displaySymbol(p)===shown&&brokerKey(p.broker)===broker});
+    if(index>=0)fetchPortfolioPrice(market,index);
+    toast(isNew?'✅ 已新增持倉；新代號請更新一次報價清單':'✅ 已加碼並更新平均成本');
+    return isNew;
+  }
+
+  window.saveBuyRecord=function(){
+    var sym=(document.getElementById('br-sym').value||'').trim().toUpperCase();
+    var market=document.getElementById('br-market').value;
+    var price=parseFloat(document.getElementById('br-price').value);
+    var qty=parseFloat(document.getElementById('br-qty').value);
+    var fee=parseFloat(document.getElementById('br-fee').value)||0;
+    var broker=(document.getElementById('br-broker').value||'').trim();
+    var date=document.getElementById('br-date').value||new Date().toISOString().slice(0,10);
+    var note=(document.getElementById('br-note').value||'').trim();
+    if(!sym){toast('⚠️ 請輸入股票代號');return}
+    if(!valid(price)){toast('⚠️ 請輸入有效買入價格');return}
+    if(!valid(qty)){toast('⚠️ 請輸入有效股數');return}
+    applyBuy({sym:sym,market:market,price:price,qty:qty,fee:fee,broker:broker,note:note,ts:new Date(date+'T12:00:00').toISOString()});
+    hideBuyRecordModal();setMobileActive('portfolio');
+  };
+
+  window.addPosition=function(market){
+    var symEl=document.getElementById(market+'-sym');
+    var costEl=document.getElementById(market+'-cost');
+    var qtyEl=document.getElementById(market+'-qty');
+    var brokerEl=document.getElementById(market==='us'?'us-broker':'tw-broker-input');
+    var sym=(symEl.value||'').trim().toUpperCase(),price=Number(costEl.value),qty=Number(qtyEl.value);
+    if(!sym||!valid(price)||!valid(qty)){toast('⚠️ 請填入代號、成本和股數');return}
+    applyBuy({sym:sym,market:market,price:price,qty:qty,fee:0,broker:brokerEl.value,note:'新增持倉'});
+    symEl.value='';costEl.value='';qtyEl.value='';brokerEl.value='';
+    document.querySelectorAll('#'+market+'-broker-btns .broker-btn').forEach(function(button){button.classList.remove('selected')});
+  };
+
+  window.renderBuyRecords=function(){
+    var el=document.getElementById('buy-records-list');if(!el)return;
+    if(!buyTrades||!buyTrades.length){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">尚無購買紀錄</div>';return}
+    var tw=buyTrades.filter(function(t){return t.market!=='us'}).reduce(function(s,t){return s+Number(t.total||0)},0);
+    var us=buyTrades.filter(function(t){return t.market==='us'}).reduce(function(s,t){return s+Number(t.total||0)},0);
+    el.innerHTML='<div style="display:flex;gap:7px;flex-wrap:wrap;padding:6px 0 10px;font-size:11px;color:var(--text2)"><span style="background:var(--ink);border-radius:8px;padding:6px 8px">台股投入 <b>'+fmtMoney(tw)+'</b></span><span style="background:var(--ink);border-radius:8px;padding:6px 8px">美股投入 <b>$'+us.toLocaleString(undefined,{maximumFractionDigits:2})+'</b></span><span style="padding:6px 3px">共 '+buyTrades.length+' 筆</span></div>'+
+      buyTrades.map(function(t,i){var cur=t.market==='us'?'$':'';return '<div style="display:grid;grid-template-columns:1fr auto;gap:8px;padding:11px 0;border-bottom:1px solid var(--line)"><div><div style="font-family:monospace;font-size:14px;font-weight:800">'+esc(t.sym)+' <span style="font-family:inherit;font-size:10px;color:var(--text3)">'+(t.market==='us'?'美股':'台股')+'</span></div><div style="font-size:12px;color:var(--text2);margin-top:3px">'+esc(t.qty)+' 股 × '+cur+Number(t.price).toLocaleString()+' · '+esc(t.broker||'未指定')+'</div><div style="font-size:10px;color:var(--text3);margin-top:3px">'+esc((t.ts||'').slice(0,10))+(t.note?' · '+esc(t.note):'')+'</div></div><div style="text-align:right"><div style="font-family:monospace;font-weight:800;color:var(--ember)">'+cur+Number(t.total||0).toLocaleString(undefined,{maximumFractionDigits:2})+'</div><button onclick="deleteBuyRecord('+i+')" style="margin-top:6px;background:none;border:none;color:var(--text3);font-size:11px;padding:5px">刪除</button></div></div>'}).join('');
+  };
+
+  window.renderPortfolioTable=function(market){
+    var box=document.getElementById(market+'-port-cards');if(!box)return;
+    var positions=portfolio[market]||[],currency=market==='us'?'$':'',fx=market==='us'?getPortfolioFx():1,dp=market==='tw'?1:2;
+    if(!positions.length){box.innerHTML='<div class="sr-empty-picker">目前沒有'+(market==='us'?'美股':'台股')+'持倉</div>';return}
+    var entries=positions.map(function(p,i){return{p:p,idx:i}});
+    if(typeof portfolioSearchQuery!=='undefined'&&portfolioSearchQuery){entries=entries.filter(function(e){return [e.p.displaySym,e.p.sym,e.p.name,e.p.broker].join(' ').toLowerCase().indexOf(portfolioSearchQuery)!==-1})}
+    if(!entries.length){box.innerHTML='<div class="sr-empty-picker">找不到符合的持倉</div>';return}
+    box.innerHTML=entries.map(function(entry){
+      var p=entry.p,i=entry.idx,has=valid(p.price),cost=Number(p.cost)*Number(p.qty),value=has?Number(p.price)*Number(p.qty):null,pnl=has?value-cost:null,pct=has&&cost>0?pnl/cost*100:null,pnlTwd=pnl==null?null:pnl*fx;
+      var color=pnlTwd==null?'#64748b':pnlTwd>=0?'#059669':'#dc2626';
+      var source=p.priceSource==='manual'?['手動價格','#92400e','#fffbeb']:p.priceSource==='snapshot-stale'?['保留舊價','#92400e','#fffbeb']:p.priceSource==='snapshot'?['排程報價','#065f46','#ecfdf5']:has?['上次價格','#1e40af','#eff6ff']:['無報價','#991b1b','#fef2f2'];
+      var updated=p.lastUpdatedAt?new Date(p.lastUpdatedAt).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):(p.lastUpdate||'-');
+      return '<div id="port-card-'+market+'-'+i+'" class="sr-position-card">'+
+        '<div class="sr-position-top"><div><div class="sr-position-symbol">'+esc(displaySymbol(p))+'</div><div class="sr-position-name">'+esc(p.name||'尚無名稱')+'</div><span class="sr-position-badge" style="color:'+source[1]+';background:'+source[2]+'">'+source[0]+'</span></div><div class="sr-position-price"><strong>'+(has?currency+Number(p.price).toFixed(dp):'N/A')+'</strong><span>'+esc(updated)+'</span></div></div>'+
+        '<div class="sr-position-highlight"><div class="sr-highlight-box"><div class="sr-highlight-label">未實現損益（台幣）</div><div class="sr-highlight-value" style="color:'+color+'">'+(pnlTwd==null?'N/A':(pnlTwd>=0?'+':'')+fmtMoney(pnlTwd))+'</div></div><div class="sr-highlight-box"><div class="sr-highlight-label">報酬率</div><div class="sr-highlight-value" style="color:'+color+'">'+(pct==null?'N/A':(pct>=0?'+':'')+pct.toFixed(2)+'%')+'</div></div></div>'+
+        '<div class="sr-position-meta"><div class="sr-meta-item"><span>持有股數</span><strong>'+esc(p.qty)+'</strong></div><div class="sr-meta-item"><span>平均成本</span><strong>'+currency+Number(p.cost).toFixed(dp)+'</strong></div><div class="sr-meta-item"><span>目前市值</span><strong>'+(value==null?'N/A':fmtMoney(value*fx))+'</strong></div></div>'+
+        '<details class="sr-card-details"><summary>更多操作 ▾</summary><div class="sr-card-actions"><button class="sr-action-sell" onclick="openSellModal(\''+market+'\','+i+')">賣出</button><button onclick="openCostCalc(\''+market+'\','+i+')">加碼試算</button><button onclick="setManualPortfolioPrice(\''+market+'\','+i+')">手動現價</button><button onclick="addPortToCompare(\''+market+'\','+i+')">加入比較</button><button onclick="editPositionQty(\''+market+'\','+i+')">修改股數</button><button class="sr-action-danger" onclick="removePosition(\''+market+'\','+i+')">刪除持倉</button></div></details></div>';
+    }).join('');
+  };
+
+  function installMobileUi(){
+    if(document.getElementById('sr-mobile-nav'))return;
+    document.body.insertAdjacentHTML('beforeend','<nav class="sr-mobile-nav" id="sr-mobile-nav" aria-label="手機快捷選單"><button data-nav="portfolio" class="active" onclick="srMobilePortfolio()"><span>💼</span>持倉</button><button data-nav="buy" class="sr-nav-buy" onclick="srMobileBuy()"><span>＋</span>買入</button><button data-nav="sell" class="sr-nav-sell" onclick="srMobileSell()"><span>−</span>賣出</button><button data-nav="records" onclick="srMobileRecords()"><span>🧾</span>紀錄</button><button data-nav="more" onclick="srMobileMore()"><span>•••</span>更多</button></nav>'+
+      '<div class="sr-sheet-overlay" id="sr-sell-picker" onclick="if(event.target===this)srCloseSheet(\'sr-sell-picker\')"><div class="sr-sheet"><div class="sr-sheet-grab"></div><div class="sr-sheet-head"><div class="sr-sheet-title">選擇要賣出的持倉</div><button class="sr-sheet-close" onclick="srCloseSheet(\'sr-sell-picker\')">×</button></div><input id="sr-sell-search" class="sr-sheet-search" placeholder="搜尋代號、名稱或券商" oninput="srFilterSellPicker(this.value)"><div class="sr-picker-list" id="sr-sell-picker-list"></div></div></div>'+
+      '<div class="sr-sheet-overlay" id="sr-more-sheet" onclick="if(event.target===this)srCloseSheet(\'sr-more-sheet\')"><div class="sr-sheet"><div class="sr-sheet-grab"></div><div class="sr-sheet-head"><div class="sr-sheet-title">更多功能</div><button class="sr-sheet-close" onclick="srCloseSheet(\'sr-more-sheet\')">×</button></div><div class="sr-more-grid"><button onclick="srMoreAction(\'refresh\')"><span>🔄</span>更新報價</button><button onclick="srMoreAction(\'backup\')"><span>📤</span>備份資料</button><button onclick="srMoreAction(\'restore\')"><span>📥</span>還原資料</button><button onclick="srMoreAction(\'symbols\')"><span>📡</span>報價清單</button><button onclick="srMoreAction(\'fees\')"><span>⚙️</span>費率設定</button><button onclick="srMoreAction(\'health\')"><span>🏥</span>持倉健檢</button><button onclick="srMoreAction(\'excel\')"><span>📊</span>Excel 匯入</button><button onclick="srMoreAction(\'scan\')"><span>🔍</span>選股掃描</button><button onclick="srMoreAction(\'compare\')"><span>⚖️</span>個股比較</button><button onclick="srMoreAction(\'sim\')"><span>💹</span>投資模擬</button></div></div></div>');
+    renderPortfolio();renderBuyRecords();
+    window.addEventListener('resize',function(){if(!mobileMode()){document.querySelectorAll('.sr-sheet-overlay.open').forEach(function(el){el.classList.remove('open')})}});
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installMobileUi,{once:true});else installMobileUi();
+})();
+</script>
 </body>
 </html>
