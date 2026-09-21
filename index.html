@@ -1887,8 +1887,12 @@ async function fetchYahooOnce(symbol,range,interval,signal){
   let settled=false;
   function combineSignal(){
     const ctrl=new AbortController();
-    if(signal) signal.addEventListener('abort',()=>ctrl.abort(),{once:true});
-    raceSignal.addEventListener('abort',()=>ctrl.abort(),{once:true});
+    if(signal){
+      if(signal.aborted) ctrl.abort();
+      else signal.addEventListener('abort',()=>ctrl.abort(),{once:true});
+    }
+    if(raceSignal.aborted) ctrl.abort();
+    else raceSignal.addEventListener('abort',()=>ctrl.abort(),{once:true});
     return ctrl.signal;
   }
   const attempts=PROXIES.map(makeProxy=>{
@@ -1916,6 +1920,7 @@ async function fetchYahoo(symbol,range='6mo',interval='1d',signal){
   // First attempt with given symbol
   const r1=await fetchYahooOnce(symbol,range,interval,signal);
   if(r1?.chart?.result?.[0]) return r1;
+  if(signal&&signal.aborted) throw new Error('request timeout');
 
   // Auto-fallback: .TW → .TWO (上櫃股票)
   if(symbol.endsWith('.TW')){
@@ -5756,12 +5761,12 @@ function updateSellPreview() {
     setMobileActive('portfolio');
   };
   window.srCloseNewSymbolNotice=function(){var sheet=document.getElementById('sr-new-symbol-notice');if(sheet)sheet.classList.remove('open')};
-  window.srDownloadNewSymbolList=function(){window.srCloseNewSymbolNotice();downloadQuoteSymbols();toast('📡 已下載新版報價清單，請上傳覆蓋 GitHub 的 symbols.json')};
+  window.srRetryNewSymbolPrice=function(){window.srCloseNewSymbolNotice();if(typeof window.srHybridRefreshQuotes==='function')window.srHybridRefreshQuotes(true)};
 
   function showNewSymbolNotice(symbol){
     var sheet=document.getElementById('sr-new-symbol-notice');
     if(!sheet){
-      document.body.insertAdjacentHTML('beforeend','<div class="sr-sheet-overlay" id="sr-new-symbol-notice" onclick="if(event.target===this)srCloseNewSymbolNotice()"><div class="sr-sheet"><div class="sr-sheet-grab"></div><div class="sr-sheet-head"><div class="sr-sheet-title">新股票尚未有排程報價</div><button class="sr-sheet-close" onclick="srCloseNewSymbolNotice()">×</button></div><div class="sr-new-symbol-message"><strong id="sr-new-symbol-name"></strong> 已加入持倉，但目前的報價清單還沒有這個代號，因此現價會暫時顯示 N/A。<ol><li>下載新版報價清單</li><li>在 GitHub 覆蓋 <b>symbols.json</b></li><li>到 Actions 執行 <b>Update quotes</b></li></ol></div><div class="sr-new-symbol-actions"><button onclick="srCloseNewSymbolNotice()">稍後處理</button><button class="primary" onclick="srDownloadNewSymbolList()">下載報價清單</button></div></div></div>');
+      document.body.insertAdjacentHTML('beforeend','<div class="sr-sheet-overlay" id="sr-new-symbol-notice" onclick="if(event.target===this)srCloseNewSymbolNotice()"><div class="sr-sheet"><div class="sr-sheet-grab"></div><div class="sr-sheet-head"><div class="sr-sheet-title">目前無法取得最新報價</div><button class="sr-sheet-close" onclick="srCloseNewSymbolNotice()">×</button></div><div class="sr-new-symbol-message"><strong id="sr-new-symbol-name"></strong> 已經加入持倉，資料不會遺失。免費行情來源目前沒有回應，網站稍後會在背景自動再試；也可以展開這檔持倉，使用「手動現價」。</div><div class="sr-new-symbol-actions"><button onclick="srCloseNewSymbolNotice()">知道了</button><button class="primary" onclick="srRetryNewSymbolPrice()">重新嘗試</button></div></div></div>');
       sheet=document.getElementById('sr-new-symbol-notice');
     }
     var name=document.getElementById('sr-new-symbol-name');if(name)name.textContent=symbol;
@@ -6095,6 +6100,7 @@ function updateSellPreview() {
 
   function quoteLabel(g){
     if(g.source==='manual')return '手動價格';
+    if(g.source==='live')return '背景更新';
     if(g.source==='snapshot-stale')return '保留舊價';
     if(g.source==='snapshot')return '排程報價';
     return good(g.price)?'上次價格':'無報價';
@@ -6166,7 +6172,7 @@ function updateSellPreview() {
     }
     var moreNav=document.querySelector('#sr-mobile-nav button[data-nav="more"]');if(moreNav)moreNav.innerHTML='<span>⚙️</span>設定';
     var moreTitle=document.querySelector('#sr-more-sheet .sr-sheet-title');if(moreTitle)moreTitle.textContent='設定';
-    ['health','excel','scan','compare','sim'].forEach(function(action){var button=document.querySelector('#sr-more-sheet button[onclick*="\''+action+'\'"]');if(button)button.remove()});
+    ['health','excel','scan','compare','sim','symbols'].forEach(function(action){var button=document.querySelector('#sr-more-sheet button[onclick*="\''+action+'\'"]');if(button)button.remove()});
     renderPortfolio();renderInventory();
   }
 
@@ -6181,6 +6187,181 @@ function updateSellPreview() {
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installInventory,{once:true});else installInventory();
   window.addEventListener('resize',function(){document.body.classList.toggle('sr-compact-ui',mobile());if(mobile()){installInventory()}else{renderPortfolio()}});
+})();
+</script>
+
+<!-- Hybrid background quotes: saved snapshot first, live best-effort refresh second -->
+<script>
+(function(){
+  'use strict';
+  var snapshotRefresh=window.refreshPortfolio;
+  var snapshotAutoRefresh=window.autoRefreshPortfolio;
+  var snapshotSinglePrice=window.fetchPortfolioPrice;
+  var LIVE_REFRESH_MS=20*60*1000;
+  var LIVE_TIMEOUT_MS=6500;
+  var LIVE_BATCH_SIZE=2;
+  var liveJob=null;
+
+  function validPrice(value){return Number.isFinite(Number(value))&&Number(value)>0}
+  function displaySymbol(position){return String(position&&position.displaySym||position&&position.sym||'').replace('.TW','').replace('.TWO','').toUpperCase()}
+  function positionKey(market,position){return market+'|'+displaySymbol(position)}
+  function quoteTimeText(value){return new Date(value).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}
+
+  function allGroups(marketFilter){
+    var map={};
+    ['tw','us'].forEach(function(market){
+      if(marketFilter&&market!==marketFilter)return;
+      (portfolio[market]||[]).forEach(function(position,index){
+        var key=positionKey(market,position);
+        if(!map[key])map[key]={key:key,market:market,symbol:displaySymbol(position),refs:[]};
+        map[key].refs.push({position:position,index:index});
+      });
+    });
+    return Object.keys(map).map(function(key){return map[key]});
+  }
+
+  function applyLiveResult(group,result){
+    var meta=result&&result.meta||{};
+    var closes=result&&result.indicators&&result.indicators.quote&&result.indicators.quote[0]&&result.indicators.quote[0].close||[];
+    var lastClose=null;
+    for(var i=closes.length-1;i>=0;i--){if(validPrice(closes[i])){lastClose=Number(closes[i]);break}}
+    var price=validPrice(meta.regularMarketPrice)?Number(meta.regularMarketPrice):lastClose;
+    if(!validPrice(price))return false;
+    var now=Date.now();
+    var marketTime=Number(meta.regularMarketTime)*1000;
+    if(!Number.isFinite(marketTime)||marketTime<=0)marketTime=now;
+    var resolved=String(meta._resolvedSymbol||meta.symbol||group.refs[0].position.sym||'').toUpperCase();
+    group.refs.forEach(function(ref){
+      var position=ref.position;
+      if((portfolio[group.market]||[]).indexOf(position)===-1)return;
+      position.price=price;
+      position.priceSource='live';
+      position.priceStatus='ok';
+      position.lastUpdatedAt=marketTime;
+      position.lastUpdate=quoteTimeText(marketTime);
+      position.lastLiveAttemptAt=now;
+      if(resolved){position.sym=resolved;position.displaySym=resolved.replace('.TW','').replace('.TWO','')}
+    });
+    savePortfolio();
+    return true;
+  }
+
+  async function fetchLiveGroup(group){
+    if(!group||!group.refs.length||navigator.onLine===false)return false;
+    var now=Date.now();
+    group.refs.forEach(function(ref){ref.position.lastLiveAttemptAt=now});
+    var symbol=group.refs[0].position.sym||group.symbol;
+    var controller=new AbortController();
+    var timer=setTimeout(function(){controller.abort()},LIVE_TIMEOUT_MS);
+    try{
+      var data=await fetchYahoo(symbol,'5d','1d',controller.signal);
+      var result=data&&data.chart&&data.chart.result&&data.chart.result[0];
+      return applyLiveResult(group,result);
+    }catch(error){
+      group.refs.forEach(function(ref){ref.position.priceStatus=validPrice(ref.position.price)?'saved':'missing'});
+      savePortfolio();
+      return false;
+    }finally{
+      clearTimeout(timer);
+    }
+  }
+
+  function copyGroupPrice(group,source){
+    if(!source||!validPrice(source.price))return false;
+    group.refs.forEach(function(ref){
+      if(ref.position===source)return;
+      ref.position.price=source.price;
+      ref.position.priceSource=source.priceSource;
+      ref.position.priceStatus=source.priceStatus;
+      ref.position.lastUpdatedAt=source.lastUpdatedAt;
+      ref.position.lastUpdate=source.lastUpdate;
+    });
+    savePortfolio();
+    return true;
+  }
+
+  window.fetchPortfolioPrice=async function(market,index){
+    var position=portfolio[market]&&portfolio[market][index];if(!position)return false;
+    var group=allGroups(market).find(function(item){return item.key===positionKey(market,position)});
+    if(group&&await fetchLiveGroup(group)){renderPortfolio();return true}
+    var applied=typeof snapshotSinglePrice==='function'?await snapshotSinglePrice(market,index):false;
+    if(applied&&group)copyGroupPrice(group,portfolio[market]&&portfolio[market][index]);
+    renderPortfolio();
+    return Boolean(applied);
+  };
+
+  function groupsToRefresh(force,market){
+    var now=Date.now();
+    return allGroups(market).filter(function(group){
+      if(force)return true;
+      return group.refs.some(function(ref){
+        var position=ref.position;
+        return !validPrice(position.price)||!Number(position.lastLiveAttemptAt)||(now-Number(position.lastLiveAttemptAt))>=LIVE_REFRESH_MS;
+      });
+    }).sort(function(a,b){
+      var am=a.refs.some(function(ref){return !validPrice(ref.position.price)})?0:1;
+      var bm=b.refs.some(function(ref){return !validPrice(ref.position.price)})?0:1;
+      return am-bm;
+    });
+  }
+
+  function setHybridStatus(success,failed){
+    if(!success)return;
+    var el=document.getElementById('sr-quote-status');if(!el)return;
+    var detail='背景更新 '+success+' 檔';
+    if(failed)detail+='；'+failed+' 檔暫用上次價格';
+    el.style.color=failed?'#92400e':'#065f46';
+    el.style.background=failed?'#fffbeb':'#ecfdf5';
+    el.style.borderColor=failed?'#fde68a':'#a7f3d0';
+    el.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><span><strong>📡 報價狀態：</strong>'+detail+'</span></div>';
+  }
+
+  async function runHybridRefresh(force,market,manual){
+    if(liveJob)return liveJob;
+    var groups=groupsToRefresh(Boolean(force),market||null);
+    if(!groups.length){if(manual)toast('✅ 目前報價已是最新');return {success:0,failed:0}}
+    liveJob=(async function(){
+      var success=0,failed=0,done=0;
+      if(manual)showPortProgress('📡 背景更新最新報價...',0,groups.length);
+      for(var start=0;start<groups.length;start+=LIVE_BATCH_SIZE){
+        var batch=groups.slice(start,start+LIVE_BATCH_SIZE);
+        var results=await Promise.all(batch.map(fetchLiveGroup));
+        results.forEach(function(ok){if(ok)success++;else failed++});
+        done+=batch.length;
+        renderPortfolio();
+        if(manual)showPortProgress('📡 背景更新最新報價...',done,groups.length);
+        if(start+LIVE_BATCH_SIZE<groups.length)await new Promise(function(resolve){setTimeout(resolve,180)});
+      }
+      if(manual)hidePortProgress();
+      setHybridStatus(success,failed);
+      if(manual)toast(success?'✅ 已更新 '+success+' 檔報價'+(failed?'，'+failed+' 檔沿用舊價':''):'⚠️ 即時來源暫時無法連線，已保留舊價');
+      else if(success)toast('📡 背景已更新 '+success+' 檔報價');
+      return {success:success,failed:failed};
+    })();
+    try{return await liveJob}finally{liveJob=null}
+  }
+
+  window.srHybridRefreshQuotes=function(force){return runHybridRefresh(Boolean(force),null,true)};
+  window.refreshPortfolio=async function(market){
+    if(typeof snapshotRefresh==='function')await snapshotRefresh(market||null);
+    return runHybridRefresh(true,market||null,true);
+  };
+  window.autoRefreshPortfolio=async function(){
+    if(typeof snapshotAutoRefresh==='function')await snapshotAutoRefresh();
+    return runHybridRefresh(false,null,false);
+  };
+
+  function startBackgroundQuotes(){
+    function kickWhenReady(){
+      if(document.hidden)return;
+      if(typeof _portUpdating!=='undefined'&&_portUpdating){setTimeout(kickWhenReady,600);return}
+      runHybridRefresh(false,null,false);
+    }
+    setTimeout(kickWhenReady,1600);
+    setInterval(function(){if(!document.hidden&&navigator.onLine!==false)runHybridRefresh(false,null,false)},LIVE_REFRESH_MS);
+    document.addEventListener('visibilitychange',function(){if(!document.hidden&&navigator.onLine!==false)runHybridRefresh(false,null,false)});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startBackgroundQuotes,{once:true});else startBackgroundQuotes();
 })();
 </script>
 </body>
