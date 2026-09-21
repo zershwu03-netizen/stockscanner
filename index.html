@@ -1861,27 +1861,39 @@ async function fetchWithTimeout(url,ms,options={}){
   }
 }
 async function fetchYahooOnce(symbol,range,interval,signal){
-  const targets=[
-    'https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(symbol)+'?interval='+interval+'&range='+range+'&includePrePost=false&events=div%2Csplit',
-    'https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(symbol)+'?interval='+interval+'&range='+range+'&includePrePost=false&events=div%2Csplit',
-  ];
-  const errors=[];
-  for(const targetUrl of targets){
-    for(const makeProxy of PROXIES){
-      const proxyUrl=makeProxy(targetUrl);
-      try{
-        const resp=await fetchWithTimeout(proxyUrl,6000,{signal:signal});
-        if(!resp.ok){errors.push('HTTP '+resp.status);continue;}
-        const text=await resp.text();
-        if(!text||!text.trim()){errors.push('empty');continue;}
-        let data;try{data=JSON.parse(text);}catch{errors.push('JSON fail');continue;}
-        if(data?.chart?.result?.[0]) return data;
-        if(data?.chart?.error) errors.push('Yahoo: '+data.chart.error.description);
-      }catch(e){errors.push(e.name+': '+e.message);}
-      await sleep(50);
-    }
+  const baseUrl=encodeURIComponent(
+    'https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(symbol)
+    +'?interval='+interval+'&range='+range+'&includePrePost=false&events=div%2Csplit'
+  );
+  // Race all proxies simultaneously — fastest wins, rest are cancelled
+  const raceCtrl=new AbortController();
+  const raceSignal=raceCtrl.signal;
+  let settled=false;
+  function combineSignal(){
+    const ctrl=new AbortController();
+    if(signal) signal.addEventListener('abort',()=>ctrl.abort(),{once:true});
+    raceSignal.addEventListener('abort',()=>ctrl.abort(),{once:true});
+    return ctrl.signal;
   }
-  return {_errors:errors};
+  const attempts=PROXIES.map(makeProxy=>{
+    const url=makeProxy('https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(symbol)+'?interval='+interval+'&range='+range+'&includePrePost=false&events=div%2Csplit');
+    return fetchWithTimeout(url,8000,{signal:combineSignal()})
+      .then(async resp=>{
+        if(!resp.ok) throw new Error('HTTP '+resp.status);
+        const text=await resp.text();
+        if(!text||!text.trim()) throw new Error('empty');
+        const data=JSON.parse(text);
+        if(!data?.chart?.result?.[0]) throw new Error('no result');
+        return data;
+      });
+  });
+  try{
+    const result=await Promise.any(attempts);
+    raceCtrl.abort(); // cancel remaining
+    return result;
+  }catch(e){
+    return {_errors:['all proxies failed']};
+  }
 }
 
 async function fetchYahoo(symbol,range='6mo',interval='1d',signal){
@@ -2685,7 +2697,8 @@ async function fetchPortfolioPrice(market, idx) {
   const pos = portfolio[market][idx];
   if (!pos) return;
   try {
-    const data = await fetchYahoo(pos.sym, '6mo', '1d');
+    // 用 3mo 取代 6mo，資料夠算指標，傳輸量小一半
+    const data = await fetchYahoo(pos.sym, '3mo', '1d');
     const result = data?.chart?.result?.[0];
     if (!result) return;
     const meta = result.meta;
