@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "generatedAt": null,
+  "source": "GitHub Actions",
+  "quotes": {},
+  "errors": {},
+  "stats": {
+    "requested": 0,
+    "fresh": 0,
+    "preserved": 0,
+    "failed": 0
+  }
+}
