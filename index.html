@@ -816,50 +816,66 @@ header .inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;jus
 
 <!-- Buy Record Modal -->
 <div id="buy-record-modal" onclick="if(event.target===this)hideBuyRecordModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:999;align-items:center;justify-content:center;padding:20px">
-  <div style="background:#fff;border-radius:16px;padding:20px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
-    <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:4px">📥 新增購買紀錄</div>
-    <div style="font-size:12px;color:var(--text3);margin-bottom:14px">記錄每一次買入的明細</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-      <div>
+  <div class="sr-buy-dialog" style="background:#fff;border-radius:16px;padding:20px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+    <div class="sr-buy-title" style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:4px">📥 新增購買紀錄</div>
+    <div class="sr-buy-subtitle" style="font-size:12px;color:var(--text3);margin-bottom:14px">記錄每一次買入的明細</div>
+    <div class="sr-buy-form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div class="sr-buy-field sr-buy-field-full">
         <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">股票代號</div>
         <input id="br-sym" class="sim-input" placeholder="NVDA / 2330" autocomplete="off" autocapitalize="characters">
       </div>
-      <div>
+      <div class="sr-buy-field">
         <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">市場</div>
         <select id="br-market" class="sim-input">
           <option value="tw">🇹🇼 台股</option>
           <option value="us">🇺🇸 美股</option>
         </select>
       </div>
-      <div>
+      <div class="sr-buy-field">
         <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">買入價格</div>
         <input id="br-price" class="sim-input" type="number" placeholder="0.00" step="0.01">
       </div>
-      <div>
+      <div class="sr-buy-field">
         <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">股數／張數</div>
         <input id="br-qty" class="sim-input" type="number" placeholder="0">
       </div>
-      <div>
+      <div class="sr-buy-field">
         <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">手續費（可選）</div>
         <input id="br-fee" class="sim-input" type="number" placeholder="0" value="0">
       </div>
-      <div>
+      <div class="sr-buy-field">
         <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">券商</div>
-        <input id="br-broker" class="sim-input" placeholder="國泰、元大...">
+        <select id="br-broker" class="sim-input">
+          <option value="">請選擇券商</option>
+          <option value="國泰">國泰</option>
+          <option value="元大">元大</option>
+          <option value="兆豐">兆豐</option>
+          <option value="富邦">富邦</option>
+          <option value="永豐">永豐</option>
+          <option value="凱基">凱基</option>
+          <option value="玉山">玉山</option>
+          <option value="台新">台新</option>
+          <option value="中信">中信</option>
+          <option value="群益">群益</option>
+          <option value="元富">元富</option>
+          <option value="第一金">第一金</option>
+          <option value="華南">華南</option>
+          <option value="統一">統一</option>
+        </select>
       </div>
-      <div>
+      <div class="sr-buy-field">
         <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">買入日期</div>
         <input id="br-date" class="sim-input" type="date">
       </div>
-      <div>
+      <div class="sr-buy-field sr-buy-field-full">
         <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">備註（可選）</div>
         <input id="br-note" class="sim-input" placeholder="買入原因...">
       </div>
     </div>
     <div id="br-total-preview" style="font-size:12px;color:var(--sky);background:rgba(37,99,235,0.06);border-radius:8px;padding:8px 10px;margin-bottom:12px;font-family:monospace">總金額：-</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <button onclick="hideBuyRecordModal()" style="padding:10px;border-radius:8px;border:1px solid var(--line2);background:#fff;color:var(--text2);cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px">取消</button>
-      <button onclick="saveBuyRecord()" style="padding:10px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--mint),#065f46);color:#fff;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px">確認新增</button>
+    <div class="sr-buy-actions" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="sr-buy-cancel" onclick="hideBuyRecordModal()" style="padding:10px;border-radius:8px;border:1px solid var(--line2);background:#fff;color:var(--text2);cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px">取消</button>
+      <button class="sr-buy-confirm" onclick="saveBuyRecord()" style="padding:10px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--mint),#065f46);color:#fff;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px">確認新增</button>
     </div>
   </div>
 </div>
@@ -5662,9 +5678,20 @@ function updateSellPreview() {
     if(price>0&&qty>0){var total=price*qty+fee;preview.textContent='總金額：'+(market==='us'?'$':'')+total.toLocaleString(undefined,{maximumFractionDigits:2})+(market==='us'?'（美元）':'（台幣）')}else preview.textContent='總金額：-';
   }
 
+  function populateBuyBrokers(selected){
+    var select=document.getElementById('br-broker');if(!select)return;
+    var names=['國泰','元大','兆豐','富邦','永豐','凱基','玉山','台新','中信','群益','元富','第一金','華南','統一'];
+    ['tw','us'].forEach(function(market){(portfolio[market]||[]).forEach(function(position){var name=brokerKey(position.broker);if(name!=='未指定'&&names.indexOf(name)===-1)names.push(name)})});
+    select.innerHTML='';
+    var blank=document.createElement('option');blank.value='';blank.textContent='請選擇券商';select.appendChild(blank);
+    names.forEach(function(name){var option=document.createElement('option');option.value=name;option.textContent=name;select.appendChild(option)});
+    select.value=selected||'';
+  }
+
   function openBuyModalSafe(){
     var modal=document.getElementById('buy-record-modal');
     if(!modal){toast('⚠️ 找不到買入視窗，請重新整理頁面');return false}
+    populateBuyBrokers('');
     var values={
       'br-sym':'','br-price':'','br-qty':'','br-fee':'0','br-broker':'','br-note':'',
       'br-market':'tw','br-date':new Date().toISOString().slice(0,10)
@@ -5680,6 +5707,7 @@ function updateSellPreview() {
     }
     modal.style.display='flex';
     modal.setAttribute('aria-hidden','false');
+    document.body.classList.add('sr-buy-open');
     document.body.style.overflow='hidden';
     setTimeout(function(){var field=document.getElementById('br-sym');if(field)field.focus()},250);
     return true;
@@ -5727,6 +5755,18 @@ function updateSellPreview() {
     var sheet=document.getElementById(id);if(sheet)sheet.classList.remove('open');
     setMobileActive('portfolio');
   };
+  window.srCloseNewSymbolNotice=function(){var sheet=document.getElementById('sr-new-symbol-notice');if(sheet)sheet.classList.remove('open')};
+  window.srDownloadNewSymbolList=function(){window.srCloseNewSymbolNotice();downloadQuoteSymbols();toast('📡 已下載新版報價清單，請上傳覆蓋 GitHub 的 symbols.json')};
+
+  function showNewSymbolNotice(symbol){
+    var sheet=document.getElementById('sr-new-symbol-notice');
+    if(!sheet){
+      document.body.insertAdjacentHTML('beforeend','<div class="sr-sheet-overlay" id="sr-new-symbol-notice" onclick="if(event.target===this)srCloseNewSymbolNotice()"><div class="sr-sheet"><div class="sr-sheet-grab"></div><div class="sr-sheet-head"><div class="sr-sheet-title">新股票尚未有排程報價</div><button class="sr-sheet-close" onclick="srCloseNewSymbolNotice()">×</button></div><div class="sr-new-symbol-message"><strong id="sr-new-symbol-name"></strong> 已加入持倉，但目前的報價清單還沒有這個代號，因此現價會暫時顯示 N/A。<ol><li>下載新版報價清單</li><li>在 GitHub 覆蓋 <b>symbols.json</b></li><li>到 Actions 執行 <b>Update quotes</b></li></ol></div><div class="sr-new-symbol-actions"><button onclick="srCloseNewSymbolNotice()">稍後處理</button><button class="primary" onclick="srDownloadNewSymbolList()">下載報價清單</button></div></div></div>');
+      sheet=document.getElementById('sr-new-symbol-notice');
+    }
+    var name=document.getElementById('sr-new-symbol-name');if(name)name.textContent=symbol;
+    sheet.classList.add('open');
+  }
 
   window.srMobileRecords=function(){
     switchNav('portfolio');
@@ -5758,6 +5798,8 @@ function updateSellPreview() {
   window.hideBuyRecordModal=function(){
     if(typeof originalHideBuyRecordModal==='function')originalHideBuyRecordModal();
     else{var modal=document.getElementById('buy-record-modal');if(modal)modal.style.display='none'}
+    var modal=document.getElementById('buy-record-modal');if(modal)modal.setAttribute('aria-hidden','true');
+    document.body.classList.remove('sr-buy-open');
     document.body.style.overflow='';
     setMobileActive('portfolio');
   };
@@ -5784,8 +5826,13 @@ function updateSellPreview() {
     buyTrades.unshift({ts:data.ts||new Date().toISOString(),market:market,sym:shown,price:price,qty:qty,fee:fee,total:price*qty+fee,broker:broker,note:data.note||''});
     savePortfolio();saveBuyTrades();renderPortfolio();renderBuyRecords();
     var index=(portfolio[market]||[]).findIndex(function(p){return displaySymbol(p)===shown&&brokerKey(p.broker)===broker});
-    if(index>=0)fetchPortfolioPrice(market,index);
-    toast(isNew?'✅ 已新增持倉；新代號請更新一次報價清單':'✅ 已加碼並更新平均成本');
+    var quoteTask=index>=0?fetchPortfolioPrice(market,index):Promise.resolve(false);
+    if(isNew){
+      toast('✅ 已新增持倉，正在檢查現價');
+      Promise.resolve(quoteTask).then(function(applied){if(applied)toast('✅ 已取得 '+shown+' 的排程現價');else showNewSymbolNotice(shown)}).catch(function(){showNewSymbolNotice(shown)});
+    }else{
+      toast('✅ 已加碼並更新平均成本');
+    }
     return isNew;
   }
 
@@ -5955,9 +6002,29 @@ function updateSellPreview() {
   body.sr-compact-ui .sr-more-grid button,
   body.sr-compact-ui .sr-picker-item{background:#121b24!important;border-color:#2b3a49!important;color:#f1f5f9!important}
   body.sr-compact-ui .sr-sheet-search{background:#121b24!important;border-color:#344657!important;color:#f1f5f9!important}
+  body.sr-compact-ui #sr-new-symbol-notice{z-index:13100}
+  body.sr-compact-ui .sr-new-symbol-message{font-size:13px;line-height:1.65;color:#cbd5e1;background:#111b25;border:1px solid #293b4b;border-radius:12px;padding:12px}
+  body.sr-compact-ui .sr-new-symbol-message strong{color:#55deea;font-family:'JetBrains Mono',monospace}
+  body.sr-compact-ui .sr-new-symbol-message ol{margin:8px 0 0;padding-left:22px;color:#93a4b6}
+  body.sr-compact-ui .sr-new-symbol-actions{display:grid;grid-template-columns:1fr 1.35fr;gap:9px;margin-top:12px}
+  body.sr-compact-ui .sr-new-symbol-actions button{height:48px;border:1px solid #405263;border-radius:10px;background:#17222d;color:#dce4ed;font-size:13px;font-weight:700}
+  body.sr-compact-ui .sr-new-symbol-actions .primary{background:#12323a;border-color:#2dd4e5;color:#65e7ef}
   body.sr-compact-ui #buy-record-modal>div,
   body.sr-compact-ui #sell-position-modal>div,
   body.sr-compact-ui #fee-settings-modal>div{background:#0c1219!important;color:#f1f5f9!important}
+  body.sr-compact-ui.sr-buy-open .sr-mobile-nav{display:none!important}
+  body.sr-compact-ui #buy-record-modal{z-index:13050!important;align-items:flex-end!important;padding:0!important;overscroll-behavior:contain}
+  body.sr-compact-ui #buy-record-modal>.sr-buy-dialog{width:100%!important;max-width:none!important;max-height:calc(100dvh - env(safe-area-inset-top))!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch;border-radius:22px 22px 0 0!important;padding:16px 14px calc(14px + env(safe-area-inset-bottom))!important;box-sizing:border-box}
+  body.sr-compact-ui .sr-buy-form-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:11px 9px!important;margin-bottom:12px!important}
+  body.sr-compact-ui .sr-buy-field{min-width:0;width:100%}
+  body.sr-compact-ui .sr-buy-field-full{grid-column:1/-1}
+  body.sr-compact-ui #buy-record-modal .sim-input{display:block;width:100%!important;max-width:100%!important;min-width:0!important;height:50px!important;box-sizing:border-box!important;padding:0 13px!important;border-radius:10px!important}
+  body.sr-compact-ui #buy-record-modal select.sim-input{padding-right:34px!important}
+  body.sr-compact-ui #buy-record-modal input[type="date"]{min-inline-size:0!important}
+  body.sr-compact-ui .sr-buy-actions{position:sticky;bottom:0;z-index:4;grid-template-columns:1fr 1fr!important;gap:9px!important;background:#0c1219;padding:10px 0 2px;box-shadow:0 -12px 18px rgba(12,18,25,.94)}
+  body.sr-compact-ui .sr-buy-actions button{height:50px!important;min-height:50px!important;border-radius:11px!important;font-size:14px!important}
+  body.sr-compact-ui .sr-buy-cancel{background:#17222d!important;border-color:#405263!important;color:#dce4ed!important}
+  body.sr-compact-ui .sr-buy-confirm{background:linear-gradient(135deg,#18b884,#087052)!important;color:#fff!important}
   body.sr-compact-ui #buy-record-modal .sim-input,
   body.sr-compact-ui #sell-position-modal .sim-input,
   body.sr-compact-ui #fee-settings-modal .sim-input{background:#151f29!important;border-color:#344657!important;color:#f1f5f9!important}
@@ -5966,6 +6033,9 @@ function updateSellPreview() {
 @media(max-width:390px){
   .sr-inventory-head,.sr-inventory-row-main{grid-template-columns:minmax(0,1.15fr) minmax(58px,.78fr) minmax(44px,.58fr) minmax(77px,1fr) 16px;gap:3px;padding-left:7px;padding-right:7px}
   .sr-cell-name strong{font-size:13px}.sr-cell-number,.sr-cell-qty,.sr-cell-pnl{font-size:11px}
+  body.sr-compact-ui .sr-buy-form-grid{grid-template-columns:1fr!important}
+  body.sr-compact-ui .sr-buy-field-full{grid-column:auto}
+  body.sr-compact-ui .sr-buy-actions{grid-template-columns:1fr 1fr!important}
 }
 </style>
 
