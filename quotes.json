@@ -1,171 +1,160 @@
 {
   "version": 1,
-  "generatedAt": "2026-10-31T00:46:42.342Z",
+  "generatedAt": "2026-11-02T05:59:07.713Z",
   "source": "Yahoo Finance chart via GitHub Actions",
   "quotes": {
-    "0050.TW": {
-      "symbol": "0050.TW",
-      "resolvedSymbol": "0050.TW",
-      "name": "YUANTA SECURITIES INV TRUST CO ",
-      "price": 104.95,
+    "00662.TW": {
+      "symbol": "00662.TW",
+      "resolvedSymbol": "00662.TW",
+      "name": "FUBON ASSET MANAGEMENT CO LTD N",
+      "price": 119.95,
       "currency": "TWD",
       "exchange": "TAI",
-      "marketTime": 1793338204,
-      "fetchedAt": "2026-10-31T00:46:41.358Z",
+      "marketTime": 1793597413,
+      "fetchedAt": "2026-11-02T05:59:06.838Z",
       "stale": false
     },
     "0051.TW": {
       "symbol": "0051.TW",
       "resolvedSymbol": "0051.TW",
       "name": "YUANTA SECURITIES INV TRUST CO ",
-      "price": 143.75,
+      "price": 143,
       "currency": "TWD",
       "exchange": "TAI",
-      "marketTime": 1793338235,
-      "fetchedAt": "2026-10-31T00:46:41.362Z",
+      "marketTime": 1793597438,
+      "fetchedAt": "2026-11-02T05:59:06.844Z",
       "stale": false
     },
-    "00662.TW": {
-      "symbol": "00662.TW",
-      "resolvedSymbol": "00662.TW",
-      "name": "FUBON ASSET MANAGEMENT CO LTD N",
-      "price": 120.85,
+    "0050.TW": {
+      "symbol": "0050.TW",
+      "resolvedSymbol": "0050.TW",
+      "name": "YUANTA SECURITIES INV TRUST CO ",
+      "price": 104.1,
       "currency": "TWD",
       "exchange": "TAI",
-      "marketTime": 1793338214,
-      "fetchedAt": "2026-10-31T00:46:41.405Z",
-      "stale": false
-    },
-    "00757.TW": {
-      "symbol": "00757.TW",
-      "resolvedSymbol": "00757.TW",
-      "name": "UNI-PRESIDENT ASSETS MGMT CORP ",
-      "price": 136.55,
-      "currency": "TWD",
-      "exchange": "TAI",
-      "marketTime": 1793338223,
-      "fetchedAt": "2026-10-31T00:46:41.412Z",
+      "marketTime": 1793597402,
+      "fetchedAt": "2026-11-02T05:59:06.874Z",
       "stale": false
     },
     "00733.TW": {
       "symbol": "00733.TW",
       "resolvedSymbol": "00733.TW",
       "name": "FUBON ASSET MANAGEMENT CO LTD F",
-      "price": 67.95,
+      "price": 67.85,
       "currency": "TWD",
       "exchange": "TAI",
-      "marketTime": 1793338214,
-      "fetchedAt": "2026-10-31T00:46:41.415Z",
+      "marketTime": 1793597413,
+      "fetchedAt": "2026-11-02T05:59:06.893Z",
       "stale": false
     },
-    "00949.TW": {
-      "symbol": "00949.TW",
-      "resolvedSymbol": "00949.TW",
-      "name": "FUH HWA SECURITIES INVESTMENT T",
-      "price": 22.24,
+    "00757.TW": {
+      "symbol": "00757.TW",
+      "resolvedSymbol": "00757.TW",
+      "name": "UNI-PRESIDENT ASSETS MGMT CORP ",
+      "price": 136.1,
       "currency": "TWD",
       "exchange": "TAI",
-      "marketTime": 1793337689,
-      "fetchedAt": "2026-10-31T00:46:41.464Z",
-      "stale": false
-    },
-    "1101.TW": {
-      "symbol": "1101.TW",
-      "resolvedSymbol": "1101.TW",
-      "name": "TCC GROUP HOLDINGS CO LTD",
-      "price": 28.35,
-      "currency": "TWD",
-      "exchange": "TAI",
-      "marketTime": 1793338214,
-      "fetchedAt": "2026-10-31T00:46:41.488Z",
+      "marketTime": 1793597424,
+      "fetchedAt": "2026-11-02T05:59:06.895Z",
       "stale": false
     },
     "00762.TW": {
       "symbol": "00762.TW",
       "resolvedSymbol": "00762.TW",
       "name": "YUANTA SECURITIES CO.LTD STOXX ",
-      "price": 108.25,
+      "price": 106.4,
       "currency": "TWD",
       "exchange": "TAI",
-      "marketTime": 1793338223,
-      "fetchedAt": "2026-10-31T00:46:41.490Z",
+      "marketTime": 1793597436,
+      "fetchedAt": "2026-11-02T05:59:06.923Z",
+      "stale": false
+    },
+    "00949.TW": {
+      "symbol": "00949.TW",
+      "resolvedSymbol": "00949.TW",
+      "name": "FUH HWA SECURITIES INVESTMENT T",
+      "price": 22.1,
+      "currency": "TWD",
+      "exchange": "TAI",
+      "marketTime": 1793597408,
+      "fetchedAt": "2026-11-02T05:59:06.941Z",
+      "stale": false
+    },
+    "1101.TW": {
+      "symbol": "1101.TW",
+      "resolvedSymbol": "1101.TW",
+      "name": "TCC GROUP HOLDINGS CO LTD",
+      "price": 28.1,
+      "currency": "TWD",
+      "exchange": "TAI",
+      "marketTime": 1793597413,
+      "fetchedAt": "2026-11-02T05:59:06.957Z",
       "stale": false
     },
     "2330.TW": {
       "symbol": "2330.TW",
       "resolvedSymbol": "2330.TW",
       "name": "TAIWAN SEMICONDUCTOR MANUFACTUR",
-      "price": 2370,
+      "price": 2330,
       "currency": "TWD",
       "exchange": "TAI",
-      "marketTime": 1793338209,
-      "fetchedAt": "2026-10-31T00:46:41.518Z",
+      "marketTime": 1793597408,
+      "fetchedAt": "2026-11-02T05:59:06.959Z",
       "stale": false
     },
     "2408.TW": {
       "symbol": "2408.TW",
       "resolvedSymbol": "2408.TW",
       "name": "NANYA TECHNOLOGY CORPORATION",
-      "price": 454.5,
+      "price": 456.5,
       "currency": "TWD",
       "exchange": "TAI",
-      "marketTime": 1793338202,
-      "fetchedAt": "2026-10-31T00:46:41.534Z",
-      "stale": false
-    },
-    "3135.TW": {
-      "symbol": "3135.TW",
-      "resolvedSymbol": "3135.TW",
-      "name": "GOLDKEY TECHNOLOGY CORPORATION",
-      "price": 141,
-      "currency": "TWD",
-      "exchange": "TAI",
-      "marketTime": 1793338226,
-      "fetchedAt": "2026-10-31T00:46:41.544Z",
+      "marketTime": 1793597401,
+      "fetchedAt": "2026-11-02T05:59:06.991Z",
       "stale": false
     },
     "2884.TW": {
       "symbol": "2884.TW",
       "resolvedSymbol": "2884.TW",
       "name": "E SUN FINANCIAL HOLDINGS",
-      "price": 49.05,
+      "price": 48.7,
       "currency": "TWD",
       "exchange": "TAI",
-      "marketTime": 1793338217,
-      "fetchedAt": "2026-10-31T00:46:41.550Z",
+      "marketTime": 1793597417,
+      "fetchedAt": "2026-11-02T05:59:07.002Z",
       "stale": false
     },
-    "6869.TW": {
-      "symbol": "6869.TW",
-      "resolvedSymbol": "6869.TW",
-      "name": "J&V ENERGY TECHNOLOGY CO LTD",
-      "price": 63.2,
+    "3135.TW": {
+      "symbol": "3135.TW",
+      "resolvedSymbol": "3135.TW",
+      "name": "GOLDKEY TECHNOLOGY CORPORATION",
+      "price": 138.5,
       "currency": "TWD",
       "exchange": "TAI",
-      "marketTime": 1793338237,
-      "fetchedAt": "2026-10-31T00:46:41.599Z",
+      "marketTime": 1793597428,
+      "fetchedAt": "2026-11-02T05:59:07.043Z",
       "stale": false
     },
     "6202.TW": {
       "symbol": "6202.TW",
       "resolvedSymbol": "6202.TW",
       "name": "HOLTEK SEMICONDUCTOR INC",
-      "price": 51.3,
+      "price": 51,
       "currency": "TWD",
       "exchange": "TAI",
-      "marketTime": 1793338217,
-      "fetchedAt": "2026-10-31T00:46:41.600Z",
+      "marketTime": 1793597421,
+      "fetchedAt": "2026-11-02T05:59:07.051Z",
       "stale": false
     },
-    "9958.TW": {
-      "symbol": "9958.TW",
-      "resolvedSymbol": "9958.TW",
-      "name": "CENTURY IRON & STEEL INDUSTRIAL",
-      "price": 82.6,
+    "6869.TW": {
+      "symbol": "6869.TW",
+      "resolvedSymbol": "6869.TW",
+      "name": "J&V ENERGY TECHNOLOGY CO LTD",
+      "price": 61.1,
       "currency": "TWD",
       "exchange": "TAI",
-      "marketTime": 1793338220,
-      "fetchedAt": "2026-10-31T00:46:41.616Z",
+      "marketTime": 1793597431,
+      "fetchedAt": "2026-11-02T05:59:07.055Z",
       "stale": false
     },
     "AMD": {
@@ -176,7 +165,7 @@
       "currency": "USD",
       "exchange": "NMS",
       "marketTime": 1793390401,
-      "fetchedAt": "2026-10-31T00:46:41.649Z",
+      "fetchedAt": "2026-11-02T05:59:07.101Z",
       "stale": false
     },
     "AMKR": {
@@ -187,18 +176,18 @@
       "currency": "USD",
       "exchange": "NMS",
       "marketTime": 1793390401,
-      "fetchedAt": "2026-10-31T00:46:41.655Z",
+      "fetchedAt": "2026-11-02T05:59:07.106Z",
       "stale": false
     },
-    "AVGO": {
-      "symbol": "AVGO",
-      "resolvedSymbol": "AVGO",
-      "name": "Broadcom Inc.",
-      "price": 326.08,
-      "currency": "USD",
-      "exchange": "NMS",
-      "marketTime": 1793390401,
-      "fetchedAt": "2026-10-31T00:46:41.678Z",
+    "9958.TW": {
+      "symbol": "9958.TW",
+      "resolvedSymbol": "9958.TW",
+      "name": "CENTURY IRON & STEEL INDUSTRIAL",
+      "price": 84,
+      "currency": "TWD",
+      "exchange": "TAI",
+      "marketTime": 1793597401,
+      "fetchedAt": "2026-11-02T05:59:07.107Z",
       "stale": false
     },
     "BLNK": {
@@ -209,7 +198,18 @@
       "currency": "USD",
       "exchange": "NCM",
       "marketTime": 1793390401,
-      "fetchedAt": "2026-10-31T00:46:41.702Z",
+      "fetchedAt": "2026-11-02T05:59:07.154Z",
+      "stale": false
+    },
+    "3264.TW": {
+      "symbol": "3264.TW",
+      "resolvedSymbol": "3264.TWO",
+      "name": "ARDENTEC CORPORATION",
+      "price": 216.5,
+      "currency": "TWD",
+      "exchange": "TWO",
+      "marketTime": 1793597411,
+      "fetchedAt": "2026-11-02T05:59:07.155Z",
       "stale": false
     },
     "CRM": {
@@ -220,40 +220,18 @@
       "currency": "USD",
       "exchange": "NYQ",
       "marketTime": 1793390402,
-      "fetchedAt": "2026-10-31T00:46:41.707Z",
+      "fetchedAt": "2026-11-02T05:59:07.157Z",
       "stale": false
     },
-    "CRWV": {
-      "symbol": "CRWV",
-      "resolvedSymbol": "CRWV",
-      "name": "CoreWeave, Inc.",
-      "price": 54.87,
+    "AVGO": {
+      "symbol": "AVGO",
+      "resolvedSymbol": "AVGO",
+      "name": "Broadcom Inc.",
+      "price": 326.08,
       "currency": "USD",
       "exchange": "NMS",
       "marketTime": 1793390401,
-      "fetchedAt": "2026-10-31T00:46:41.732Z",
-      "stale": false
-    },
-    "3264.TW": {
-      "symbol": "3264.TW",
-      "resolvedSymbol": "3264.TWO",
-      "name": "ARDENTEC CORPORATION",
-      "price": 220.5,
-      "currency": "TWD",
-      "exchange": "TWO",
-      "marketTime": 1793338211,
-      "fetchedAt": "2026-10-31T00:46:41.750Z",
-      "stale": false
-    },
-    "FUBO": {
-      "symbol": "FUBO",
-      "resolvedSymbol": "FUBO",
-      "name": "fuboTV Inc.",
-      "price": 7.62,
-      "currency": "USD",
-      "exchange": "NYQ",
-      "marketTime": 1793390402,
-      "fetchedAt": "2026-10-31T00:46:41.752Z",
+      "fetchedAt": "2026-11-02T05:59:07.161Z",
       "stale": false
     },
     "GEV": {
@@ -264,40 +242,29 @@
       "currency": "USD",
       "exchange": "NYQ",
       "marketTime": 1793390402,
-      "fetchedAt": "2026-10-31T00:46:41.763Z",
+      "fetchedAt": "2026-11-02T05:59:07.205Z",
       "stale": false
     },
-    "GOOGL": {
-      "symbol": "GOOGL",
-      "resolvedSymbol": "GOOGL",
-      "name": "Alphabet Inc.",
-      "price": 279.84,
+    "FUBO": {
+      "symbol": "FUBO",
+      "resolvedSymbol": "FUBO",
+      "name": "fuboTV Inc.",
+      "price": 7.62,
+      "currency": "USD",
+      "exchange": "NYQ",
+      "marketTime": 1793390402,
+      "fetchedAt": "2026-11-02T05:59:07.206Z",
+      "stale": false
+    },
+    "CRWV": {
+      "symbol": "CRWV",
+      "resolvedSymbol": "CRWV",
+      "name": "CoreWeave, Inc.",
+      "price": 54.87,
       "currency": "USD",
       "exchange": "NMS",
       "marketTime": 1793390401,
-      "fetchedAt": "2026-10-31T00:46:41.800Z",
-      "stale": false
-    },
-    "GRAB": {
-      "symbol": "GRAB",
-      "resolvedSymbol": "GRAB",
-      "name": "Grab Holdings Limited",
-      "price": 2.71,
-      "currency": "USD",
-      "exchange": "NMS",
-      "marketTime": 1793390401,
-      "fetchedAt": "2026-10-31T00:46:41.804Z",
-      "stale": false
-    },
-    "HOOD": {
-      "symbol": "HOOD",
-      "resolvedSymbol": "HOOD",
-      "name": "Robinhood Markets, Inc.",
-      "price": 84.99,
-      "currency": "USD",
-      "exchange": "NMS",
-      "marketTime": 1793390401,
-      "fetchedAt": "2026-10-31T00:46:41.809Z",
+      "fetchedAt": "2026-11-02T05:59:07.207Z",
       "stale": false
     },
     "GLW": {
@@ -308,7 +275,40 @@
       "currency": "USD",
       "exchange": "NYQ",
       "marketTime": 1793390628,
-      "fetchedAt": "2026-10-31T00:46:41.823Z",
+      "fetchedAt": "2026-11-02T05:59:07.235Z",
+      "stale": false
+    },
+    "GRAB": {
+      "symbol": "GRAB",
+      "resolvedSymbol": "GRAB",
+      "name": "Grab Holdings Limited",
+      "price": 2.71,
+      "currency": "USD",
+      "exchange": "NMS",
+      "marketTime": 1793390401,
+      "fetchedAt": "2026-11-02T05:59:07.253Z",
+      "stale": false
+    },
+    "HOOD": {
+      "symbol": "HOOD",
+      "resolvedSymbol": "HOOD",
+      "name": "Robinhood Markets, Inc.",
+      "price": 84.99,
+      "currency": "USD",
+      "exchange": "NMS",
+      "marketTime": 1793390401,
+      "fetchedAt": "2026-11-02T05:59:07.265Z",
+      "stale": false
+    },
+    "GOOGL": {
+      "symbol": "GOOGL",
+      "resolvedSymbol": "GOOGL",
+      "name": "Alphabet Inc.",
+      "price": 279.84,
+      "currency": "USD",
+      "exchange": "NMS",
+      "marketTime": 1793390401,
+      "fetchedAt": "2026-11-02T05:59:07.289Z",
       "stale": false
     },
     "LAC": {
@@ -319,18 +319,7 @@
       "currency": "USD",
       "exchange": "NYQ",
       "marketTime": 1793390402,
-      "fetchedAt": "2026-10-31T00:46:41.858Z",
-      "stale": false
-    },
-    "META": {
-      "symbol": "META",
-      "resolvedSymbol": "META",
-      "name": "Meta Platforms, Inc.",
-      "price": 614.99,
-      "currency": "USD",
-      "exchange": "NMS",
-      "marketTime": 1793390401,
-      "fetchedAt": "2026-10-31T00:46:41.874Z",
+      "fetchedAt": "2026-11-02T05:59:07.302Z",
       "stale": false
     },
     "INTC": {
@@ -341,7 +330,7 @@
       "currency": "USD",
       "exchange": "NMS",
       "marketTime": 1793390401,
-      "fetchedAt": "2026-10-31T00:46:41.888Z",
+      "fetchedAt": "2026-11-02T05:59:07.307Z",
       "stale": false
     },
     "LRCX": {
@@ -352,18 +341,18 @@
       "currency": "USD",
       "exchange": "NMS",
       "marketTime": 1793390401,
-      "fetchedAt": "2026-10-31T00:46:41.899Z",
+      "fetchedAt": "2026-11-02T05:59:07.324Z",
       "stale": false
     },
-    "MSFT": {
-      "symbol": "MSFT",
-      "resolvedSymbol": "MSFT",
-      "name": "Microsoft Corporation",
-      "price": 521.91,
+    "META": {
+      "symbol": "META",
+      "resolvedSymbol": "META",
+      "name": "Meta Platforms, Inc.",
+      "price": 614.99,
       "currency": "USD",
       "exchange": "NMS",
       "marketTime": 1793390401,
-      "fetchedAt": "2026-10-31T00:46:41.932Z",
+      "fetchedAt": "2026-11-02T05:59:07.344Z",
       "stale": false
     },
     "MSTR": {
@@ -374,7 +363,18 @@
       "currency": "USD",
       "exchange": "NMS",
       "marketTime": 1793390400,
-      "fetchedAt": "2026-10-31T00:46:41.933Z",
+      "fetchedAt": "2026-11-02T05:59:07.356Z",
+      "stale": false
+    },
+    "MSFT": {
+      "symbol": "MSFT",
+      "resolvedSymbol": "MSFT",
+      "name": "Microsoft Corporation",
+      "price": 521.91,
+      "currency": "USD",
+      "exchange": "NMS",
+      "marketTime": 1793390401,
+      "fetchedAt": "2026-11-02T05:59:07.367Z",
       "stale": false
     },
     "NBIS": {
@@ -385,7 +385,7 @@
       "currency": "USD",
       "exchange": "NMS",
       "marketTime": 1793390400,
-      "fetchedAt": "2026-10-31T00:46:41.950Z",
+      "fetchedAt": "2026-11-02T05:59:07.391Z",
       "stale": false
     },
     "MU": {
@@ -396,7 +396,7 @@
       "currency": "USD",
       "exchange": "NMS",
       "marketTime": 1793390401,
-      "fetchedAt": "2026-10-31T00:46:41.960Z",
+      "fetchedAt": "2026-11-02T05:59:07.393Z",
       "stale": false
     },
     "NFLX": {
@@ -407,18 +407,7 @@
       "currency": "USD",
       "exchange": "NMS",
       "marketTime": 1793390400,
-      "fetchedAt": "2026-10-31T00:46:41.979Z",
-      "stale": false
-    },
-    "NOW": {
-      "symbol": "NOW",
-      "resolvedSymbol": "NOW",
-      "name": "ServiceNow, Inc.",
-      "price": 105.12,
-      "currency": "USD",
-      "exchange": "NYQ",
-      "marketTime": 1793390403,
-      "fetchedAt": "2026-10-31T00:46:42.005Z",
+      "fetchedAt": "2026-11-02T05:59:07.403Z",
       "stale": false
     },
     "NOK": {
@@ -429,51 +418,18 @@
       "currency": "USD",
       "exchange": "NYQ",
       "marketTime": 1793390402,
-      "fetchedAt": "2026-10-31T00:46:42.015Z",
+      "fetchedAt": "2026-11-02T05:59:07.434Z",
       "stale": false
     },
-    "NVDA": {
-      "symbol": "NVDA",
-      "resolvedSymbol": "NVDA",
-      "name": "NVIDIA Corporation",
-      "price": 204.64,
-      "currency": "USD",
-      "exchange": "NMS",
-      "marketTime": 1793390401,
-      "fetchedAt": "2026-10-31T00:46:42.016Z",
-      "stale": false
-    },
-    "OPEN": {
-      "symbol": "OPEN",
-      "resolvedSymbol": "OPEN",
-      "name": "Opendoor Technologies Inc",
-      "price": 1.8,
-      "currency": "USD",
-      "exchange": "NMS",
-      "marketTime": 1793390401,
-      "fetchedAt": "2026-10-31T00:46:42.061Z",
-      "stale": false
-    },
-    "PYPL": {
-      "symbol": "PYPL",
-      "resolvedSymbol": "PYPL",
-      "name": "PayPal Holdings, Inc.",
-      "price": 57.01,
-      "currency": "USD",
-      "exchange": "NMS",
-      "marketTime": 1793390400,
-      "fetchedAt": "2026-10-31T00:46:42.077Z",
-      "stale": false
-    },
-    "ORCL": {
-      "symbol": "ORCL",
-      "resolvedSymbol": "ORCL",
-      "name": "Oracle Corporation",
-      "price": 130.67,
+    "NOW": {
+      "symbol": "NOW",
+      "resolvedSymbol": "NOW",
+      "name": "ServiceNow, Inc.",
+      "price": 105.12,
       "currency": "USD",
       "exchange": "NYQ",
-      "marketTime": 1793390622,
-      "fetchedAt": "2026-10-31T00:46:42.081Z",
+      "marketTime": 1793390403,
+      "fetchedAt": "2026-11-02T05:59:07.436Z",
       "stale": false
     },
     "ONDS": {
@@ -484,7 +440,51 @@
       "currency": "USD",
       "exchange": "NCM",
       "marketTime": 1793390400,
-      "fetchedAt": "2026-10-31T00:46:42.103Z",
+      "fetchedAt": "2026-11-02T05:59:07.449Z",
+      "stale": false
+    },
+    "NVDA": {
+      "symbol": "NVDA",
+      "resolvedSymbol": "NVDA",
+      "name": "NVIDIA Corporation",
+      "price": 204.64,
+      "currency": "USD",
+      "exchange": "NMS",
+      "marketTime": 1793390401,
+      "fetchedAt": "2026-11-02T05:59:07.452Z",
+      "stale": false
+    },
+    "OPEN": {
+      "symbol": "OPEN",
+      "resolvedSymbol": "OPEN",
+      "name": "Opendoor Technologies Inc",
+      "price": 1.8,
+      "currency": "USD",
+      "exchange": "NMS",
+      "marketTime": 1793390401,
+      "fetchedAt": "2026-11-02T05:59:07.482Z",
+      "stale": false
+    },
+    "PYPL": {
+      "symbol": "PYPL",
+      "resolvedSymbol": "PYPL",
+      "name": "PayPal Holdings, Inc.",
+      "price": 57.01,
+      "currency": "USD",
+      "exchange": "NMS",
+      "marketTime": 1793390400,
+      "fetchedAt": "2026-11-02T05:59:07.501Z",
+      "stale": false
+    },
+    "ORCL": {
+      "symbol": "ORCL",
+      "resolvedSymbol": "ORCL",
+      "name": "Oracle Corporation",
+      "price": 130.67,
+      "currency": "USD",
+      "exchange": "NYQ",
+      "marketTime": 1793390622,
+      "fetchedAt": "2026-11-02T05:59:07.503Z",
       "stale": false
     },
     "QQQ": {
@@ -495,7 +495,7 @@
       "currency": "USD",
       "exchange": "NGM",
       "marketTime": 1793390401,
-      "fetchedAt": "2026-10-31T00:46:42.125Z",
+      "fetchedAt": "2026-11-02T05:59:07.515Z",
       "stale": false
     },
     "QQQM": {
@@ -506,18 +506,7 @@
       "currency": "USD",
       "exchange": "NGM",
       "marketTime": 1793390400,
-      "fetchedAt": "2026-10-31T00:46:42.138Z",
-      "stale": false
-    },
-    "SHOP": {
-      "symbol": "SHOP",
-      "resolvedSymbol": "SHOP",
-      "name": "Shopify Inc.",
-      "price": 157.49,
-      "currency": "USD",
-      "exchange": "NMS",
-      "marketTime": 1793390400,
-      "fetchedAt": "2026-10-31T00:46:42.161Z",
+      "fetchedAt": "2026-11-02T05:59:07.537Z",
       "stale": false
     },
     "SENS": {
@@ -528,18 +517,18 @@
       "currency": "USD",
       "exchange": "NMS",
       "marketTime": 1793390400,
-      "fetchedAt": "2026-10-31T00:46:42.162Z",
+      "fetchedAt": "2026-11-02T05:59:07.550Z",
       "stale": false
     },
-    "SMCI": {
-      "symbol": "SMCI",
-      "resolvedSymbol": "SMCI",
-      "name": "Super Micro Computer, Inc.",
-      "price": 32.95,
+    "SHOP": {
+      "symbol": "SHOP",
+      "resolvedSymbol": "SHOP",
+      "name": "Shopify Inc.",
+      "price": 157.49,
       "currency": "USD",
       "exchange": "NMS",
-      "marketTime": 1793390401,
-      "fetchedAt": "2026-10-31T00:46:42.195Z",
+      "marketTime": 1793390400,
+      "fetchedAt": "2026-11-02T05:59:07.556Z",
       "stale": false
     },
     "SKHY": {
@@ -550,29 +539,18 @@
       "currency": "USD",
       "exchange": "NMS",
       "marketTime": 1793390401,
-      "fetchedAt": "2026-10-31T00:46:42.207Z",
+      "fetchedAt": "2026-11-02T05:59:07.564Z",
       "stale": false
     },
-    "SMH": {
-      "symbol": "SMH",
-      "resolvedSymbol": "SMH",
-      "name": "VanEck Semiconductor ETF",
-      "price": 522.49,
-      "currency": "USD",
-      "exchange": "NGM",
-      "marketTime": 1793390400,
-      "fetchedAt": "2026-10-31T00:46:42.219Z",
-      "stale": false
-    },
-    "TMC": {
-      "symbol": "TMC",
-      "resolvedSymbol": "TMC",
-      "name": "TMC the metals company Inc.",
-      "price": 2.6,
+    "SMCI": {
+      "symbol": "SMCI",
+      "resolvedSymbol": "SMCI",
+      "name": "Super Micro Computer, Inc.",
+      "price": 32.95,
       "currency": "USD",
       "exchange": "NMS",
       "marketTime": 1793390401,
-      "fetchedAt": "2026-10-31T00:46:42.243Z",
+      "fetchedAt": "2026-11-02T05:59:07.587Z",
       "stale": false
     },
     "SNDK": {
@@ -583,7 +561,18 @@
       "currency": "USD",
       "exchange": "NMS",
       "marketTime": 1793390400,
-      "fetchedAt": "2026-10-31T00:46:42.256Z",
+      "fetchedAt": "2026-11-02T05:59:07.603Z",
+      "stale": false
+    },
+    "SMH": {
+      "symbol": "SMH",
+      "resolvedSymbol": "SMH",
+      "name": "VanEck Semiconductor ETF",
+      "price": 522.49,
+      "currency": "USD",
+      "exchange": "NGM",
+      "marketTime": 1793390400,
+      "fetchedAt": "2026-11-02T05:59:07.604Z",
       "stale": false
     },
     "TSLA": {
@@ -594,7 +583,29 @@
       "currency": "USD",
       "exchange": "NMS",
       "marketTime": 1793390400,
-      "fetchedAt": "2026-10-31T00:46:42.258Z",
+      "fetchedAt": "2026-11-02T05:59:07.637Z",
+      "stale": false
+    },
+    "TMC": {
+      "symbol": "TMC",
+      "resolvedSymbol": "TMC",
+      "name": "TMC the metals company Inc.",
+      "price": 2.6,
+      "currency": "USD",
+      "exchange": "NMS",
+      "marketTime": 1793390401,
+      "fetchedAt": "2026-11-02T05:59:07.646Z",
+      "stale": false
+    },
+    "USDTWD=X": {
+      "symbol": "USDTWD=X",
+      "resolvedSymbol": "USDTWD=X",
+      "name": "USD/TWD",
+      "price": 32.551,
+      "currency": "TWD",
+      "exchange": "CCY",
+      "marketTime": 1793599146,
+      "fetchedAt": "2026-11-02T05:59:07.651Z",
       "stale": false
     },
     "TSM": {
@@ -605,18 +616,7 @@
       "currency": "USD",
       "exchange": "NYQ",
       "marketTime": 1793390402,
-      "fetchedAt": "2026-10-31T00:46:42.286Z",
-      "stale": false
-    },
-    "USDTWD=X": {
-      "symbol": "USDTWD=X",
-      "resolvedSymbol": "USDTWD=X",
-      "name": "USD/TWD",
-      "price": 32.605,
-      "currency": "TWD",
-      "exchange": "CCY",
-      "marketTime": 1793398090,
-      "fetchedAt": "2026-10-31T00:46:42.288Z",
+      "fetchedAt": "2026-11-02T05:59:07.671Z",
       "stale": false
     },
     "VOO": {
@@ -627,7 +627,7 @@
       "currency": "USD",
       "exchange": "PCX",
       "marketTime": 1793390400,
-      "fetchedAt": "2026-10-31T00:46:42.317Z",
+      "fetchedAt": "2026-11-02T05:59:07.694Z",
       "stale": false
     },
     "XLI": {
@@ -638,7 +638,7 @@
       "currency": "USD",
       "exchange": "PCX",
       "marketTime": 1793390400,
-      "fetchedAt": "2026-10-31T00:46:42.342Z",
+      "fetchedAt": "2026-11-02T05:59:07.713Z",
       "stale": false
     }
   },
